@@ -3,7 +3,10 @@ package com.example.glassesvto
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.view.Gravity
 import android.view.SurfaceView
+import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -42,9 +45,33 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Create container layout
+        val container = FrameLayout(this)
+
         // Create SurfaceView
         surfaceView = SurfaceView(this)
-        setContentView(surfaceView)
+        container.addView(surfaceView, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+
+        // Create switch glasses button
+        val switchButton = Button(this).apply {
+            text = "Switch Glasses"
+            setOnClickListener {
+                vtoRenderer.switchGlassesModel()
+            }
+        }
+        val buttonParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            bottomMargin = 100
+        }
+        container.addView(switchButton, buttonParams)
+
+        setContentView(container)
 
         // Create and initialize renderer
         vtoRenderer = VTORenderer(this)
@@ -116,15 +143,15 @@ class MainActivity : AppCompatActivity() {
             // Connect session to renderer
             vtoRenderer.session = arSession
 
-        } catch (e: UnavailableArcoreNotInstalledException) {
+        } catch (_: UnavailableArcoreNotInstalledException) {
             showError("ARCore is not installed")
-        } catch (e: UnavailableDeviceNotCompatibleException) {
+        } catch (_: UnavailableDeviceNotCompatibleException) {
             showError("This device does not support AR")
-        } catch (e: UnavailableSdkTooOldException) {
+        } catch (_: UnavailableSdkTooOldException) {
             showError("Please update ARCore")
-        } catch (e: UnavailableApkTooOldException) {
+        } catch (_: UnavailableApkTooOldException) {
             showError("Please update this app")
-        } catch (e: CameraNotAvailableException) {
+        } catch (_: CameraNotAvailableException) {
             showError("Camera not available")
         } catch (e: Exception) {
             showError("Failed to create AR session: ${e.message}")

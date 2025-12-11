@@ -14,7 +14,10 @@ import com.google.ar.core.AugmentedFace
 import com.google.ar.core.Frame
 import kotlin.math.abs
 
-private const val DEFAULT_MODEL_PATH = "models/680048.glb"
+private val AVAILABLE_MODELS = listOf(
+    "models/878082.glb",
+    "models/680048.glb"
+)
 
 /**
  * Renderer for glasses model with face tracking transform.
@@ -31,6 +34,7 @@ class GlassesRenderer(private val context: Context) {
     private lateinit var assetLoader: AssetLoader
     private lateinit var resourceLoader: ResourceLoader
     private var glassesAsset: FilamentAsset? = null
+    private var currentModelIndex = 0
 
     // Reusable arrays to avoid per-frame allocations
     private val tempVec4 = FloatArray(4)
@@ -45,11 +49,12 @@ class GlassesRenderer(private val context: Context) {
      * Setup the glasses renderer with Filament engine and scene.
      * @param engine Filament engine instance
      * @param scene Scene to add glasses entities to
-     * @param modelPath Path to glasses GLB model (default: models/680048.glb)
+     * @param modelIndex Index of the model to load (default: 0)
      */
-    fun setup(engine: Engine, scene: Scene, modelPath: String = DEFAULT_MODEL_PATH) {
+    fun setup(engine: Engine, scene: Scene, modelIndex: Int = 0) {
         this.engine = engine
         this.scene = scene
+        this.currentModelIndex = modelIndex
 
         // Setup GLTF loader
         val materialProvider = UbershaderProvider(engine)
@@ -57,7 +62,7 @@ class GlassesRenderer(private val context: Context) {
         resourceLoader = ResourceLoader(engine)
 
         // Load model
-        loadModel(modelPath)
+        loadModel(AVAILABLE_MODELS[currentModelIndex])
     }
 
     private fun loadModel(filename: String) {
@@ -168,6 +173,23 @@ class GlassesRenderer(private val context: Context) {
             val instance = engine.transformManager.getInstance(asset.root)
             engine.transformManager.setTransform(instance, MatrixUtils.createHideMatrix())
         }
+    }
+
+    /**
+     * Switch to the next available glasses model.
+     */
+    fun switchToNextModel() {
+        // Remove current model from scene
+        glassesAsset?.let { asset ->
+            scene.removeEntities(asset.entities)
+            assetLoader.destroyAsset(asset)
+        }
+        glassesAsset = null
+
+        // Load next model
+        currentModelIndex = (currentModelIndex + 1) % AVAILABLE_MODELS.size
+        loadModel(AVAILABLE_MODELS[currentModelIndex])
+        Log.d(TAG, "Switched to model: ${AVAILABLE_MODELS[currentModelIndex]}")
     }
 
     /**

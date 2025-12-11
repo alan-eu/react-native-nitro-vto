@@ -169,6 +169,10 @@ class VTORenderer(private val context: Context) {
         choreographer.removeFrameCallback(frameCallback)
     }
 
+    fun switchGlassesModel() {
+        glassesRenderer.switchToNextModel()
+    }
+
     private fun doFrame() {
         if (!initialized) return
 

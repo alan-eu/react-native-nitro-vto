@@ -18,7 +18,7 @@ class EnvironmentLightingRenderer(private val context: Context) {
 
     companion object {
         private const val TAG = "EnvironmentLighting"
-        private const val BASE_INTENSITY = 30_000f
+        private const val BASE_INTENSITY = 90_000f
     }
 
     private var indirectLight: IndirectLight? = null
