@@ -141,10 +141,11 @@ class GlassesRenderer(private val context: Context) {
 
     private fun getEyeCenterNdc(face: AugmentedFace): FloatArray {
         val meshBuffer = face.meshVertices
-        val leftIdx = 374 * 3
-        val rightIdx = 145 * 3
+        // Nose bridge vertices indexes
+        val leftIdx = 351 * 3
+        val rightIdx = 122 * 3
 
-        // Read eye positions directly from buffer
+        // Read nose bridge positions directly from buffer
         val leftX = meshBuffer.get(leftIdx)
         val leftY = meshBuffer.get(leftIdx + 1)
         val leftZ = meshBuffer.get(leftIdx + 2)
@@ -152,7 +153,7 @@ class GlassesRenderer(private val context: Context) {
         val rightY = meshBuffer.get(rightIdx + 1)
         val rightZ = meshBuffer.get(rightIdx + 2)
 
-        // Eye center in local coordinates
+        // Face center in local coordinates
         val centerX = (leftX + rightX) / 2f
         val centerY = (leftY + rightY) / 2f
         val centerZ = (leftZ + rightZ) / 2f
