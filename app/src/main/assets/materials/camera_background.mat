@@ -1,0 +1,24 @@
+material {
+    name : "Camera Background",
+    shadingModel : unlit,
+    depthWrite : false,
+    depthCulling : false,
+    doubleSided : true,
+    parameters : [
+        {
+            type : samplerExternal,
+            name : cameraTexture
+        }
+    ],
+    requires : [
+        uv0
+    ]
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        vec2 uv = getUV0();
+        material.baseColor = texture(materialParams_cameraTexture, uv);
+    }
+}
