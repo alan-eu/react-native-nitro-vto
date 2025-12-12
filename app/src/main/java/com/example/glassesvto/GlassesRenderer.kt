@@ -12,11 +12,17 @@ import com.google.android.filament.gltfio.ResourceLoader
 import com.google.android.filament.gltfio.UbershaderProvider
 import com.google.ar.core.AugmentedFace
 import com.google.ar.core.Frame
+import com.google.ar.core.Pose
 import kotlin.math.abs
 
+data class GlassesModel(
+    val path: String,
+    val widthMeters: Float  // total frame width in meters
+)
+
 private val AVAILABLE_MODELS = listOf(
-    "models/878082.glb",
-    "models/680048.glb"
+    GlassesModel("models/878082.glb", 0.135f),  // TODO: replace with actual width
+    GlassesModel("models/680048.glb", 0.138f)   // TODO: replace with actual width
 )
 
 /**
@@ -62,7 +68,7 @@ class GlassesRenderer(private val context: Context) {
         resourceLoader = ResourceLoader(engine)
 
         // Load model
-        loadModel(AVAILABLE_MODELS[currentModelIndex])
+        loadModel(AVAILABLE_MODELS[currentModelIndex].path)
     }
 
     private fun loadModel(filename: String) {
@@ -107,23 +113,24 @@ class GlassesRenderer(private val context: Context) {
             frame.camera.getViewMatrix(viewMatrix, 0)
             frame.camera.getProjectionMatrix(projMatrix, 0, 0.1f, 100f)
 
-            // Get eye center in NDC coordinates
-            val eyeCenterNdc = getEyeCenterNdc(face)
+            // Get nose bridge center in NDC coordinates for positioning
+            val noseBridgeCenterNdc = getNoseBridgeCenterNdc(face)
 
-            // Get forehead landmarks for scale calculation
-            val foreheadLeft = face.getRegionPose(AugmentedFace.RegionType.FOREHEAD_LEFT)
-            val foreheadRight = face.getRegionPose(AugmentedFace.RegionType.FOREHEAD_RIGHT)
-            val foreheadRightNdc = MatrixUtils.projectToNdc(foreheadRight, viewMatrix, projMatrix, tempVec4)
-            val foreheadLeftNdc = MatrixUtils.projectToNdc(foreheadLeft, viewMatrix, projMatrix, tempVec4)
+            // Get PD measurements for scale calculation
+            val pdMeters = getPupillaryDistance(face)
+            val pdNdc = getPupillaryDistanceNdc(face)
 
-            // Calculate scale: ratio of face width in NDC to face width in meters
-            val faceWidthNdc = abs(foreheadRightNdc[0] - foreheadLeftNdc[0])
-            val faceWidthMeters = MatrixUtils.distance3d(foreheadLeft, foreheadRight)
-            val scale = faceWidthNdc / faceWidthMeters
+            // Cross-multiplication to get glasses scale in NDC
+            // If PD (pdMeters) maps to pdNdc, then glassesWidth maps to glassesNdc
+            val currentModel = AVAILABLE_MODELS[currentModelIndex]
+            val glassesWidthNdc = (currentModel.widthMeters / pdMeters) * pdNdc
+
+            // Scale factor: glasses model is 1 unit wide, we want it to be glassesWidthNdc in NDC
+            val scale = glassesWidthNdc / currentModel.widthMeters
             val scaleY = scale * aspectRatio
 
             // Build transform: rotation * scale, then set position
-            val rotationMatrix = MatrixUtils.quaternionToMatrix(face.centerPose.rotationQuaternion)
+            val rotationMatrix = MatrixUtils.getGlassesRotationMatrix(face)
 
             val finalMatrix = FloatArray(16)
             Matrix.setIdentityM(finalMatrix, 0)
@@ -131,32 +138,48 @@ class GlassesRenderer(private val context: Context) {
             Matrix.multiplyMM(tempMatrix16, 0, rotationMatrix, 0, finalMatrix, 0)
 
             // Position in NDC space (flip X for mirrored camera)
-            tempMatrix16[12] = -eyeCenterNdc[0]
-            tempMatrix16[13] = eyeCenterNdc[1]
+            tempMatrix16[12] = -noseBridgeCenterNdc[0]
+            tempMatrix16[13] = noseBridgeCenterNdc[1]
             tempMatrix16[14] = -0.5f
 
             engine.transformManager.setTransform(instance, tempMatrix16)
         }
     }
 
-    private fun getEyeCenterNdc(face: AugmentedFace): FloatArray {
-        val meshBuffer = face.meshVertices
-        // Nose bridge vertices indexes
-        val leftIdx = 351 * 3
-        val rightIdx = 122 * 3
+    private fun getPupillaryDistance(face: AugmentedFace): Float {
+        // Eyes position from vertices
+        val left = MatrixUtils.getPositionForVertice(374, face)
+        val right = MatrixUtils.getPositionForVertice(145, face)
+        return MatrixUtils.distance3d(left[0], left[1], left[2], right[0], right[1], right[2])
+    }
 
-        // Read nose bridge positions directly from buffer
-        val leftX = meshBuffer.get(leftIdx)
-        val leftY = meshBuffer.get(leftIdx + 1)
-        val leftZ = meshBuffer.get(leftIdx + 2)
-        val rightX = meshBuffer.get(rightIdx)
-        val rightY = meshBuffer.get(rightIdx + 1)
-        val rightZ = meshBuffer.get(rightIdx + 2)
+    private fun getPupillaryDistanceNdc(face: AugmentedFace): Float {
+        // Eyes position from vertices
+        val left = MatrixUtils.getPositionForVertice(374, face)
+        val right = MatrixUtils.getPositionForVertice(145, face)
 
-        // Face center in local coordinates
-        val centerX = (leftX + rightX) / 2f
-        val centerY = (leftY + rightY) / 2f
-        val centerZ = (leftZ + rightZ) / 2f
+        // Transform both points to world coordinates
+        face.centerPose.toMatrix(tempMatrix16, 0)
+        val leftWorld = MatrixUtils.transformToWorld(left[0], left[1], left[2], tempMatrix16, tempVec4)
+        val rightWorld = MatrixUtils.transformToWorld(right[0], right[1], right[2], tempMatrix16, FloatArray(4))
+
+        // Project both to NDC
+        val leftNdc = MatrixUtils.projectToNdc(leftWorld, viewMatrix, projMatrix, tempVec4)
+        val rightNdc = MatrixUtils.projectToNdc(rightWorld, viewMatrix, projMatrix, FloatArray(4))
+
+        // Return horizontal distance in NDC
+        return abs(rightNdc[0] - leftNdc[0])
+    }
+
+    private fun getNoseBridgeCenterNdc(face: AugmentedFace): FloatArray {
+        // Nose bridge position from vertices
+        val left = MatrixUtils.getPositionForVertice(351, face)
+        val right = MatrixUtils.getPositionForVertice(122, face)
+
+        // Nose bridge center in local coordinates
+        val centerX = (left[0] + right[0]) / 2f
+        val centerY = (left[1] + right[1]) / 2f
+        val centerZ = (left[2] + right[2]) / 2f
 
         // Transform to world coordinates
         face.centerPose.toMatrix(tempMatrix16, 0)
@@ -189,8 +212,8 @@ class GlassesRenderer(private val context: Context) {
 
         // Load next model
         currentModelIndex = (currentModelIndex + 1) % AVAILABLE_MODELS.size
-        loadModel(AVAILABLE_MODELS[currentModelIndex])
-        Log.d(TAG, "Switched to model: ${AVAILABLE_MODELS[currentModelIndex]}")
+        loadModel(AVAILABLE_MODELS[currentModelIndex].path)
+        Log.d(TAG, "Switched to model: ${AVAILABLE_MODELS[currentModelIndex].path}")
     }
 
     /**
