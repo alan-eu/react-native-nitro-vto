@@ -121,59 +121,106 @@ object MatrixUtils {
     }
 
     /**
-     * Compute a rotation matrix for glasses placement based on eye region vertices.
-     * Builds a coordinate frame from left eye, right eye, and forehead vertices.
+     * Compute a rotation matrix for glasses placement based on face vertices.
      *
-     * Assumes GLB model convention:
-     * - X axis: along temples (right to left)
-     * - Y axis: up
-     * - Z axis: forward (out from lenses toward viewer)
+     * Face mesh coordinate system (ARCore local space):
+     * - +X = face's left
+     * - +Y = toward viewer (out from face)
+     * - +Z = up
+     *
+     * GLB model coordinate system (Blender):
+     * - +X = left
+     * - -Y = forward (lenses facing)
+     * - +Z = up
+     *
+     * Mapping (model axis → face axis):
+     * - Model +X → Face +X (left)
+     * - Model +Y → Face -Y (so model's -Y/lenses points to face's +Y/viewer)
+     * - Model +Z → Face +Z (up)
+     *
+     * Front camera is mirrored, so negate X.
      */
     fun getGlassesRotationMatrix(face: AugmentedFace): FloatArray {
-        // Get key points for building coordinate frame
-        val leftEye = getPositionForVertice(374, face)
-        val rightEye = getPositionForVertice(145, face)
-        val forehead = getPositionForVertice(10, face)  // center forehead
+        // Log centerPose rotation for comparison
+        val poseMatrix = FloatArray(16)
+        face.centerPose.toMatrix(poseMatrix, 0)
+        android.util.Log.d("MatrixUtils", "CenterPose rotation:")
+        android.util.Log.d("MatrixUtils", "  Col0 (X): [${poseMatrix[0]}, ${poseMatrix[1]}, ${poseMatrix[2]}]")
+        android.util.Log.d("MatrixUtils", "  Col1 (Y): [${poseMatrix[4]}, ${poseMatrix[5]}, ${poseMatrix[6]}]")
+        android.util.Log.d("MatrixUtils", "  Col2 (Z): [${poseMatrix[8]}, ${poseMatrix[9]}, ${poseMatrix[10]}]")
 
-        // Eye center
+        // Key landmarks in LOCAL face space
+        val leftEyeLocal = getPositionForVertice(374, face)
+        val rightEyeLocal = getPositionForVertice(145, face)
+        val foreheadLocal = getPositionForVertice(10, face)
+
+        // Transform to WORLD space using centerPose
+        val tempVec = FloatArray(4)
+        val leftEye = transformToWorld(leftEyeLocal[0], leftEyeLocal[1], leftEyeLocal[2], poseMatrix, tempVec)
+        val rightEye = transformToWorld(rightEyeLocal[0], rightEyeLocal[1], rightEyeLocal[2], poseMatrix, FloatArray(4))
+        val forehead = transformToWorld(foreheadLocal[0], foreheadLocal[1], foreheadLocal[2], poseMatrix, FloatArray(4))
+
+        // Eye center in world space
         val eyeCenter = floatArrayOf(
             (leftEye[0] + rightEye[0]) / 2f,
             (leftEye[1] + rightEye[1]) / 2f,
             (leftEye[2] + rightEye[2]) / 2f
         )
 
-        // X axis: right eye to left eye (along temples)
-        val xAxis = floatArrayOf(
+        // Face +X: left (from right eye to left eye) in world space
+        val faceX = floatArrayOf(
             leftEye[0] - rightEye[0],
             leftEye[1] - rightEye[1],
             leftEye[2] - rightEye[2]
         )
-        normalize(xAxis)
+        normalize(faceX)
 
-        // Temp Y axis: from eye center toward forehead (pointing up)
-        val tempYAxis = floatArrayOf(
+        // Temporary up vector (from eye center to forehead) in world space
+        val tempUp = floatArrayOf(
             forehead[0] - eyeCenter[0],
             forehead[1] - eyeCenter[1],
             forehead[2] - eyeCenter[2]
         )
-        normalize(tempYAxis)
+        normalize(tempUp)
 
-        // Z axis: cross product of X and tempY (pointing out from face)
-        val zAxis = cross(xAxis, tempYAxis)
-        normalize(zAxis)
+        // Face +Y: forward = X × tempUp (right-hand rule: left × up = forward)
+        val faceY = cross(faceX, tempUp)
+        normalize(faceY)
 
-        // Recompute Y to ensure orthogonality
-        val yAxis = cross(zAxis, xAxis)
-        normalize(yAxis)
+        // Face +Z: up = Y × X (recompute for orthogonality)
+        val faceZ = cross(faceY, faceX)
+        normalize(faceZ)
 
-        // Build rotation matrix (column-major order for OpenGL)
-        // Negate all axes for mirrored front camera
-        return floatArrayOf(
-            -xAxis[0], -xAxis[1], -xAxis[2], 0f,
-            yAxis[0], yAxis[1], yAxis[2], 0f,
-            zAxis[0], zAxis[1], zAxis[2], 0f,
+        // Build rotation matrix (swapped based on previous comparison)
+        val baseRotation = floatArrayOf(
+            faceX[0], faceX[1], faceX[2], 0f,
+            faceZ[0], faceZ[1], faceZ[2], 0f,  // our faceZ goes to Col1 (Y)
+            faceY[0], faceY[1], faceY[2], 0f,  // our faceY goes to Col2 (Z)
             0f, 0f, 0f, 1f
         )
+
+        // Apply small pitch correction (rotate around X axis) to tilt temples down
+        // Negative angle tilts the front down / temples down
+        val pitchAngle = Math.toRadians(-10.0).toFloat()  // -10 degrees
+        val cosP = kotlin.math.cos(pitchAngle)
+        val sinP = kotlin.math.sin(pitchAngle)
+        val pitchCorrection = floatArrayOf(
+            1f, 0f, 0f, 0f,
+            0f, cosP, sinP, 0f,
+            0f, -sinP, cosP, 0f,
+            0f, 0f, 0f, 1f
+        )
+
+        // Result = baseRotation * pitchCorrection
+        val result = FloatArray(16)
+        Matrix.multiplyMM(result, 0, baseRotation, 0, pitchCorrection, 0)
+
+        android.util.Log.d("MatrixUtils", "Custom rotation:")
+        android.util.Log.d("MatrixUtils", "  Col0 (X): [${result[0]}, ${result[1]}, ${result[2]}]")
+        android.util.Log.d("MatrixUtils", "  Col1 (Y): [${result[4]}, ${result[5]}, ${result[6]}]")
+        android.util.Log.d("MatrixUtils", "  Col2 (Z): [${result[8]}, ${result[9]}, ${result[10]}]")
+
+        return result
     }
 
     private fun normalize(v: FloatArray) {
