@@ -31,3 +31,11 @@ cmgen --format=ktx --size=256 --deploy=./app/src/main/assets/envs/ ./app/src/mai
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
+
+## Concepts
+
+### Head rotation
+
+- along X axis: Roll, tilt your head left/right
+- along Y axis: Pitch, look up/down
+- along Z axis: Yaw, turn left/right

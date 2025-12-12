@@ -116,26 +116,49 @@ class GlassesRenderer(private val context: Context) {
             // Get nose bridge center in NDC coordinates for positioning
             val noseBridgeCenterNdc = getNoseBridgeCenterNdc(face)
 
-            // Get PD measurements for scale calculation
+            // Get PD in meters (constant regardless of head orientation)
             val pdMeters = getPupillaryDistance(face)
-            val pdNdc = getPupillaryDistanceNdc(face)
+
+            // Get nose bridge position in view space for depth calculation
+            val noseBridgeWorld = getNoseBridgeWorldPos(face)
+
+            // Transform world position to view space to get depth
+            tempVec4[0] = noseBridgeWorld[0]
+            tempVec4[1] = noseBridgeWorld[1]
+            tempVec4[2] = noseBridgeWorld[2]
+            tempVec4[3] = 1f
+            val viewPos = FloatArray(4)
+            android.opengl.Matrix.multiplyMV(viewPos, 0, viewMatrix, 0, tempVec4, 0)
+            val depth = kotlin.math.abs(viewPos[2])  // Z in view space is depth
+
+            // Calculate what PD would look like in NDC at this depth (facing camera)
+            // This gives stable scale regardless of head turn
+            val focalX = kotlin.math.abs(projMatrix[0])
+            val pdNdc = pdMeters * focalX / depth
 
             // Cross-multiplication to get glasses scale in NDC
-            // If PD (pdMeters) maps to pdNdc, then glassesWidth maps to glassesNdc
             val currentModel = AVAILABLE_MODELS[currentModelIndex]
             val glassesWidthNdc = (currentModel.widthMeters / pdMeters) * pdNdc
 
-            // Scale factor: glasses model is 1 unit wide, we want it to be glassesWidthNdc in NDC
+            // Scale factor
             val scale = glassesWidthNdc / currentModel.widthMeters
-            val scaleY = scale * aspectRatio
 
-            // Build transform: rotation * scale, then set position
-            val rotationMatrix = MatrixUtils.getGlassesRotationMatrix(face)
+            // Build transform: first rotation, then uniform scale, then aspect ratio correction
+            val rotationMatrix = MatrixUtils.quaternionToMatrix(face.centerPose.rotationQuaternion)
 
+            // Start with uniform scale
             val finalMatrix = FloatArray(16)
             Matrix.setIdentityM(finalMatrix, 0)
-            Matrix.scaleM(finalMatrix, 0, scale, scaleY, scale)
+            Matrix.scaleM(finalMatrix, 0, scale, scale, scale)
+
+            // Apply rotation
             Matrix.multiplyMM(tempMatrix16, 0, rotationMatrix, 0, finalMatrix, 0)
+
+            // Apply aspect ratio correction in screen space (after rotation)
+            // This stretches Y to compensate for non-square pixels in NDC
+            tempMatrix16[1] *= aspectRatio
+            tempMatrix16[5] *= aspectRatio
+            tempMatrix16[9] *= aspectRatio
 
             // Position in NDC space (flip X for mirrored camera)
             tempMatrix16[12] = -noseBridgeCenterNdc[0]
@@ -167,8 +190,26 @@ class GlassesRenderer(private val context: Context) {
         val leftNdc = MatrixUtils.projectToNdc(leftWorld, viewMatrix, projMatrix, tempVec4)
         val rightNdc = MatrixUtils.projectToNdc(rightWorld, viewMatrix, projMatrix, FloatArray(4))
 
-        // Return horizontal distance in NDC
-        return abs(rightNdc[0] - leftNdc[0])
+        // Return 2D distance in NDC (not just horizontal)
+        // This helps maintain scale when head is turned
+        val dx = rightNdc[0] - leftNdc[0]
+        val dy = rightNdc[1] - leftNdc[1]
+        return kotlin.math.sqrt(dx * dx + dy * dy)
+    }
+
+    private fun getNoseBridgeWorldPos(face: AugmentedFace): FloatArray {
+        // Nose bridge position from vertices
+        val left = MatrixUtils.getPositionForVertice(351, face)
+        val right = MatrixUtils.getPositionForVertice(122, face)
+
+        // Nose bridge center in local coordinates
+        val centerX = (left[0] + right[0]) / 2f
+        val centerY = (left[1] + right[1]) / 2f
+        val centerZ = (left[2] + right[2]) / 2f
+
+        // Transform to world coordinates
+        face.centerPose.toMatrix(tempMatrix16, 0)
+        return MatrixUtils.transformToWorld(centerX, centerY, centerZ, tempMatrix16, tempVec4)
     }
 
     private fun getNoseBridgeCenterNdc(face: AugmentedFace): FloatArray {
