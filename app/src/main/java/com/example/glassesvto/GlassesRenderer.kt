@@ -49,6 +49,12 @@ class GlassesRenderer(private val context: Context) {
     // Aspect ratio for scale correction
     private var aspectRatio = 1f
 
+    // Kalman filters for smoothing (reduce jitter)
+    // Higher processNoise = more responsive, higher measurementNoise = smoother
+    private val positionFilter = KalmanFilter2D(processNoise = 0.1f, measurementNoise = 0.05f)
+    private val scaleFilter = KalmanFilter(processNoise = 0.1f, measurementNoise = 0.05f)
+    private val rotationFilter = KalmanFilterQuaternion(processNoise = 0.1f, measurementNoise = 0.05f)
+
     /**
      * Setup the glasses renderer with Filament engine and scene.
      * @param engine Filament engine instance
@@ -110,7 +116,7 @@ class GlassesRenderer(private val context: Context) {
 
             // Get nose bridge in world and NDC space
             val noseBridgeWorld = getNoseBridgeWorldPos(face)
-            val noseBridgeNdc = projectToNdc(noseBridgeWorld)
+            val noseBridgeNdcRaw = projectToNdc(noseBridgeWorld)
 
             // Calculate depth (distance from camera) for scale calculation
             val depth = getDepthInViewSpace(noseBridgeWorld)
@@ -119,10 +125,15 @@ class GlassesRenderer(private val context: Context) {
             // Derived from: scale = pdNdc / pdMeters, where pdNdc = pdMeters * focalLength / depth
             // Simplifies to: scale = focalLength / depth
             val focalLength = kotlin.math.abs(projMatrix[0])
-            val scale = focalLength / depth
+            val scaleRaw = focalLength / depth
+
+            // Apply Kalman filters to smooth position, scale, and rotation
+            val noseBridgeNdc = positionFilter.update(noseBridgeNdcRaw[0], noseBridgeNdcRaw[1])
+            val scale = scaleFilter.update(scaleRaw)
+            val smoothedQuaternion = rotationFilter.update(face.centerPose.rotationQuaternion)
 
             // Build transform matrix: rotation * uniform scale
-            val rotationMatrix = MatrixUtils.quaternionToMatrix(face.centerPose.rotationQuaternion)
+            val rotationMatrix = MatrixUtils.quaternionToMatrix(smoothedQuaternion)
             Matrix.setIdentityM(tempMatrix16, 0)
             Matrix.scaleM(tempMatrix16, 0, scale, scale, scale)
             Matrix.multiplyMM(tempMatrix16, 0, rotationMatrix, 0, tempMatrix16.copyOf(), 0)
@@ -186,6 +197,13 @@ class GlassesRenderer(private val context: Context) {
             val instance = engine.transformManager.getInstance(asset.root)
             engine.transformManager.setTransform(instance, MatrixUtils.createHideMatrix())
         }
+        resetFilters()
+    }
+
+    private fun resetFilters() {
+        positionFilter.reset()
+        scaleFilter.reset()
+        rotationFilter.reset()
     }
 
     /**
@@ -198,6 +216,7 @@ class GlassesRenderer(private val context: Context) {
             assetLoader.destroyAsset(asset)
         }
         glassesAsset = null
+        resetFilters()
 
         // Load next model
         currentModelIndex = (currentModelIndex + 1) % AVAILABLE_MODELS.size
