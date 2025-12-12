@@ -12,8 +12,6 @@ import com.google.android.filament.gltfio.ResourceLoader
 import com.google.android.filament.gltfio.UbershaderProvider
 import com.google.ar.core.AugmentedFace
 import com.google.ar.core.Frame
-import com.google.ar.core.Pose
-import kotlin.math.abs
 
 data class GlassesModel(
     val path: String,
@@ -102,132 +100,82 @@ class GlassesRenderer(private val context: Context) {
 
     /**
      * Update glasses transform based on detected face.
-     * @param face ARCore AugmentedFace with tracking data
-     * @param frame Current ARCore frame for camera matrices
      */
     fun updateTransform(face: AugmentedFace, frame: Frame) {
         glassesAsset?.let { asset ->
             val instance = engine.transformManager.getInstance(asset.root)
 
-            // Get camera matrices
             frame.camera.getViewMatrix(viewMatrix, 0)
             frame.camera.getProjectionMatrix(projMatrix, 0, 0.1f, 100f)
 
-            // Get nose bridge center in NDC coordinates for positioning
-            val noseBridgeCenterNdc = getNoseBridgeCenterNdc(face)
-
-            // Get PD in meters (constant regardless of head orientation)
-            val pdMeters = getPupillaryDistance(face)
-
-            // Get nose bridge position in view space for depth calculation
+            // Get nose bridge in world and NDC space
             val noseBridgeWorld = getNoseBridgeWorldPos(face)
+            val noseBridgeNdc = projectToNdc(noseBridgeWorld)
 
-            // Transform world position to view space to get depth
-            tempVec4[0] = noseBridgeWorld[0]
-            tempVec4[1] = noseBridgeWorld[1]
-            tempVec4[2] = noseBridgeWorld[2]
-            tempVec4[3] = 1f
-            val viewPos = FloatArray(4)
-            android.opengl.Matrix.multiplyMV(viewPos, 0, viewMatrix, 0, tempVec4, 0)
-            val depth = kotlin.math.abs(viewPos[2])  // Z in view space is depth
+            // Calculate depth (distance from camera) for scale calculation
+            val depth = getDepthInViewSpace(noseBridgeWorld)
 
-            // Calculate what PD would look like in NDC at this depth (facing camera)
-            // This gives stable scale regardless of head turn
-            val focalX = kotlin.math.abs(projMatrix[0])
-            val pdNdc = pdMeters * focalX / depth
+            // Scale: use depth-based projection to maintain consistent size regardless of head turn
+            // Derived from: scale = pdNdc / pdMeters, where pdNdc = pdMeters * focalLength / depth
+            // Simplifies to: scale = focalLength / depth
+            val focalLength = kotlin.math.abs(projMatrix[0])
+            val scale = focalLength / depth
 
-            // Cross-multiplication to get glasses scale in NDC
-            val currentModel = AVAILABLE_MODELS[currentModelIndex]
-            val glassesWidthNdc = (currentModel.widthMeters / pdMeters) * pdNdc
-
-            // Scale factor
-            val scale = glassesWidthNdc / currentModel.widthMeters
-
-            // Build transform: first rotation, then uniform scale, then aspect ratio correction
+            // Build transform matrix: rotation * uniform scale
             val rotationMatrix = MatrixUtils.quaternionToMatrix(face.centerPose.rotationQuaternion)
-
-            // Start with uniform scale
-            val finalMatrix = FloatArray(16)
-            Matrix.setIdentityM(finalMatrix, 0)
-            Matrix.scaleM(finalMatrix, 0, scale, scale, scale)
-
-            // Apply rotation
-            Matrix.multiplyMM(tempMatrix16, 0, rotationMatrix, 0, finalMatrix, 0)
+            Matrix.setIdentityM(tempMatrix16, 0)
+            Matrix.scaleM(tempMatrix16, 0, scale, scale, scale)
+            Matrix.multiplyMM(tempMatrix16, 0, rotationMatrix, 0, tempMatrix16.copyOf(), 0)
 
             // Apply aspect ratio correction in screen space (after rotation)
-            // This stretches Y to compensate for non-square pixels in NDC
+            // Multiplying Y components of each column stretches vertically
             tempMatrix16[1] *= aspectRatio
             tempMatrix16[5] *= aspectRatio
             tempMatrix16[9] *= aspectRatio
 
-            // Position in NDC space (flip X for mirrored camera)
-            tempMatrix16[12] = -noseBridgeCenterNdc[0]
-            tempMatrix16[13] = noseBridgeCenterNdc[1]
+            // Set position (flip X for front camera mirror)
+            tempMatrix16[12] = -noseBridgeNdc[0]
+            tempMatrix16[13] = noseBridgeNdc[1]
             tempMatrix16[14] = -0.5f
 
             engine.transformManager.setTransform(instance, tempMatrix16)
         }
     }
 
-    private fun getPupillaryDistance(face: AugmentedFace): Float {
-        // Eyes position from vertices
-        val left = MatrixUtils.getPositionForVertice(374, face)
-        val right = MatrixUtils.getPositionForVertice(145, face)
-        return MatrixUtils.distance3d(left[0], left[1], left[2], right[0], right[1], right[2])
-    }
-
-    private fun getPupillaryDistanceNdc(face: AugmentedFace): Float {
-        // Eyes position from vertices
-        val left = MatrixUtils.getPositionForVertice(374, face)
-        val right = MatrixUtils.getPositionForVertice(145, face)
-
-        // Transform both points to world coordinates
-        face.centerPose.toMatrix(tempMatrix16, 0)
-        val leftWorld = MatrixUtils.transformToWorld(left[0], left[1], left[2], tempMatrix16, tempVec4)
-        val rightWorld = MatrixUtils.transformToWorld(right[0], right[1], right[2], tempMatrix16, FloatArray(4))
-
-        // Project both to NDC
-        val leftNdc = MatrixUtils.projectToNdc(leftWorld, viewMatrix, projMatrix, tempVec4)
-        val rightNdc = MatrixUtils.projectToNdc(rightWorld, viewMatrix, projMatrix, FloatArray(4))
-
-        // Return 2D distance in NDC (not just horizontal)
-        // This helps maintain scale when head is turned
-        val dx = rightNdc[0] - leftNdc[0]
-        val dy = rightNdc[1] - leftNdc[1]
-        return kotlin.math.sqrt(dx * dx + dy * dy)
-    }
-
+    /**
+     * Get nose bridge center position in world coordinates.
+     * Uses vertices 351 (left) and 122 (right) from ARCore face mesh.
+     */
     private fun getNoseBridgeWorldPos(face: AugmentedFace): FloatArray {
-        // Nose bridge position from vertices
         val left = MatrixUtils.getPositionForVertice(351, face)
         val right = MatrixUtils.getPositionForVertice(122, face)
 
-        // Nose bridge center in local coordinates
         val centerX = (left[0] + right[0]) / 2f
         val centerY = (left[1] + right[1]) / 2f
         val centerZ = (left[2] + right[2]) / 2f
 
-        // Transform to world coordinates
         face.centerPose.toMatrix(tempMatrix16, 0)
         return MatrixUtils.transformToWorld(centerX, centerY, centerZ, tempMatrix16, tempVec4)
     }
 
-    private fun getNoseBridgeCenterNdc(face: AugmentedFace): FloatArray {
-        // Nose bridge position from vertices
-        val left = MatrixUtils.getPositionForVertice(351, face)
-        val right = MatrixUtils.getPositionForVertice(122, face)
-
-        // Nose bridge center in local coordinates
-        val centerX = (left[0] + right[0]) / 2f
-        val centerY = (left[1] + right[1]) / 2f
-        val centerZ = (left[2] + right[2]) / 2f
-
-        // Transform to world coordinates
-        face.centerPose.toMatrix(tempMatrix16, 0)
-        val worldPos = MatrixUtils.transformToWorld(centerX, centerY, centerZ, tempMatrix16, tempVec4)
-
-        // Project to NDC
+    /**
+     * Project world position to NDC (Normalized Device Coordinates).
+     */
+    private fun projectToNdc(worldPos: FloatArray): FloatArray {
         return MatrixUtils.projectToNdc(worldPos, viewMatrix, projMatrix, tempVec4)
+    }
+
+    /**
+     * Get depth (Z distance) from camera in view space.
+     */
+    private fun getDepthInViewSpace(worldPos: FloatArray): Float {
+        tempVec4[0] = worldPos[0]
+        tempVec4[1] = worldPos[1]
+        tempVec4[2] = worldPos[2]
+        tempVec4[3] = 1f
+        val viewPos = FloatArray(4)
+        Matrix.multiplyMV(viewPos, 0, viewMatrix, 0, tempVec4, 0)
+        return kotlin.math.abs(viewPos[2])
     }
 
     /**

@@ -6,7 +6,6 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
-import kotlin.math.sqrt
 
 /**
  * Utility functions for matrix operations and buffer creation.
@@ -30,17 +29,7 @@ object MatrixUtils {
     }
 
     /**
-     * Calculate 3D distance between two 3D points.
-     */
-    fun distance3d(x1: Float, y1: Float, z1: Float, x2: Float, y2: Float, z2: Float): Float {
-        val dx = x2 - x1
-        val dy = y2 - y1
-        val dz = z2 - z1
-        return sqrt(dx * dx + dy * dy + dz * dz)
-    }
-
-    /**
-     * Project a world position (FloatArray) to NDC coordinates.
+     * Project a world position to NDC (Normalized Device Coordinates).
      */
     fun projectToNdc(worldPos: FloatArray, viewMatrix: FloatArray, projMatrix: FloatArray, tempVec4: FloatArray): FloatArray {
         tempVec4[0] = worldPos[0]
