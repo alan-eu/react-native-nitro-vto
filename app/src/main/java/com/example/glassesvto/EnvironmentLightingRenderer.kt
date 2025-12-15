@@ -18,7 +18,10 @@ class EnvironmentLightingRenderer(private val context: Context) {
 
     companion object {
         private const val TAG = "EnvironmentLighting"
-        private const val BASE_INTENSITY = 90_000f
+        // Intensity will range from 30_000 to 90_000 based on pixel intensity
+        // With a minimum of 30_000
+        private const val BASE_INTENSITY = 30_000f
+        private const val INTENSITY_FACTOR = 60_000f
     }
 
     private var indirectLight: IndirectLight? = null
@@ -62,7 +65,7 @@ class EnvironmentLightingRenderer(private val context: Context) {
         val lightEstimate = frame.lightEstimate
         if (lightEstimate.state == LightEstimate.State.VALID) {
             val pixelIntensity = lightEstimate.pixelIntensity
-            indirectLight?.intensity = BASE_INTENSITY * pixelIntensity
+            indirectLight?.intensity = BASE_INTENSITY + pixelIntensity * INTENSITY_FACTOR
         }
     }
 

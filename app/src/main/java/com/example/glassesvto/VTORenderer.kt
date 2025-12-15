@@ -157,7 +157,7 @@ class VTORenderer(private val context: Context) {
         if (width == 0 || height == 0) return
         filamentCamera.setProjection(
             Camera.Projection.ORTHO,
-            -1.0, 1.0, -1.0, 1.0, -1.0, 1.0
+            -1.0, 1.0, -1.0, 1.0, -1.0, 1.15
         )
     }
 
