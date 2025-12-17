@@ -4,7 +4,7 @@ const path = require("node:path");
 // Monorepo root
 const root = path.resolve(__dirname, "..");
 // Library package
-const libraryPackage = path.resolve(root, "packages/react-native-glasses-vto");
+const libraryPackage = path.resolve(root, "packages/react-native-nitro-vto");
 
 /**
  * Metro configuration
@@ -17,9 +17,7 @@ const config = {
 
   resolver: {
     // Ensure we use the root node_modules
-    nodeModulesPaths: [
-      path.resolve(root, "node_modules"),
-    ],
+    nodeModulesPaths: [path.resolve(root, "node_modules")],
   },
 
   transformer: {

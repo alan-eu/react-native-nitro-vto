@@ -1,5 +1,5 @@
 {
-  "name": "glassesvtoexample",
+  "name": "@alaneu/react-native-nitro-vto-example",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,7 +11,7 @@
   "dependencies": {
     "react": "19.1.1",
     "react-native": "0.82.0",
-    "react-native-glasses-vto": "*",
+    "@alaneu/react-native-nitro-vto": "*",
     "react-native-nitro-modules": "0.31.10"
   },
   "devDependencies": {

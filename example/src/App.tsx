@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -7,12 +7,12 @@ import {
   PermissionsAndroid,
   Platform,
   Alert,
-} from 'react-native';
-import { GlassesVTOView } from 'react-native-glasses-vto';
+} from "react-native";
+import { NitroVtoView } from "@alaneu/react-native-nitro-vto";
 
 const MODELS = [
-  { path: 'models/680048.glb', width: 0.138 },
-  { path: 'models/878082.glb', width: 0.135 },
+  { path: "models/680048.glb", width: 0.138 },
+  { path: "models/878082.glb", width: 0.135 },
 ];
 
 function App(): React.JSX.Element {
@@ -20,22 +20,26 @@ function App(): React.JSX.Element {
   const [currentModelIndex, setCurrentModelIndex] = useState(0);
 
   const requestCameraPermission = useCallback(async () => {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       try {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.CAMERA,
           {
-            title: 'Camera Permission',
-            message: 'This app needs camera access for the virtual try-on feature.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
+            title: "Camera Permission",
+            message:
+              "This app needs camera access for the virtual try-on feature.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK",
           }
         );
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
           setHasPermission(true);
         } else {
-          Alert.alert('Permission Denied', 'Camera permission is required for this feature.');
+          Alert.alert(
+            "Permission Denied",
+            "Camera permission is required for this feature."
+          );
         }
       } catch (err) {
         console.warn(err);
@@ -59,7 +63,10 @@ function App(): React.JSX.Element {
     return (
       <View style={styles.container}>
         <Text style={styles.text}>Camera permission is required</Text>
-        <TouchableOpacity style={styles.button} onPress={requestCameraPermission}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={requestCameraPermission}
+        >
           <Text style={styles.buttonText}>Grant Permission</Text>
         </TouchableOpacity>
       </View>
@@ -68,7 +75,7 @@ function App(): React.JSX.Element {
 
   return (
     <View style={styles.container}>
-      <GlassesVTOView
+      <NitroVtoView
         style={styles.vtoView}
         modelPath={currentModel.path}
         modelWidthMeters={currentModel.width}
@@ -87,38 +94,38 @@ function App(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
   },
   vtoView: {
     flex: 1,
   },
   controls: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 40,
     left: 0,
     right: 0,
-    alignItems: 'center',
+    alignItems: "center",
   },
   modelText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
     marginBottom: 10,
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   text: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 20,
   },
 });
