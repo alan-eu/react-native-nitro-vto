@@ -1,0 +1,33 @@
+{
+  "name": "glassesvtoexample",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "start": "react-native start --client-logs",
+    "build:android": "cd android && ./gradlew assembleRelease"
+  },
+  "dependencies": {
+    "react": "19.1.1",
+    "react-native": "^0.82.0",
+    "react-native-glasses-vto": "../",
+    "react-native-nitro-modules": "0.31.10"
+  },
+  "devDependencies": {
+    "@babel/core": "7.28.5",
+    "@babel/preset-env": "7.28.5",
+    "@babel/runtime": "7.28.4",
+    "@react-native-community/cli": "20.0.0",
+    "@react-native-community/cli-platform-android": "20.0.0",
+    "@react-native-community/cli-platform-ios": "20.0.0",
+    "@react-native/babel-preset": "^0.82.0",
+    "@react-native/metro-config": "^0.82.0",
+    "@react-native/typescript-config": "^0.82.0",
+    "@types/react": "19.1.1",
+    "typescript": "5.8.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

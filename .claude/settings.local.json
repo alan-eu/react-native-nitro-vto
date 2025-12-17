@@ -4,7 +4,30 @@
       "Bash(mkdir:*)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:nitro.margelo.com)",
+      "WebSearch",
+      "Bash(find:*)",
+      "Bash(npm install:*)",
+      "Bash(npx nitro-codegen:*)",
+      "Bash(grep:*)",
+      "Bash(npm show react-native-nitro-modules versions)",
+      "Bash(npm show:*)",
+      "Bash(./node_modules/.bin/nitro-codegen)",
+      "Bash(node:*)",
+      "Bash(npx nitrogen)",
+      "Bash(npx bob build:*)",
+      "Bash(npm run android:*)",
+      "Bash(npm ls:*)",
+      "Bash(gradle wrapper:*)",
+      "Bash(chmod:*)",
+      "Bash(curl:*)",
+      "Bash(./gradlew:*)",
+      "Bash(keytool:*)",
+      "Bash(adb install:*)",
+      "Bash(unzip:*)",
+      "Bash(adb shell am start:*)",
+      "Bash(adb logcat:*)"
     ]
   }
 }

@@ -1,11 +1,34 @@
-*.iml
-.gradle
-/local.properties
-/.idea
+# Dependencies
+node_modules/
+
+# Build outputs
+lib/
+*.tsbuildinfo
+
+# OS files
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Android
+.gradle/
 local.properties
-/app/build
+*.keystore
+!debug.keystore
+android/.cxx/
+android/build/
+
+# Example app
+example/node_modules/
+example/android/.gradle/
+example/android/app/build/
+example/android/app/.cxx/
+example/android/build/
+
+# Misc
+*.log
+.env
+android/.settings/org.eclipse.buildship.core.prefs

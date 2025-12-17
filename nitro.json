@@ -1,0 +1,17 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": ["glassesvto"],
+  "ios": {
+    "iosModuleName": "GlassesVTO"
+  },
+  "android": {
+    "androidNamespace": ["glassesvto"],
+    "androidCxxLibName": "GlassesVTO"
+  },
+  "autolinking": {
+    "GlassesVTOView": {
+      "kotlin": "HybridGlassesVTOView"
+    }
+  },
+  "ignorePaths": ["**/node_modules"]
+}
