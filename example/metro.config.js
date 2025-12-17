@@ -1,7 +1,10 @@
 const { getDefaultConfig, mergeConfig } = require("@react-native/metro-config");
 const path = require("node:path");
 
+// Monorepo root
 const root = path.resolve(__dirname, "..");
+// Library package
+const libraryPackage = path.resolve(root, "packages/react-native-glasses-vto");
 
 /**
  * Metro configuration
@@ -10,7 +13,14 @@ const root = path.resolve(__dirname, "..");
  * @type {import('@react-native/metro-config').MetroConfig}
  */
 const config = {
-  watchFolders: [root],
+  watchFolders: [root, libraryPackage],
+
+  resolver: {
+    // Ensure we use the root node_modules
+    nodeModulesPaths: [
+      path.resolve(root, "node_modules"),
+    ],
+  },
 
   transformer: {
     getTransformOptions: async () => ({

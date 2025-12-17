@@ -71,9 +71,9 @@
     "typescript": "5.9.3"
   },
   "peerDependencies": {
-    "react": "*",
-    "react-native": "*",
-    "react-native-nitro-modules": "*"
+    "react": ">=18.0.0",
+    "react-native": ">=0.78.0",
+    "react-native-nitro-modules": ">=0.23.0"
   },
   "react-native-builder-bob": {
     "source": "src",
