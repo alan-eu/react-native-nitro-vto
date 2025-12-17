@@ -1,0 +1,12 @@
+{
+  "uiViewClassName": "NitroVtoView",
+  "supportsRawText": false,
+  "bubblingEventTypes": {},
+  "directEventTypes": {},
+  "validAttributes": {
+    "modelPath": true,
+    "modelWidthMeters": true,
+    "isActive": true,
+    "hybridRef": true
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@alaneu/react-native-nitro-vto-monorepo",
+  "version": "0.1.0",
+  "description": "React Native library for glasses virtual try-on using ARCore and Filament",
+  "private": true,
+  "workspaces": [
+    "packages/react-native-nitro-vto",
+    "example"
+  ],
+  "devDependencies": {
+    "@types/react": "19.1.1",
+    "react": "19.1.1",
+    "react-native": "0.82.0",
+    "react-native-builder-bob": "0.40.17",
+    "typescript": "5.9.3"
+  }
+}
