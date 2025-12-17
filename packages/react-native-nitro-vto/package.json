@@ -1,6 +1,6 @@
 {
   "name": "@alaneu/react-native-nitro-vto",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "React Native library for glasses virtual try-on using ARCore and Filament",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
@@ -34,7 +34,8 @@
     "specs": "nitrogen",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "prepare": "bob build",
-    "prepack": "bob build"
+    "prepack": "bob build",
+    "release": "release-it"
   },
   "keywords": [
     "react-native",
@@ -50,7 +51,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/alan-eu/react-native-nitro-vto"
+    "url": "git+https://github.com/alan-eu/react-native-nitro-vto.git"
   },
   "author": "Xavier Seignard",
   "license": "MIT",
@@ -88,5 +89,15 @@
         }
       ]
     ]
+  },
+  "release-it": {
+    "npm": {
+      "publish": true,
+      "access": "public"
+    },
+    "git": false,
+    "github": {
+      "release": false
+    }
   }
 }
