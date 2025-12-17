@@ -4,7 +4,7 @@
   "bubblingEventTypes": {},
   "directEventTypes": {},
   "validAttributes": {
-    "modelPath": true,
+    "modelUrl": true,
     "modelWidthMeters": true,
     "isActive": true,
     "hybridRef": true

@@ -44,8 +44,8 @@ namespace margelo::nitro::nitrovto {
 
     public:
       // Properties
-      virtual std::string getModelPath() = 0;
-      virtual void setModelPath(const std::string& modelPath) = 0;
+      virtual std::string getModelUrl() = 0;
+      virtual void setModelUrl(const std::string& modelUrl) = 0;
       virtual double getModelWidthMeters() = 0;
       virtual void setModelWidthMeters(double modelWidthMeters) = 0;
       virtual bool getIsActive() = 0;
@@ -53,7 +53,7 @@ namespace margelo::nitro::nitrovto {
 
     public:
       // Methods
-      virtual void switchModel(const std::string& modelPath, double widthMeters) = 0;
+      virtual void switchModel(const std::string& modelUrl, double widthMeters) = 0;
       virtual void resetSession() = 0;
 
     protected:

@@ -36,8 +36,8 @@ void JHybridNitroVtoViewStateUpdater::updateViewProps(jni::alias_ref<jni::JClass
     throw std::runtime_error("HybridNitroVtoViewState's data doesn't contain any props!");
   }
   const HybridNitroVtoViewProps& props = maybeProps.value();
-  if (props.modelPath.isDirty) {
-    view->setModelPath(props.modelPath.value);
+  if (props.modelUrl.isDirty) {
+    view->setModelUrl(props.modelUrl.value);
     // TODO: Set isDirty = false
   }
   if (props.modelWidthMeters.isDirty) {

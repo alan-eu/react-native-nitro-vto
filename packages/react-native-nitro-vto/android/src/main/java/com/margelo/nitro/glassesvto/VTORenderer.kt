@@ -82,14 +82,14 @@ class VTORenderer(private val context: Context) {
     private var lastDisplayHeight = 0
 
     // Model configuration
-    private var modelPath: String = ""
-    private var modelWidthMeters: Float = 0.135f
+    private var modelUrl: String = ""
+    private var modelWidthMeters: Float = 0f
 
     /**
      * Initialize Filament and attach to surface view
      */
-    fun initialize(surfaceView: SurfaceView, modelPath: String, widthMeters: Float) {
-        this.modelPath = modelPath
+    fun initialize(surfaceView: SurfaceView, modelUrl: String, widthMeters: Float) {
+        this.modelUrl = modelUrl
         this.modelWidthMeters = widthMeters
         surfaceViewRef = surfaceView
 
@@ -154,7 +154,7 @@ class VTORenderer(private val context: Context) {
 
         // Setup glasses renderer
         glassesRenderer = GlassesRenderer(context)
-        glassesRenderer.setup(engine, scene, modelPath, widthMeters)
+        glassesRenderer.setup(engine, scene, modelUrl, widthMeters)
 
         initialized = true
     }
@@ -178,10 +178,10 @@ class VTORenderer(private val context: Context) {
     /**
      * Switch to a different glasses model
      */
-    fun switchModel(modelPath: String, widthMeters: Float) {
-        this.modelPath = modelPath
+    fun switchModel(modelUrl: String, widthMeters: Float) {
+        this.modelUrl = modelUrl
         this.modelWidthMeters = widthMeters
-        glassesRenderer.switchModel(modelPath, widthMeters)
+        glassesRenderer.switchModel(modelUrl, widthMeters)
     }
 
     /**

@@ -52,7 +52,7 @@ function App() {
     <View style={{ flex: 1 }}>
       <NitroVtoView
         style={{ flex: 1 }}
-        modelPath="models/glasses.glb"
+        modelUrl="https://example.com/glasses.glb"
         modelWidthMeters={0.135}
         isActive={true}
       />
@@ -65,12 +65,12 @@ function App() {
 
 ### Props
 
-| Prop               | Type        | Description                                              |
-| ------------------ | ----------- | -------------------------------------------------------- |
-| `modelPath`        | `string`    | Path to the GLB model file relative to the assets folder |
-| `modelWidthMeters` | `number`    | Width of the glasses frame in meters for proper scaling  |
-| `isActive`         | `boolean`   | Whether the AR session is active                         |
-| `style`            | `ViewStyle` | Standard React Native view styles                        |
+| Prop               | Type        | Description                                             |
+| ------------------ | ----------- | ------------------------------------------------------- |
+| `modelUrl`         | `string`    | URL to the GLB model file                               |
+| `modelWidthMeters` | `number`    | Width of the glasses frame in meters for proper scaling |
+| `isActive`         | `boolean`   | Whether the AR session is active                        |
+| `style`            | `ViewStyle` | Standard React Native view styles                       |
 
 ### Methods
 
@@ -90,12 +90,12 @@ function App() {
   const vtoRef = useRef<VtoRef>(null);
 
   const switchGlasses = () => {
-    vtoRef.current?.switchModel("models/other.glb", 0.138);
+    vtoRef.current?.switchModel("https://example.com/other.glb", 0.138);
   };
 
   return (
     <NitroVtoView
-      modelPath="models/glasses.glb"
+      modelUrl="https://example.com/glasses.glb"
       modelWidthMeters={0.135}
       isActive={true}
       hybridRef={(ref) => {
@@ -106,10 +106,10 @@ function App() {
 }
 ```
 
-| Method                                                | Description                                    |
-| ----------------------------------------------------- | ---------------------------------------------- |
-| `switchModel(modelPath: string, widthMeters: number)` | Switch to a different glasses model at runtime |
-| `resetSession()`                                      | Reset the AR session and face tracking         |
+| Method                                               | Description                                    |
+| ---------------------------------------------------- | ---------------------------------------------- |
+| `switchModel(modelUrl: string, widthMeters: number)` | Switch to a different glasses model at runtime |
+| `resetSession()`                                     | Reset the AR session and face tracking         |
 
 ## Assets Setup
 

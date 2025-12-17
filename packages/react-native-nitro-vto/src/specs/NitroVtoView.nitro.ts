@@ -12,7 +12,7 @@ export interface NitroVtoViewProps extends HybridViewProps {
    * The URL to the glasses model file (GLB format).
    * Example: "https://example.com/glasses.glb"
    */
-  modelPath: string;
+  modelUrl: string;
 
   /**
    * The width of the glasses frame in meters.
@@ -33,10 +33,10 @@ export interface NitroVtoViewProps extends HybridViewProps {
 export interface NitroVtoViewMethods extends HybridViewMethods {
   /**
    * Switch to a different glasses model at runtime.
-   * @param modelPath - URL to the new model file (GLB format)
+   * @param modelUrl - URL to the new model file (GLB format)
    * @param widthMeters - Width of the new model in meters
    */
-  switchModel(modelPath: string, widthMeters: number): void;
+  switchModel(modelUrl: string, widthMeters: number): void;
 
   /**
    * Reset the AR session and face tracking.

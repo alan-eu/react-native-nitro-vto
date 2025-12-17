@@ -30,12 +30,12 @@ export type { HybridRef } from "react-native-nitro-modules";
  *   const vtoRef = useRef<NitroVtoRef>(null)
  *
  *   const switchGlasses = () => {
- *     vtoRef.current?.switchModel('models/680048.glb', 0.138)
+ *     vtoRef.current?.switchModel('https://example.com/glasses.glb', 0.138)
  *   }
  *
  *   return (
  *     <NitroVtoView
- *       modelPath="models/878082.glb"
+ *       modelUrl="https://example.com/glasses.glb"
  *       modelWidthMeters={0.135}
  *       isActive={true}
  *       style={{ flex: 1 }}

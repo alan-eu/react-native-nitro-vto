@@ -41,8 +41,8 @@ class GlassesRenderer(private val context: Context) {
     private var isLoading = false
 
     // Current model info
-    private var currentModelPath: String = ""
-    private var currentWidthMeters: Float = 0.135f
+    private var currentModelUrl: String = ""
+    private var currentWidthMeters: Float = 0f
 
     // Reusable arrays to avoid per-frame allocations
     private val tempVec4 = FloatArray(4)
@@ -63,13 +63,13 @@ class GlassesRenderer(private val context: Context) {
      * Setup the glasses renderer with Filament engine and scene.
      * @param engine Filament engine instance
      * @param scene Scene to add glasses entities to
-     * @param modelPath URL to the glasses model (GLB format)
+     * @param modelUrl URL to the glasses model (GLB format)
      * @param widthMeters Width of the glasses in meters
      */
-    fun setup(engine: Engine, scene: Scene, modelPath: String, widthMeters: Float) {
+    fun setup(engine: Engine, scene: Scene, modelUrl: String, widthMeters: Float) {
         this.engine = engine
         this.scene = scene
-        this.currentModelPath = modelPath
+        this.currentModelUrl = modelUrl
         this.currentWidthMeters = widthMeters
 
         // Setup GLTF loader
@@ -78,7 +78,7 @@ class GlassesRenderer(private val context: Context) {
         resourceLoader = ResourceLoader(engine)
 
         // Load model
-        loadModel(modelPath)
+        loadModel(modelUrl)
     }
 
     private fun loadModel(url: String) {
@@ -92,7 +92,7 @@ class GlassesRenderer(private val context: Context) {
 
         executor.execute {
             try {
-                val modelBuffer = LoaderUtils.loadFromUrl(url)
+                val modelBuffer = LoaderUtils.loadFromUrl(context, url)
 
                 mainHandler.post {
                     try {
@@ -239,10 +239,10 @@ class GlassesRenderer(private val context: Context) {
 
     /**
      * Switch to a different glasses model.
-     * @param modelPath URL to the new model (GLB format)
+     * @param modelUrl URL to the new model (GLB format)
      * @param widthMeters Width of the new model in meters
      */
-    fun switchModel(modelPath: String, widthMeters: Float) {
+    fun switchModel(modelUrl: String, widthMeters: Float) {
         // Remove current model from scene
         glassesAsset?.let { asset ->
             scene.removeEntities(asset.entities)
@@ -252,12 +252,12 @@ class GlassesRenderer(private val context: Context) {
         resetFilters()
 
         // Update current model info
-        currentModelPath = modelPath
+        currentModelUrl = modelUrl
         currentWidthMeters = widthMeters
 
         // Load new model
-        loadModel(modelPath)
-        Log.d(TAG, "Switched to model: $modelPath")
+        loadModel(modelUrl)
+        Log.d(TAG, "Switched to model: $modelUrl")
     }
 
     /**
