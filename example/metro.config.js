@@ -1,21 +1,17 @@
 const { getDefaultConfig, mergeConfig } = require("@react-native/metro-config");
-const path = require("path");
+const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 
-const defaultConfig = getDefaultConfig(__dirname);
-
+/**
+ * Metro configuration
+ * https://facebook.github.io/metro/docs/configuration
+ *
+ * @type {import('@react-native/metro-config').MetroConfig}
+ */
 const config = {
   watchFolders: [root],
-  resolver: {
-    // Ensure JSON files are resolved
-    sourceExts: [...defaultConfig.resolver.sourceExts, 'json'],
-    // Make sure nitrogen generated files are accessible
-    nodeModulesPaths: [
-      path.resolve(__dirname, "node_modules"),
-      path.resolve(root, "node_modules"),
-    ],
-  },
+
   transformer: {
     getTransformOptions: async () => ({
       transform: {
@@ -26,4 +22,4 @@ const config = {
   },
 };
 
-module.exports = mergeConfig(defaultConfig, config);
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);
