@@ -1,6 +1,6 @@
 {
   "name": "@alaneu/react-native-nitro-vto-example",
-  "version": "0.2.4",
+  "version": "0.2.2",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
