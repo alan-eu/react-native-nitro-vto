@@ -60,7 +60,8 @@
   },
   "homepage": "https://github.com/alan-eu/react-native-nitro-vto#readme",
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "devDependencies": {
     "@types/react": "19.1.1",
