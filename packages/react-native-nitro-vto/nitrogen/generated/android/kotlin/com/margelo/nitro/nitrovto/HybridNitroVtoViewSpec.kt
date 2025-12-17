@@ -46,7 +46,7 @@ abstract class HybridNitroVtoViewSpec: HybridView() {
   @get:Keep
   @set:DoNotStrip
   @set:Keep
-  abstract var modelPath: String
+  abstract var modelUrl: String
   
   @get:DoNotStrip
   @get:Keep
@@ -63,7 +63,7 @@ abstract class HybridNitroVtoViewSpec: HybridView() {
   // Methods
   @DoNotStrip
   @Keep
-  abstract fun switchModel(modelPath: String, widthMeters: Double): Unit
+  abstract fun switchModel(modelUrl: String, widthMeters: Double): Unit
   
   @DoNotStrip
   @Keep

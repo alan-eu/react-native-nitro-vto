@@ -14,8 +14,8 @@ namespace margelo::nitro::nitrovto {
     HybridObject::loadHybridMethods();
     // load custom methods/properties
     registerHybrids(this, [](Prototype& prototype) {
-      prototype.registerHybridGetter("modelPath", &HybridNitroVtoViewSpec::getModelPath);
-      prototype.registerHybridSetter("modelPath", &HybridNitroVtoViewSpec::setModelPath);
+      prototype.registerHybridGetter("modelUrl", &HybridNitroVtoViewSpec::getModelUrl);
+      prototype.registerHybridSetter("modelUrl", &HybridNitroVtoViewSpec::setModelUrl);
       prototype.registerHybridGetter("modelWidthMeters", &HybridNitroVtoViewSpec::getModelWidthMeters);
       prototype.registerHybridSetter("modelWidthMeters", &HybridNitroVtoViewSpec::setModelWidthMeters);
       prototype.registerHybridGetter("isActive", &HybridNitroVtoViewSpec::getIsActive);

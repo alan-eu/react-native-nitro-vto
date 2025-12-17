@@ -21,13 +21,13 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
         get() = nitroVtoView
 
     // Props implementation
-    override var modelPath: String = "models/878082.glb"
+    override var modelUrl: String = ""
         set(value) {
             field = value
-            nitroVtoView.setModelPath(value)
+            nitroVtoView.setModelUrl(value)
         }
 
-    override var modelWidthMeters: Double = 0.135
+    override var modelWidthMeters: Double = 0.0
         set(value) {
             field = value
             nitroVtoView.setModelWidthMeters(value.toFloat())
@@ -40,8 +40,8 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
         }
 
     // Methods implementation
-    override fun switchModel(modelPath: String, widthMeters: Double) {
-        nitroVtoView.switchModel(modelPath, widthMeters.toFloat())
+    override fun switchModel(modelUrl: String, widthMeters: Double) {
+        nitroVtoView.switchModel(modelUrl, widthMeters.toFloat())
     }
 
     override fun resetSession() {

@@ -41,8 +41,8 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     private var vtoRenderer: VTORenderer? = null
 
     // Configuration
-    private var modelPath: String = "models/878082.glb"
-    private var modelWidthMeters: Float = 0.135f
+    private var modelUrl: String = ""
+    private var modelWidthMeters: Float = 0f
     private var isActive: Boolean = true
 
     // State
@@ -58,13 +58,13 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     }
 
     /**
-     * Set the model path for the glasses
+     * Set the model URL for the glasses
      */
-    fun setModelPath(path: String) {
-        if (modelPath != path) {
-            modelPath = path
+    fun setModelUrl(url: String) {
+        if (modelUrl != url) {
+            modelUrl = url
             if (isInitialized) {
-                vtoRenderer?.switchModel(modelPath, modelWidthMeters)
+                vtoRenderer?.switchModel(modelUrl, modelWidthMeters)
             }
         }
     }
@@ -76,7 +76,7 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
         if (modelWidthMeters != width) {
             modelWidthMeters = width
             if (isInitialized) {
-                vtoRenderer?.switchModel(modelPath, modelWidthMeters)
+                vtoRenderer?.switchModel(modelUrl, modelWidthMeters)
             }
         }
     }
@@ -98,10 +98,10 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     /**
      * Switch to a different glasses model
      */
-    fun switchModel(modelPath: String, widthMeters: Float) {
-        this.modelPath = modelPath
+    fun switchModel(modelUrl: String, widthMeters: Float) {
+        this.modelUrl = modelUrl
         this.modelWidthMeters = widthMeters
-        vtoRenderer?.switchModel(modelPath, widthMeters)
+        vtoRenderer?.switchModel(modelUrl, widthMeters)
     }
 
     /**
@@ -130,7 +130,7 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
 
         // Create and initialize renderer
         vtoRenderer = VTORenderer(context)
-        vtoRenderer?.initialize(surfaceView, modelPath, modelWidthMeters)
+        vtoRenderer?.initialize(surfaceView, modelUrl, modelWidthMeters)
 
         isInitialized = true
         Log.d(TAG, "NitroVtoView initialized")

@@ -11,8 +11,14 @@ import {
 import { NitroVtoView } from "@alaneu/react-native-nitro-vto";
 
 const MODELS = [
-  { path: "models/680048.glb", width: 0.138 },
-  { path: "models/878082.glb", width: 0.135 },
+  {
+    url: "https://github.com/alan-eu/react-native-nitro-vto/raw/main/packages/react-native-nitro-vto/android/src/main/assets/models/680048.glb",
+    width: 0.138,
+  },
+  {
+    url: "https://github.com/alan-eu/react-native-nitro-vto/raw/main/packages/react-native-nitro-vto/android/src/main/assets/models/878082.glb",
+    width: 0.135,
+  },
 ];
 
 function App(): React.JSX.Element {
@@ -77,12 +83,12 @@ function App(): React.JSX.Element {
     <View style={styles.container}>
       <NitroVtoView
         style={styles.vtoView}
-        modelPath={currentModel.path}
+        modelUrl={currentModel.url}
         modelWidthMeters={currentModel.width}
         isActive={true}
       />
       <View style={styles.controls}>
-        <Text style={styles.modelText}>Model: {currentModel.path}</Text>
+        <Text style={styles.modelText}>Model: {currentModel.url}</Text>
         <TouchableOpacity style={styles.button} onPress={handleNextModel}>
           <Text style={styles.buttonText}>Next Model</Text>
         </TouchableOpacity>

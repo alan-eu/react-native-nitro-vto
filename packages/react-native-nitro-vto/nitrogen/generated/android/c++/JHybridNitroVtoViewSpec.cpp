@@ -40,14 +40,14 @@ namespace margelo::nitro::nitrovto {
   }
 
   // Properties
-  std::string JHybridNitroVtoViewSpec::getModelPath() {
-    static const auto method = javaClassStatic()->getMethod<jni::local_ref<jni::JString>()>("getModelPath");
+  std::string JHybridNitroVtoViewSpec::getModelUrl() {
+    static const auto method = javaClassStatic()->getMethod<jni::local_ref<jni::JString>()>("getModelUrl");
     auto __result = method(_javaPart);
     return __result->toStdString();
   }
-  void JHybridNitroVtoViewSpec::setModelPath(const std::string& modelPath) {
-    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* modelPath */)>("setModelPath");
-    method(_javaPart, jni::make_jstring(modelPath));
+  void JHybridNitroVtoViewSpec::setModelUrl(const std::string& modelUrl) {
+    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* modelUrl */)>("setModelUrl");
+    method(_javaPart, jni::make_jstring(modelUrl));
   }
   double JHybridNitroVtoViewSpec::getModelWidthMeters() {
     static const auto method = javaClassStatic()->getMethod<double()>("getModelWidthMeters");
@@ -69,9 +69,9 @@ namespace margelo::nitro::nitrovto {
   }
 
   // Methods
-  void JHybridNitroVtoViewSpec::switchModel(const std::string& modelPath, double widthMeters) {
-    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* modelPath */, double /* widthMeters */)>("switchModel");
-    method(_javaPart, jni::make_jstring(modelPath), widthMeters);
+  void JHybridNitroVtoViewSpec::switchModel(const std::string& modelUrl, double widthMeters) {
+    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* modelUrl */, double /* widthMeters */)>("switchModel");
+    method(_javaPart, jni::make_jstring(modelUrl), widthMeters);
   }
   void JHybridNitroVtoViewSpec::resetSession() {
     static const auto method = javaClassStatic()->getMethod<void()>("resetSession");

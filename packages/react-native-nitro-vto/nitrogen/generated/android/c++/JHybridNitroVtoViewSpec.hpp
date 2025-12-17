@@ -50,8 +50,8 @@ namespace margelo::nitro::nitrovto {
 
   public:
     // Properties
-    std::string getModelPath() override;
-    void setModelPath(const std::string& modelPath) override;
+    std::string getModelUrl() override;
+    void setModelUrl(const std::string& modelUrl) override;
     double getModelWidthMeters() override;
     void setModelWidthMeters(double modelWidthMeters) override;
     bool getIsActive() override;
@@ -59,7 +59,7 @@ namespace margelo::nitro::nitrovto {
 
   public:
     // Methods
-    void switchModel(const std::string& modelPath, double widthMeters) override;
+    void switchModel(const std::string& modelUrl, double widthMeters) override;
     void resetSession() override;
 
   private:

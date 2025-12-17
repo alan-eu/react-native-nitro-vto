@@ -43,7 +43,7 @@ namespace margelo::nitro::nitrovto::views {
                             const react::RawProps& rawProps);
 
   public:
-    CachedProp<std::string> modelPath;
+    CachedProp<std::string> modelUrl;
     CachedProp<double> modelWidthMeters;
     CachedProp<bool> isActive;
     CachedProp<std::optional<std::function<void(const std::shared_ptr<HybridNitroVtoViewSpec>& /* ref */)>>> hybridRef;
