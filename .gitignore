@@ -18,8 +18,8 @@ lib/
 local.properties
 *.keystore
 !debug.keystore
-android/.cxx/
-android/build/
+**/android/.cxx/
+**/android/build/
 
 # Example app
 example/node_modules/
