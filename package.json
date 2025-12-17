@@ -8,7 +8,7 @@
     "example"
   ],
   "scripts": {
-    "release": "release-it"
+    "release": "npm run release --workspaces && release-it"
   },
   "devDependencies": {
     "@release-it/bumper": "^7.0.5",
@@ -28,9 +28,7 @@
       "requireCleanWorkingDir": false
     },
     "npm": {
-      "publish": true,
-      "publishPath": "packages/react-native-nitro-vto",
-      "access": "public"
+      "publish": false
     },
     "github": {
       "release": true,
