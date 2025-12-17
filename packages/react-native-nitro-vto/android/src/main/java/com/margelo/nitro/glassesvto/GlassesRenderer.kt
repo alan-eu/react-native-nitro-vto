@@ -2,6 +2,8 @@ package com.margelo.nitro.nitrovto
 
 import android.content.Context
 import android.opengl.Matrix
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.google.android.filament.Engine
 import com.google.android.filament.EntityManager
@@ -12,6 +14,8 @@ import com.google.android.filament.gltfio.ResourceLoader
 import com.google.android.filament.gltfio.UbershaderProvider
 import com.google.ar.core.AugmentedFace
 import com.google.ar.core.Frame
+import java.nio.ByteBuffer
+import java.util.concurrent.Executors
 
 /**
  * Renderer for glasses model with face tracking transform.
@@ -28,6 +32,13 @@ class GlassesRenderer(private val context: Context) {
     private lateinit var assetLoader: AssetLoader
     private lateinit var resourceLoader: ResourceLoader
     private var glassesAsset: FilamentAsset? = null
+
+    // Thread management for URL loading
+    private val executor = Executors.newSingleThreadExecutor()
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    // Loading state
+    private var isLoading = false
 
     // Current model info
     private var currentModelPath: String = ""
@@ -52,7 +63,7 @@ class GlassesRenderer(private val context: Context) {
      * Setup the glasses renderer with Filament engine and scene.
      * @param engine Filament engine instance
      * @param scene Scene to add glasses entities to
-     * @param modelPath Path to the glasses model in assets
+     * @param modelPath URL to the glasses model (GLB format)
      * @param widthMeters Width of the glasses in meters
      */
     fun setup(engine: Engine, scene: Scene, modelPath: String, widthMeters: Float) {
@@ -70,23 +81,48 @@ class GlassesRenderer(private val context: Context) {
         loadModel(modelPath)
     }
 
-    private fun loadModel(filename: String) {
-        try {
-            val modelBuffer = LoaderUtils.loadAsset(context, filename)
-            glassesAsset = assetLoader.createAsset(modelBuffer)
+    private fun loadModel(url: String) {
+        if (isLoading) {
+            Log.d(TAG, "Already loading a model, skipping request for: $url")
+            return
+        }
 
-            glassesAsset?.let { asset ->
-                resourceLoader.loadResources(asset)
-                asset.releaseSourceData()
-                scene.addEntities(asset.entities)
-                Log.d(TAG, "Glasses model loaded: ${asset.entities.size} entities")
-                hide()
-            } ?: run {
-                Log.e(TAG, "Failed to create glasses asset")
+        isLoading = true
+        Log.d(TAG, "Starting download from URL: $url")
+
+        executor.execute {
+            try {
+                val modelBuffer = LoaderUtils.loadFromUrl(url)
+
+                mainHandler.post {
+                    try {
+                        loadModelBuffer(modelBuffer)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to load model buffer on main thread: ${e.message}")
+                        e.printStackTrace()
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to download GLB from URL: ${e.message}")
+                e.printStackTrace()
+                isLoading = false
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load glasses model: ${e.message}")
-            e.printStackTrace()
+        }
+    }
+
+    private fun loadModelBuffer(modelBuffer: ByteBuffer) {
+        glassesAsset = assetLoader.createAsset(modelBuffer)
+
+        glassesAsset?.let { asset ->
+            resourceLoader.loadResources(asset)
+            asset.releaseSourceData()
+            scene.addEntities(asset.entities)
+            Log.d(TAG, "Glasses model loaded: ${asset.entities.size} entities")
+            hide()
+        } ?: run {
+            Log.e(TAG, "Failed to create glasses asset")
         }
     }
 
@@ -203,7 +239,7 @@ class GlassesRenderer(private val context: Context) {
 
     /**
      * Switch to a different glasses model.
-     * @param modelPath Path to the new model in assets
+     * @param modelPath URL to the new model (GLB format)
      * @param widthMeters Width of the new model in meters
      */
     fun switchModel(modelPath: String, widthMeters: Float) {
@@ -228,6 +264,7 @@ class GlassesRenderer(private val context: Context) {
      * Clean up resources.
      */
     fun destroy() {
+        executor.shutdown()
         glassesAsset?.let {
             scene.removeEntities(it.entities)
             assetLoader.destroyAsset(it)

@@ -11,8 +11,14 @@ import {
 import { NitroVtoView } from "@alaneu/react-native-nitro-vto";
 
 const MODELS = [
-  { path: "models/680048.glb", width: 0.138 },
-  { path: "models/878082.glb", width: 0.135 },
+  {
+    path: "https://github.com/alan-eu/react-native-nitro-vto/raw/main/packages/react-native-nitro-vto/android/src/main/assets/models/680048.glb",
+    width: 0.138,
+  },
+  {
+    path: "https://github.com/alan-eu/react-native-nitro-vto/raw/main/packages/react-native-nitro-vto/android/src/main/assets/models/878082.glb",
+    width: 0.135,
+  },
 ];
 
 function App(): React.JSX.Element {
