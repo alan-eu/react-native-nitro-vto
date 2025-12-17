@@ -1,126 +1,137 @@
-# Glasses Virtual Try-On (VTO)
+# React Native Nitro VTO
 
-A minimal Android app for virtual try-on of glasses using ARCore face tracking and Filament rendering.
+A React Native library for glasses virtual try-on using ARCore face tracking and Filament 3D rendering. Built with [Nitro Modules](https://nitro.margelo.com/) for high-performance native integration.
+
+## Features
+
+- Real-time face tracking with ARCore
+- High-quality 3D rendering with Filament
+- GLB model support
+- Runtime model switching
+- Proper depth-based scaling for accurate sizing
 
 ## Requirements
 
-- Android device with ARCore support and front-facing camera
-- Filament `matc` tool for compiling materials
-- Filament `cmgen` tool for compiling HDR to IBL
+- React Native >= 0.78.0
+- Android device with ARCore support
+- `react-native-nitro-modules` >= 0.23.0
 
-## Setup
+**Note**: This library is Android-only as it uses ARCore which is not available on iOS.
 
-### 1. Compile a Filament Material
-
-Download the Filament tools and compile the camera background material:
+## Installation
 
 ```bash
- matc --api opengl --api vulkan --platform mobile -o ./app/src/main/assets/materials/camera_background.filamat ./app/src/main/assets/materials/camera_background.mat
+npm install @alaneu/react-native-nitro-vto react-native-nitro-modules
 ```
 
-### 2. Generate IBL from HDR env
+## Usage
 
-```bash
-cmgen --format=ktx --size=256 --deploy=./app/src/main/assets/envs/ ./app/src/main/assets/envs/neon_photostudio_2k.hd
+```tsx
+import React, { useState, useEffect } from 'react';
+import { View, PermissionsAndroid, Platform } from 'react-native';
+import { NitroVtoView } from '@alaneu/react-native-nitro-vto';
+
+function App() {
+  const [hasPermission, setHasPermission] = useState(false);
+
+  useEffect(() => {
+    async function requestPermission() {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA
+        );
+        setHasPermission(granted === PermissionsAndroid.RESULTS.GRANTED);
+      }
+    }
+    requestPermission();
+  }, []);
+
+  if (!hasPermission) return null;
+
+  return (
+    <View style={{ flex: 1 }}>
+      <NitroVtoView
+        style={{ flex: 1 }}
+        modelPath="models/glasses.glb"
+        modelWidthMeters={0.135}
+        isActive={true}
+      />
+    </View>
+  );
+}
 ```
 
-### 3. Build and Run
+## API
 
-```bash
-./gradlew assembleDebug
-adb install app/build/outputs/apk/debug/app-debug.apk
+### Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `modelPath` | `string` | Path to the GLB model file relative to the assets folder |
+| `modelWidthMeters` | `number` | Width of the glasses frame in meters for proper scaling |
+| `isActive` | `boolean` | Whether the AR session is active |
+| `style` | `ViewStyle` | Standard React Native view styles |
+
+### Methods
+
+Access methods via `hybridRef`:
+
+```tsx
+import { useRef } from 'react';
+import { NitroVtoView, type NitroVtoViewMethods, type HybridRef } from '@alaneu/react-native-nitro-vto';
+
+type VtoRef = HybridRef<NitroVtoViewProps, NitroVtoViewMethods>;
+
+function App() {
+  const vtoRef = useRef<VtoRef>(null);
+
+  const switchGlasses = () => {
+    vtoRef.current?.switchModel('models/other.glb', 0.138);
+  };
+
+  return (
+    <NitroVtoView
+      modelPath="models/glasses.glb"
+      modelWidthMeters={0.135}
+      isActive={true}
+      hybridRef={(ref) => { vtoRef.current = ref }}
+    />
+  );
+}
 ```
 
+| Method | Description |
+|--------|-------------|
+| `switchModel(modelPath: string, widthMeters: number)` | Switch to a different glasses model at runtime |
+| `resetSession()` | Reset the AR session and face tracking |
 
-## Concepts
+## Assets Setup
 
-### Head rotation
+Place your GLB model files in your Android assets folder:
 
-- along X axis: Roll, tilt your head left/right
-- along Y axis: Pitch, look up/down
-- along Z axis: Yaw, turn left/right
-
-## Glasses Transform Pipeline
-
-The `GlassesRenderer.updateTransform()` function positions and scales the 3D glasses model to align with the user's face. Here's how it works:
-
-```mermaid
-flowchart TD
-    subgraph Input
-        A[ARCore Frame] --> B[View Matrix]
-        A --> C[Projection Matrix]
-        D[AugmentedFace] --> E[Face Mesh Vertices]
-        D --> F[centerPose.rotationQuaternion]
-    end
-
-    subgraph Position["Position Calculation"]
-        E --> G[Get Nose Bridge Vertices<br/>351 left, 122 right]
-        G --> H[Compute Center Point]
-        H --> I[Transform to World Space]
-        I --> J[Project to NDC]
-    end
-
-    subgraph Scale["Scale Calculation"]
-        I --> K[Transform to View Space]
-        K --> L[Extract Depth Z]
-        C --> M[Extract Focal Length]
-        L --> N[scale = focalLength / depth]
-        M --> N
-    end
-
-    subgraph Rotation["Rotation"]
-        F --> O[quaternionToMatrix]
-    end
-
-    subgraph Transform["Final Transform Matrix"]
-        N --> P[Apply Uniform Scale]
-        O --> Q[Apply Rotation]
-        P --> Q
-        Q --> R[Apply Aspect Ratio<br/>to Y components]
-        J --> S[Set Position<br/>flip X for mirror]
-        R --> S
-    end
-
-    S --> T[Set Transform on<br/>Glasses Entity]
+```
+android/app/src/main/assets/models/glasses.glb
 ```
 
-### Key Design Decisions
+## Technical Details
 
-#### 1. Depth-Based Scaling
+### Head Rotation Axes
 
-**Problem**: When the user turns their head left/right, the apparent distance between facial landmarks (like pupils) decreases due to perspective foreshortening. Using this distance for scaling would incorrectly shrink the glasses.
+- X axis (Roll): Tilt head left/right
+- Y axis (Pitch): Look up/down
+- Z axis (Yaw): Turn left/right
 
-**Solution**: Use the depth (Z distance from camera) to calculate scale instead:
-```
-scale = focalLength / depth
-```
-This ensures consistent glasses size regardless of head orientation - only distance from camera affects scale.
+### Transform Pipeline
 
-#### 2. Aspect Ratio Correction After Rotation
+The glasses positioning uses a depth-based scaling approach:
 
-**Problem**: The screen has a non-square aspect ratio. Applying aspect ratio correction before rotation causes the glasses to skew when tilting the head left/right.
+1. **Position**: Computed from ARCore face mesh nose bridge vertices (351, 122)
+2. **Scale**: `focalLength / depth` - ensures consistent size regardless of head orientation
+3. **Rotation**: Uses ARCore's `centerPose.rotationQuaternion` directly
+4. **Aspect Ratio**: Applied after rotation to prevent skewing during head tilt
 
-**Solution**: Apply uniform scale first, then rotation, then multiply the Y components of the rotation matrix columns by the aspect ratio:
-```kotlin
-tempMatrix16[1] *= aspectRatio  // Column 0, Y component
-tempMatrix16[5] *= aspectRatio  // Column 1, Y component
-tempMatrix16[9] *= aspectRatio  // Column 2, Y component
-```
-This stretches the result vertically in screen space without affecting the rotation.
+This approach solves common issues like glasses shrinking when turning the head (perspective foreshortening) and skewing during roll rotation.
 
-#### 3. Using centerPose for Rotation
+## License
 
-**Problem**: Computing rotation from face mesh vertices (eye positions, forehead) was complex and produced inconsistent results with skewing artifacts.
-
-**Solution**: Use ARCore's `face.centerPose.rotationQuaternion` directly. It provides stable, accurate head orientation without additional computation.
-
-#### 4. NDC Space Rendering
-
-The glasses are rendered in NDC (Normalized Device Coordinates) space using an orthographic projection. This simplifies the transform pipeline:
-- Position is set directly in NDC (-1 to 1 range)
-- X is flipped for front camera mirror effect
-- Z is set to -0.5 to render in front of the camera background
-
-#### 5. Nose Bridge Positioning
-
-The glasses are positioned at the nose bridge center, computed as the midpoint between vertices 351 and 122 from the [ARCore canonical face mesh](https://github.com/google-ar/arcore-android-sdk/blob/main/assets/canonical_face_mesh.fbx).
+MIT
