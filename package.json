@@ -1,6 +1,6 @@
 {
   "name": "@alaneu/react-native-nitro-vto-monorepo",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "React Native library for glasses virtual try-on using ARCore and Filament",
   "private": true,
   "workspaces": [
@@ -8,7 +8,7 @@
     "example"
   ],
   "scripts": {
-    "release": "npm run release --workspaces && release-it"
+    "release": "npm run release --workspace=packages/react-native-nitro-vto && release-it"
   },
   "devDependencies": {
     "@release-it/bumper": "^7.0.5",
@@ -27,9 +27,7 @@
       "tagAnnotation": "Release ${version}",
       "requireCleanWorkingDir": false
     },
-    "npm": {
-      "publish": false
-    },
+    "npm": false,
     "github": {
       "release": true,
       "releaseName": "v${version}"
