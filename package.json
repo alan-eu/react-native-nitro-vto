@@ -1,17 +1,81 @@
 {
   "name": "@alaneu/react-native-nitro-vto-monorepo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "React Native library for glasses virtual try-on using ARCore and Filament",
   "private": true,
   "workspaces": [
     "packages/react-native-nitro-vto",
     "example"
   ],
+  "scripts": {
+    "release": "release-it"
+  },
   "devDependencies": {
+    "@release-it/bumper": "^7.0.5",
+    "@release-it/conventional-changelog": "^10.0.4",
     "@types/react": "19.1.1",
     "react": "19.1.1",
     "react-native": "0.82.0",
     "react-native-builder-bob": "0.40.17",
+    "release-it": "^19.1.0",
     "typescript": "5.9.3"
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "chore: release ${version}",
+      "tagName": "v${version}",
+      "tagAnnotation": "Release ${version}",
+      "requireCleanWorkingDir": false
+    },
+    "npm": {
+      "publish": true,
+      "publishPath": "packages/react-native-nitro-vto",
+      "access": "public"
+    },
+    "github": {
+      "release": true,
+      "releaseName": "v${version}"
+    },
+    "hooks": {
+      "before:init": [
+        "npm run build --workspace=packages/react-native-nitro-vto"
+      ]
+    },
+    "plugins": {
+      "@release-it/bumper": {
+        "out": [
+          "package.json",
+          "packages/react-native-nitro-vto/package.json",
+          "example/package.json"
+        ]
+      },
+      "@release-it/conventional-changelog": {
+        "preset": {
+          "name": "conventionalcommits",
+          "types": [
+            {
+              "type": "feat",
+              "section": "✨ Features"
+            },
+            {
+              "type": "perf",
+              "section": "💨 Performance Improvements"
+            },
+            {
+              "type": "fix",
+              "section": "🐛 Bug Fixes"
+            },
+            {
+              "type": "chore(deps)",
+              "section": "🛠️ Dependency Upgrades"
+            },
+            {
+              "type": "docs",
+              "section": "📚 Documentation"
+            }
+          ]
+        }
+      }
+    }
   }
 }
