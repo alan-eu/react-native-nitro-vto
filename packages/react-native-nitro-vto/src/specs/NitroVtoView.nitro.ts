@@ -25,6 +25,12 @@ export interface NitroVtoViewProps extends HybridViewProps {
    * Set to false to pause face tracking and rendering.
    */
   isActive: boolean;
+
+  /**
+   * Callback invoked when model loading completes.
+   * @param modelUrl - The URL of the model that was loaded
+   */
+  onModelLoaded?: (modelUrl: string) => void;
 }
 
 /**

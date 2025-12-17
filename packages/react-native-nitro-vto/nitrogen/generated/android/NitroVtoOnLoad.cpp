@@ -16,6 +16,7 @@
 #include <NitroModules/HybridObjectRegistry.hpp>
 
 #include "JHybridNitroVtoViewSpec.hpp"
+#include "JFunc_void_std__string.hpp"
 #include "views/JHybridNitroVtoViewStateUpdater.hpp"
 #include <NitroModules/DefaultConstructableObject.hpp>
 
@@ -29,6 +30,7 @@ int initialize(JavaVM* vm) {
   return facebook::jni::initialize(vm, [] {
     // Register native JNI methods
     margelo::nitro::nitrovto::JHybridNitroVtoViewSpec::registerNatives();
+    margelo::nitro::nitrovto::JFunc_void_std__string_cxx::registerNatives();
     margelo::nitro::nitrovto::views::JHybridNitroVtoViewStateUpdater::registerNatives();
 
     // Register Nitro Hybrid Objects

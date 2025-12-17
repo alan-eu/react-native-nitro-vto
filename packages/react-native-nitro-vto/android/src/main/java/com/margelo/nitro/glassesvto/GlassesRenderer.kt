@@ -44,6 +44,9 @@ class GlassesRenderer(private val context: Context) {
     private var currentModelUrl: String = ""
     private var currentWidthMeters: Float = 0f
 
+    // Callbacks
+    var onModelLoaded: ((modelUrl: String) -> Unit)? = null
+
     // Reusable arrays to avoid per-frame allocations
     private val tempVec4 = FloatArray(4)
     private val tempMatrix16 = FloatArray(16)
@@ -82,6 +85,11 @@ class GlassesRenderer(private val context: Context) {
     }
 
     private fun loadModel(url: String) {
+        if (url.isEmpty()) {
+            Log.d(TAG, "Empty URL, skipping model load")
+            return
+        }
+
         if (isLoading) {
             Log.d(TAG, "Already loading a model, skipping request for: $url")
             return
@@ -97,6 +105,7 @@ class GlassesRenderer(private val context: Context) {
                 mainHandler.post {
                     try {
                         loadModelBuffer(modelBuffer)
+                        onModelLoaded?.invoke(url)
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to load model buffer on main thread: ${e.message}")
                         e.printStackTrace()
@@ -107,7 +116,9 @@ class GlassesRenderer(private val context: Context) {
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to download GLB from URL: ${e.message}")
                 e.printStackTrace()
-                isLoading = false
+                mainHandler.post {
+                    isLoading = false
+                }
             }
         }
     }

@@ -59,6 +59,20 @@ abstract class HybridNitroVtoViewSpec: HybridView() {
   @set:DoNotStrip
   @set:Keep
   abstract var isActive: Boolean
+  
+  abstract var onModelLoaded: ((modelUrl: String) -> Unit)?
+  
+  private var onModelLoaded_cxx: Func_void_std__string?
+    @Keep
+    @DoNotStrip
+    get() {
+      return onModelLoaded?.let { Func_void_std__string_java(it) }
+    }
+    @Keep
+    @DoNotStrip
+    set(value) {
+      onModelLoaded = value?.let { it }
+    }
 
   // Methods
   @DoNotStrip

@@ -20,6 +20,8 @@ namespace margelo::nitro::nitrovto {
       prototype.registerHybridSetter("modelWidthMeters", &HybridNitroVtoViewSpec::setModelWidthMeters);
       prototype.registerHybridGetter("isActive", &HybridNitroVtoViewSpec::getIsActive);
       prototype.registerHybridSetter("isActive", &HybridNitroVtoViewSpec::setIsActive);
+      prototype.registerHybridGetter("onModelLoaded", &HybridNitroVtoViewSpec::getOnModelLoaded);
+      prototype.registerHybridSetter("onModelLoaded", &HybridNitroVtoViewSpec::setOnModelLoaded);
       prototype.registerHybridMethod("switchModel", &HybridNitroVtoViewSpec::switchModel);
       prototype.registerHybridMethod("resetSession", &HybridNitroVtoViewSpec::resetSession);
     });

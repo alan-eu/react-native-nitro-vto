@@ -39,6 +39,12 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.setIsActive(value)
         }
 
+    override var onModelLoaded: ((modelUrl: String) -> Unit)? = null
+        set(value) {
+            field = value
+            nitroVtoView.onModelLoaded = value
+        }
+
     // Methods implementation
     override fun switchModel(modelUrl: String, widthMeters: Double) {
         nitroVtoView.switchModel(modelUrl, widthMeters.toFloat())
