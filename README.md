@@ -27,16 +27,16 @@ npm install @alaneu/react-native-nitro-vto react-native-nitro-modules
 ## Usage
 
 ```tsx
-import React, { useState, useEffect } from 'react';
-import { View, PermissionsAndroid, Platform } from 'react-native';
-import { NitroVtoView } from '@alaneu/react-native-nitro-vto';
+import React, { useState, useEffect } from "react";
+import { View, PermissionsAndroid, Platform } from "react-native";
+import { NitroVtoView } from "@alaneu/react-native-nitro-vto";
 
 function App() {
   const [hasPermission, setHasPermission] = useState(false);
 
   useEffect(() => {
     async function requestPermission() {
-      if (Platform.OS === 'android') {
+      if (Platform.OS === "android") {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.CAMERA
         );
@@ -65,20 +65,24 @@ function App() {
 
 ### Props
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `modelPath` | `string` | Path to the GLB model file relative to the assets folder |
-| `modelWidthMeters` | `number` | Width of the glasses frame in meters for proper scaling |
-| `isActive` | `boolean` | Whether the AR session is active |
-| `style` | `ViewStyle` | Standard React Native view styles |
+| Prop               | Type        | Description                                              |
+| ------------------ | ----------- | -------------------------------------------------------- |
+| `modelPath`        | `string`    | Path to the GLB model file relative to the assets folder |
+| `modelWidthMeters` | `number`    | Width of the glasses frame in meters for proper scaling  |
+| `isActive`         | `boolean`   | Whether the AR session is active                         |
+| `style`            | `ViewStyle` | Standard React Native view styles                        |
 
 ### Methods
 
 Access methods via `hybridRef`:
 
 ```tsx
-import { useRef } from 'react';
-import { NitroVtoView, type NitroVtoViewMethods, type HybridRef } from '@alaneu/react-native-nitro-vto';
+import { useRef } from "react";
+import {
+  NitroVtoView,
+  type NitroVtoViewMethods,
+  type HybridRef,
+} from "@alaneu/react-native-nitro-vto";
 
 type VtoRef = HybridRef<NitroVtoViewProps, NitroVtoViewMethods>;
 
@@ -86,7 +90,7 @@ function App() {
   const vtoRef = useRef<VtoRef>(null);
 
   const switchGlasses = () => {
-    vtoRef.current?.switchModel('models/other.glb', 0.138);
+    vtoRef.current?.switchModel("models/other.glb", 0.138);
   };
 
   return (
@@ -94,16 +98,18 @@ function App() {
       modelPath="models/glasses.glb"
       modelWidthMeters={0.135}
       isActive={true}
-      hybridRef={(ref) => { vtoRef.current = ref }}
+      hybridRef={(ref) => {
+        vtoRef.current = ref;
+      }}
     />
   );
 }
 ```
 
-| Method | Description |
-|--------|-------------|
+| Method                                                | Description                                    |
+| ----------------------------------------------------- | ---------------------------------------------- |
 | `switchModel(modelPath: string, widthMeters: number)` | Switch to a different glasses model at runtime |
-| `resetSession()` | Reset the AR session and face tracking |
+| `resetSession()`                                      | Reset the AR session and face tracking         |
 
 ## Assets Setup
 
@@ -114,6 +120,22 @@ android/app/src/main/assets/models/glasses.glb
 ```
 
 ## Technical Details
+
+### Compile a Filament Material
+
+Download the Filament tools and compile the camera background material:
+
+```bash
+ matc --api opengl --api vulkan --platform mobile -o output.filamat input.mat
+```
+
+### Generate IBL from HDR env
+
+Download the Filament tools and generate the IBL from the HDR env:
+
+```bash
+cmgen --format=ktx --size=256 --deploy=./output/path/ ./input/path/your_env.hdr
+```
 
 ### Head Rotation Axes
 
