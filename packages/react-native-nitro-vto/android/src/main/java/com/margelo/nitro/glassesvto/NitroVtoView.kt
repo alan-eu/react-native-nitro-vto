@@ -45,6 +45,9 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     private var modelWidthMeters: Float = 0f
     private var isActive: Boolean = true
 
+    // Callbacks
+    var onModelLoaded: ((modelUrl: String) -> Unit)? = null
+
     // State
     private var isInitialized = false
     private var isResumed = false
@@ -130,6 +133,7 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
 
         // Create and initialize renderer
         vtoRenderer = VTORenderer(context)
+        vtoRenderer?.onModelLoaded = onModelLoaded
         vtoRenderer?.initialize(surfaceView, modelUrl, modelWidthMeters)
 
         isInitialized = true

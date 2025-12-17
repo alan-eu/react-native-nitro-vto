@@ -17,10 +17,10 @@
 #include <react/renderer/components/view/ViewProps.h>
 
 #include <string>
-#include <memory>
-#include "HybridNitroVtoViewSpec.hpp"
 #include <functional>
 #include <optional>
+#include <memory>
+#include "HybridNitroVtoViewSpec.hpp"
 
 namespace margelo::nitro::nitrovto::views {
 
@@ -46,6 +46,7 @@ namespace margelo::nitro::nitrovto::views {
     CachedProp<std::string> modelUrl;
     CachedProp<double> modelWidthMeters;
     CachedProp<bool> isActive;
+    CachedProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>> onModelLoaded;
     CachedProp<std::optional<std::function<void(const std::shared_ptr<HybridNitroVtoViewSpec>& /* ref */)>>> hybridRef;
 
   private:

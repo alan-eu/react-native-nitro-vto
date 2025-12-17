@@ -10,6 +10,10 @@
 
 
 #include <string>
+#include <functional>
+#include <optional>
+#include "JFunc_void_std__string.hpp"
+#include <NitroModules/JNICallable.hpp>
 
 namespace margelo::nitro::nitrovto {
 
@@ -66,6 +70,23 @@ namespace margelo::nitro::nitrovto {
   void JHybridNitroVtoViewSpec::setIsActive(bool isActive) {
     static const auto method = javaClassStatic()->getMethod<void(jboolean /* isActive */)>("setActive");
     method(_javaPart, isActive);
+  }
+  std::optional<std::function<void(const std::string& /* modelUrl */)>> JHybridNitroVtoViewSpec::getOnModelLoaded() {
+    static const auto method = javaClassStatic()->getMethod<jni::local_ref<JFunc_void_std__string::javaobject>()>("getOnModelLoaded_cxx");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional([&]() -> std::function<void(const std::string& /* modelUrl */)> {
+      if (__result->isInstanceOf(JFunc_void_std__string_cxx::javaClassStatic())) [[likely]] {
+        auto downcast = jni::static_ref_cast<JFunc_void_std__string_cxx::javaobject>(__result);
+        return downcast->cthis()->getFunction();
+      } else {
+        auto __resultRef = jni::make_global(__result);
+        return JNICallable<JFunc_void_std__string, void(std::string)>(std::move(__resultRef));
+      }
+    }()) : std::nullopt;
+  }
+  void JHybridNitroVtoViewSpec::setOnModelLoaded(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onModelLoaded) {
+    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<JFunc_void_std__string::javaobject> /* onModelLoaded */)>("setOnModelLoaded_cxx");
+    method(_javaPart, onModelLoaded.has_value() ? JFunc_void_std__string_cxx::fromCpp(onModelLoaded.value()) : nullptr);
   }
 
   // Methods

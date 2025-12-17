@@ -9,6 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { NitroVtoView } from "@alaneu/react-native-nitro-vto";
+import { callback } from "react-native-nitro-modules";
 
 const MODELS = [
   {
@@ -24,6 +25,7 @@ const MODELS = [
 function App(): React.JSX.Element {
   const [hasPermission, setHasPermission] = useState(false);
   const [currentModelIndex, setCurrentModelIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const requestCameraPermission = useCallback(async () => {
     if (Platform.OS === "android") {
@@ -60,7 +62,13 @@ function App(): React.JSX.Element {
   }, [requestCameraPermission]);
 
   const handleNextModel = useCallback(() => {
+    setIsLoading(true);
     setCurrentModelIndex((prev) => (prev + 1) % MODELS.length);
+  }, []);
+
+  const handleModelLoaded = useCallback((url: string) => {
+    console.log("Model loaded:", url);
+    setIsLoading(false);
   }, []);
 
   const currentModel = MODELS[currentModelIndex];
@@ -86,10 +94,19 @@ function App(): React.JSX.Element {
         modelUrl={currentModel.url}
         modelWidthMeters={currentModel.width}
         isActive={true}
+        onModelLoaded={callback(handleModelLoaded)}
       />
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <Text style={styles.loadingText}>Loading model...</Text>
+        </View>
+      )}
       <View style={styles.controls}>
-        <Text style={styles.modelText}>Model: {currentModel.url}</Text>
-        <TouchableOpacity style={styles.button} onPress={handleNextModel}>
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={handleNextModel}
+          disabled={isLoading}
+        >
           <Text style={styles.buttonText}>Next Model</Text>
         </TouchableOpacity>
       </View>
@@ -112,16 +129,14 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: "center",
   },
-  modelText: {
-    color: "#fff",
-    fontSize: 16,
-    marginBottom: 10,
-  },
   button: {
     backgroundColor: "#007AFF",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
+  },
+  buttonDisabled: {
+    backgroundColor: "#666",
   },
   buttonText: {
     color: "#fff",
@@ -133,6 +148,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     marginBottom: 20,
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
   },
 });
 

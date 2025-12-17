@@ -55,6 +55,16 @@ namespace margelo::nitro::nitrovto::views {
         throw std::runtime_error(std::string("NitroVtoView.isActive: ") + exc.what());
       }
     }()),
+    onModelLoaded([&]() -> CachedProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>> {
+      try {
+        const react::RawValue* rawValue = rawProps.at("onModelLoaded", nullptr, nullptr);
+        if (rawValue == nullptr) return sourceProps.onModelLoaded;
+        const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
+        return CachedProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>>::fromRawValue(*runtime, value.asObject(*runtime).getProperty(*runtime, "f"), sourceProps.onModelLoaded);
+      } catch (const std::exception& exc) {
+        throw std::runtime_error(std::string("NitroVtoView.onModelLoaded: ") + exc.what());
+      }
+    }()),
     hybridRef([&]() -> CachedProp<std::optional<std::function<void(const std::shared_ptr<HybridNitroVtoViewSpec>& /* ref */)>>> {
       try {
         const react::RawValue* rawValue = rawProps.at("hybridRef", nullptr, nullptr);
@@ -71,6 +81,7 @@ namespace margelo::nitro::nitrovto::views {
     modelUrl(other.modelUrl),
     modelWidthMeters(other.modelWidthMeters),
     isActive(other.isActive),
+    onModelLoaded(other.onModelLoaded),
     hybridRef(other.hybridRef) { }
 
   bool HybridNitroVtoViewProps::filterObjectKeys(const std::string& propName) {
@@ -78,6 +89,7 @@ namespace margelo::nitro::nitrovto::views {
       case hashString("modelUrl"): return true;
       case hashString("modelWidthMeters"): return true;
       case hashString("isActive"): return true;
+      case hashString("onModelLoaded"): return true;
       case hashString("hybridRef"): return true;
       default: return false;
     }

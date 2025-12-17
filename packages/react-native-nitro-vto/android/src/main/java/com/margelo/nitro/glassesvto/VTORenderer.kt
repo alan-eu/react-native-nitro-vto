@@ -85,6 +85,9 @@ class VTORenderer(private val context: Context) {
     private var modelUrl: String = ""
     private var modelWidthMeters: Float = 0f
 
+    // Callbacks
+    var onModelLoaded: ((modelUrl: String) -> Unit)? = null
+
     /**
      * Initialize Filament and attach to surface view
      */
@@ -154,6 +157,7 @@ class VTORenderer(private val context: Context) {
 
         // Setup glasses renderer
         glassesRenderer = GlassesRenderer(context)
+        glassesRenderer.onModelLoaded = onModelLoaded
         glassesRenderer.setup(engine, scene, modelUrl, widthMeters)
 
         initialized = true

@@ -16,6 +16,8 @@
 
 
 #include <string>
+#include <functional>
+#include <optional>
 
 namespace margelo::nitro::nitrovto {
 
@@ -50,6 +52,8 @@ namespace margelo::nitro::nitrovto {
       virtual void setModelWidthMeters(double modelWidthMeters) = 0;
       virtual bool getIsActive() = 0;
       virtual void setIsActive(bool isActive) = 0;
+      virtual std::optional<std::function<void(const std::string& /* modelUrl */)>> getOnModelLoaded() = 0;
+      virtual void setOnModelLoaded(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onModelLoaded) = 0;
 
     public:
       // Methods

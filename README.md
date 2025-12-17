@@ -6,8 +6,9 @@ A React Native library for glasses virtual try-on using ARCore face tracking and
 
 - Real-time face tracking with ARCore
 - High-quality 3D rendering with Filament
-- GLB model support
+- GLB model loading from URLs with automatic caching
 - Runtime model switching
+- Callback when model is loaded
 - Proper depth-based scaling for accurate sizing
 
 ## Requirements
@@ -30,6 +31,7 @@ npm install @alaneu/react-native-nitro-vto react-native-nitro-modules
 import React, { useState, useEffect } from "react";
 import { View, PermissionsAndroid, Platform } from "react-native";
 import { NitroVtoView } from "@alaneu/react-native-nitro-vto";
+import { callback } from "react-native-nitro-modules";
 
 function App() {
   const [hasPermission, setHasPermission] = useState(false);
@@ -55,22 +57,26 @@ function App() {
         modelUrl="https://example.com/glasses.glb"
         modelWidthMeters={0.135}
         isActive={true}
+        onModelLoaded={callback((url) => console.log("Model loaded:", url))}
       />
     </View>
   );
 }
 ```
 
+> **Note**: Callback props must be wrapped with `callback()` from `react-native-nitro-modules` due to React Native renderer limitations.
+
 ## API
 
 ### Props
 
-| Prop               | Type        | Description                                             |
-| ------------------ | ----------- | ------------------------------------------------------- |
-| `modelUrl`         | `string`    | URL to the GLB model file                               |
-| `modelWidthMeters` | `number`    | Width of the glasses frame in meters for proper scaling |
-| `isActive`         | `boolean`   | Whether the AR session is active                        |
-| `style`            | `ViewStyle` | Standard React Native view styles                       |
+| Prop               | Type                         | Description                                                    |
+| ------------------ | ---------------------------- | -------------------------------------------------------------- |
+| `modelUrl`         | `string`                     | URL to the GLB model file                                      |
+| `modelWidthMeters` | `number`                     | Width of the glasses frame in meters for proper scaling        |
+| `isActive`         | `boolean`                    | Whether the AR session is active                               |
+| `onModelLoaded`    | `(modelUrl: string) => void` | Callback when model loading completes (wrap with `callback()`) |
+| `style`            | `ViewStyle`                  | Standard React Native view styles                              |
 
 ### Methods
 
@@ -110,14 +116,6 @@ function App() {
 | ---------------------------------------------------- | ---------------------------------------------- |
 | `switchModel(modelUrl: string, widthMeters: number)` | Switch to a different glasses model at runtime |
 | `resetSession()`                                     | Reset the AR session and face tracking         |
-
-## Assets Setup
-
-Place your GLB model files in your Android assets folder:
-
-```
-android/app/src/main/assets/models/glasses.glb
-```
 
 ## Technical Details
 

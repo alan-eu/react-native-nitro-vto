@@ -56,6 +56,8 @@ namespace margelo::nitro::nitrovto {
     void setModelWidthMeters(double modelWidthMeters) override;
     bool getIsActive() override;
     void setIsActive(bool isActive) override;
+    std::optional<std::function<void(const std::string& /* modelUrl */)>> getOnModelLoaded() override;
+    void setOnModelLoaded(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onModelLoaded) override;
 
   public:
     // Methods

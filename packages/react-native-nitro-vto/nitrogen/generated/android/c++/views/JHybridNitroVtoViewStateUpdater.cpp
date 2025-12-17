@@ -48,6 +48,10 @@ void JHybridNitroVtoViewStateUpdater::updateViewProps(jni::alias_ref<jni::JClass
     view->setIsActive(props.isActive.value);
     // TODO: Set isDirty = false
   }
+  if (props.onModelLoaded.isDirty) {
+    view->setOnModelLoaded(props.onModelLoaded.value);
+    // TODO: Set isDirty = false
+  }
 
   // Update hybridRef if it changed
   if (props.hybridRef.isDirty) {
