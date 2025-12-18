@@ -148,12 +148,13 @@ class CameraTextureRenderer(private val context: Context) {
                 textureCoords
             )
 
-            // Build new vertex data with positions and transformed UVs (flipped vertically)
+            // Build new vertex data with positions and transformed UVs
+            // Flipped vertically AND horizontally (for front camera mirror effect)
             val vertices = floatArrayOf(
-                -1f, -1f, textureCoords[4], textureCoords[5],
-                 1f, -1f, textureCoords[6], textureCoords[7],
-                -1f,  1f, textureCoords[0], textureCoords[1],
-                 1f,  1f, textureCoords[2], textureCoords[3]
+                -1f, -1f, textureCoords[6], textureCoords[7],  // bottom-left gets bottom-right UV
+                 1f, -1f, textureCoords[4], textureCoords[5],  // bottom-right gets bottom-left UV
+                -1f,  1f, textureCoords[2], textureCoords[3],  // top-left gets top-right UV
+                 1f,  1f, textureCoords[0], textureCoords[1]   // top-right gets top-left UV
             )
 
             backgroundQuadVertexBuffer?.setBufferAt(engine, 0, MatrixUtils.createFloatBuffer(vertices))
