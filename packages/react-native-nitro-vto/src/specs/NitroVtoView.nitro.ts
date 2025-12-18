@@ -52,12 +52,10 @@ export interface NitroVtoViewMethods extends HybridViewMethods {
 
 /**
  * NitroVtoView is a native view component for glasses virtual try-on.
- * It uses ARCore for face tracking and Filament for 3D rendering.
- *
- * Android-only: Uses ARCore which is not available on iOS.
+ * It uses ARCore/ARKit for face tracking and Filament for 3D rendering.
  */
 export type NitroVtoView = HybridView<
   NitroVtoViewProps,
   NitroVtoViewMethods,
-  { android: "kotlin" }
+  { android: "kotlin"; ios: "swift" }
 >;
