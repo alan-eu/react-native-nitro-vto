@@ -172,7 +172,16 @@ class GlassesRenderer(private val context: Context) {
             // Apply Kalman filters to smooth position, scale, and rotation
             val noseBridgeNdc = positionFilter.update(noseBridgeNdcRaw[0], noseBridgeNdcRaw[1])
             val scale = scaleFilter.update(scaleRaw)
-            val smoothedQuaternion = rotationFilter.update(face.centerPose.rotationQuaternion)
+
+            // Negate Y and Z rotation components to compensate for horizontal camera mirror
+            val faceQuaternion = face.centerPose.rotationQuaternion
+            val mirroredQuaternion = floatArrayOf(
+                faceQuaternion[0],   // X unchanged
+                -faceQuaternion[1],  // Y negated
+                -faceQuaternion[2],  // Z negated
+                faceQuaternion[3]    // W unchanged
+            )
+            val smoothedQuaternion = rotationFilter.update(mirroredQuaternion)
 
             // Build transform matrix: rotation * uniform scale
             val rotationMatrix = MatrixUtils.quaternionToMatrix(smoothedQuaternion)
@@ -186,8 +195,8 @@ class GlassesRenderer(private val context: Context) {
             tempMatrix16[5] *= aspectRatio
             tempMatrix16[9] *= aspectRatio
 
-            // Set position (flip X for front camera mirror)
-            tempMatrix16[12] = -noseBridgeNdc[0]
+            // Set position
+            tempMatrix16[12] = noseBridgeNdc[0]
             tempMatrix16[13] = noseBridgeNdc[1]
             tempMatrix16[14] = -0.5f
 
