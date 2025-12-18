@@ -68,7 +68,11 @@ function App(): React.JSX.Element {
 
   const handleModelLoaded = useCallback((url: string) => {
     console.log("Model loaded:", url);
-    setIsLoading(false);
+    // add a timeout to avoid loading overlay flickering
+    const timeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    return () => clearTimeout(timeout);
   }, []);
 
   const currentModel = MODELS[currentModelIndex];
@@ -96,11 +100,11 @@ function App(): React.JSX.Element {
         isActive={true}
         onModelLoaded={callback(handleModelLoaded)}
       />
-      {/* {isLoading && (
+      {isLoading && (
         <View style={styles.loadingOverlay}>
           <Text style={styles.loadingText}>Loading model...</Text>
         </View>
-      )} */}
+      )}
       <View style={styles.controls}>
         <TouchableOpacity
           style={[styles.button, isLoading && styles.buttonDisabled]}

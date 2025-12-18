@@ -191,8 +191,21 @@ static NSString *const TAG = @"GlassesRenderer";
     simd_float2 noseBridgeNdc = [_positionFilter updateWithX:noseBridgeNdcRaw.x y:noseBridgeNdcRaw.y];
     float scale = [_scaleFilter updateWithValue:scaleRaw];
 
-    // Get rotation quaternion from face transform
-    simd_quatf faceRotation = simd_quaternion(face.transform);
+    // Get face rotation from transform
+    simd_quatf faceRotationWorld = simd_quaternion(face.transform);
+
+    // Extract camera pitch and roll from view matrix and compensate
+    // This keeps glasses anchored to face regardless of phone orientation
+    float cameraPitch = asinf(-viewMatrix.columns[2].y);
+    float cameraRoll = atan2f(viewMatrix.columns[0].y, viewMatrix.columns[1].y);
+
+    simd_quatf pitchCompensation = simd_quaternion(cameraPitch, simd_make_float3(1, 0, 0));
+    simd_quatf rollCompensation = simd_quaternion(cameraRoll, simd_make_float3(0, 0, 1));
+
+    // Apply both compensations
+    simd_quatf compensation = simd_mul(rollCompensation, pitchCompensation);
+    simd_quatf faceRotation = simd_mul(compensation, faceRotationWorld);
+
     simd_quatf smoothedQuaternion = [_rotationFilter updateWithQuaternion:faceRotation];
 
     // Build transform matrix: rotation * uniform scale
@@ -213,8 +226,8 @@ static NSString *const TAG = @"GlassesRenderer";
     transformMatrix.columns[1].y *= _aspectRatio;
     transformMatrix.columns[2].y *= _aspectRatio;
 
-    // Set position (flip X for front camera mirror)
-    transformMatrix.columns[3].x = -noseBridgeNdc.x;
+    // Set position
+    transformMatrix.columns[3].x = noseBridgeNdc.x;
     transformMatrix.columns[3].y = noseBridgeNdc.y;
     transformMatrix.columns[3].z = -0.5f;
 
@@ -231,8 +244,9 @@ static NSString *const TAG = @"GlassesRenderer";
 
 - (simd_float3)getNoseBridgeWorldPosWithFace:(ARFaceAnchor *)face {
     // ARKit face mesh vertex indices for nose bridge
-    const int leftIndex = 9;    // Left side of nose bridge
-    const int rightIndex = 175; // Right side of nose bridge
+    // Reference: https://www.oxfordechoes.com/ios-arkit-face-tracking-vertices/
+    const int leftIndex = 818;  // Left side of nose bridge
+    const int rightIndex = 366; // Right side of nose bridge
 
     ARFaceGeometry *geometry = face.geometry;
     const simd_float3 *vertices = geometry.vertices;
