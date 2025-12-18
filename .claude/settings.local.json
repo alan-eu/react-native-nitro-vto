@@ -27,7 +27,12 @@
       "Bash(adb install:*)",
       "Bash(unzip:*)",
       "Bash(adb shell am start:*)",
-      "Bash(adb logcat:*)"
+      "Bash(adb logcat:*)",
+      "Bash(cat:*)",
+      "Bash(pod spec cat:*)",
+      "Bash(pod search:*)",
+      "Bash(pod spec:*)",
+      "Bash(/Users/xavier.seignard/Documents/filament/bin/matc:*)"
     ]
   }
 }

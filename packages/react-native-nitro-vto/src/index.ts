@@ -12,12 +12,10 @@ export type { HybridRef } from "react-native-nitro-modules";
 
 /**
  * NitroVtoView is a React Native component for virtual try-on of glasses.
- * It uses ARCore for face tracking and Filament for 3D rendering.
+ * It uses ARCore/ARKit for face tracking and Filament for 3D rendering.
  *
  * **Important**: Camera permissions must be granted before using this component.
  * The consuming app is responsible for requesting camera permissions.
- *
- * **Android-only**: This component uses ARCore which is not available on iOS.
  *
  * @example
  * ```tsx

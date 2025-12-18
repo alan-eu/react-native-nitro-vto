@@ -2,7 +2,7 @@
   "$schema": "https://nitro.margelo.com/nitro.schema.json",
   "cxxNamespace": ["nitrovto"],
   "ios": {
-    "iosModuleName": "NitroVtO"
+    "iosModuleName": "NitroVto"
   },
   "android": {
     "androidNamespace": ["nitrovto"],
@@ -10,7 +10,8 @@
   },
   "autolinking": {
     "NitroVtoView": {
-      "kotlin": "HybridNitroVtoView"
+      "kotlin": "HybridNitroVtoView",
+      "swift": "HybridNitroVtoView"
     }
   },
   "ignorePaths": ["**/node_modules"]

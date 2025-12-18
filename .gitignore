@@ -21,6 +21,12 @@ local.properties
 **/android/.cxx/
 **/android/build/
 
+# iOS
+example/ios/Pods/
+example/ios/build/
+**/ios/*.xcodeproj/xcuserdata/
+**/ios/*.xcworkspace/xcuserdata/
+
 # Example app
 example/node_modules/
 example/android/.gradle/
