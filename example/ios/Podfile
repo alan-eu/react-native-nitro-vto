@@ -16,12 +16,9 @@ if linkage != nil
 end
 
 target 'NitroVtoExample' do
-  # Use local Filament 1.67.0 podspec (must be before NitroVto which depends on it)
-  pod 'Filament', :podspec => '../../node_modules/@alaneu/react-native-nitro-vto/Filament.podspec'
-  
   config = use_native_modules!
 
-  # Use local NitroVto podspec (which depends on Filament)
+  # Use local NitroVto podspec (which includes Filament dependency)
   pod 'NitroVto', :path => '../../node_modules/@alaneu/react-native-nitro-vto'
 
   use_react_native!(
@@ -44,48 +41,19 @@ target 'NitroVtoExample' do
         config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++20'
       end
       
-      # Link Filament libraries for NitroVto target in Pods project
+      # Link Filament libraries for NitroVto target
       if target.name == 'NitroVto'
         target.build_configurations.each do |config|
-          # Add Filament library search path
-          library_search_paths = config.build_settings['LIBRARY_SEARCH_PATHS'] || '$(inherited)'
-          config.build_settings['LIBRARY_SEARCH_PATHS'] = "#{library_search_paths} \"$(PODS_ROOT)/Filament/lib/universal\""
+          config.build_settings['LIBRARY_SEARCH_PATHS'] ||= ['$(inherited)']
+          config.build_settings['LIBRARY_SEARCH_PATHS'] << '"$(PODS_ROOT)/Filament/lib/universal"'
           
-          # Add Filament library linker flags
-          other_ldflags = config.build_settings['OTHER_LDFLAGS'] || '$(inherited)'
+          config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
           filament_libs = %w[filament backend filabridge filaflat geometry ibl utils gltfio_core dracodec uberarchive stb image ktxreader basis_transcoder uberzlib zstd shaders smol-v]
-          filament_flags = filament_libs.map { |lib| "-l#{lib}" }.join(' ')
-          config.build_settings['OTHER_LDFLAGS'] = "#{other_ldflags} #{filament_flags}"
-        end
-      end
-    end
-    
-    # Add linker flags to the main app project
-    app_project_path = File.join(File.dirname(__FILE__), 'NitroVtoExample.xcodeproj')
-    if File.exist?(app_project_path)
-      app_project = Xcodeproj::Project.open(app_project_path)
-      app_project.targets.each do |target|
-        if target.name == 'NitroVtoExample'
-          target.build_configurations.each do |config|
-            # Add Filament library search path
-            library_search_paths = config.build_settings['LIBRARY_SEARCH_PATHS'] || ['$(inherited)']
-            library_search_paths = [library_search_paths] unless library_search_paths.is_a?(Array)
-            library_search_paths << '"${PODS_ROOT}/Filament/lib/universal"' unless library_search_paths.include?('"${PODS_ROOT}/Filament/lib/universal"')
-            config.build_settings['LIBRARY_SEARCH_PATHS'] = library_search_paths
-            
-            # Add Filament library linker flags
-            other_ldflags = config.build_settings['OTHER_LDFLAGS'] || ['$(inherited)']
-            other_ldflags = [other_ldflags] unless other_ldflags.is_a?(Array)
-            filament_libs = %w[filament backend filabridge filaflat geometry ibl utils gltfio_core dracodec uberarchive stb image ktxreader basis_transcoder uberzlib zstd shaders smol-v]
-            filament_libs.each do |lib|
-              flag = "-l#{lib}"
-              other_ldflags << flag unless other_ldflags.include?(flag)
-            end
-            config.build_settings['OTHER_LDFLAGS'] = other_ldflags
+          filament_libs.each do |lib|
+            config.build_settings['OTHER_LDFLAGS'] << "-l#{lib}"
           end
         end
       end
-      app_project.save
     end
   end
 end

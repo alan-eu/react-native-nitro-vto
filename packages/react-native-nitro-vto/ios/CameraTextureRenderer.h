@@ -17,11 +17,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// Setup the camera background rendering
 - (void)setupWithEngine:(filament::Engine *)engine scene:(filament::Scene *)scene;
 
+/// Set viewport size for correct aspect ratio transform
+- (void)setViewportSize:(CGSize)size;
+
 /// Update camera texture from ARKit frame
 - (void)updateTextureWithFrame:(ARFrame *)frame;
-
-/// Reset UV transform flag (call when session is reset)
-- (void)resetUvTransform;
 
 /// Cleanup and destroy resources
 - (void)destroy;

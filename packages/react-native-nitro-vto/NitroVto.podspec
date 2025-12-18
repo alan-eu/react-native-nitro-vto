@@ -19,16 +19,16 @@ Pod::Spec.new do |s|
     # Implementation files only (Objective-C++)
     "ios/**/*.{mm}",
     # C++ headers and implementation
+    "ios/**/*.hpp",on
+    "ios/**/*.hpp",on
     "ios/**/*.hpp",
-    "cpp/**/*.{hpp,cpp}",
-  ]
   
   # Preserve paths to headers but don't include them in source_files
   # This prevents them from being treated as public by default
   s.preserve_paths = "ios/**/*.h"
-
-  load 'nitrogen/generated/ios/NitroVto+autolinking.rb'
-  add_nitrogen_files(s)
+    "ios/VTORendererBridge.h",
+  
+  # Preserve paths to headers but don't include them in source_files
   
   # Only VTORendererBridge should be public for Swift access
   current_public_headers = Array(s.attributes_hash['public_header_files'])
@@ -41,22 +41,75 @@ Pod::Spec.new do |s|
     'CLANG_WARN_MODULE_CONFLICT' => 'NO',
     'HEADER_SEARCH_PATHS' => '$(inherited) "$(PODS_ROOT)/Filament/include"'
   })
-
-  s.resource_bundles = {
-    "NitroVtoAssets" => ["ios/assets/**/*.{filamat,ktx}"]
-  }
-
-  # iOS frameworks
-  s.frameworks = "ARKit", "Metal", "MetalKit", "AVFoundation", "CoreVideo"
-
-  s.dependency 'React-jsi'
-  s.dependency 'React-callinvoker'
-
-  # Filament for 3D rendering (Metal backend on iOS)
-  s.dependency "Filament/filament"
-  s.dependency "Filament/gltfio_core"
-  s.dependency "Filament/image"
-  s.dependency "Filament/ktxreader"
-
-  install_modules_dependencies(s)
-end
+  # This prevents them from being treated as public by default
+  s.preserve_paths = "ios/**/*.h"
+    # Private headers
+  
+  # Preserve paths to headers but don't include them in source_files
+  
+  # Only VTORendererBridge should be public for Swift access
+  current_public_headers = Array(s.attributes_hash['public_header_files'])
+  s.public_header_files = current_public_headers + ["ios/VTORendererBridge.h"]
+  
+  # Disable strict C++ module checking to avoid Filament header conflicts
+  current_xcconfig = s.attributes_hash['pod_target_xcconfig'] || {}
+  s.pod_target_xcconfig = current_xcconfig.merge({
+    'CLANG_WARN_MODULE_CONFLICT' => 'NO'
+  })
+  # This prevents them from being treated as public by default
+  s.preserve_paths = "ios/**/*.h"
+    "ios/CameraTextureRenderer.h",
+    "ios/EnvironmentLightingRenderer.h",
+    "ios/GlassesRenderer.h",
+  
+  # Only VTORendererBridge should be public for Swift access
+  current_public_headers = Array(s.attributes_hash['public_header_files'])
+  s.public_header_files = current_public_headers + ["ios/VTORendererBridge.h"]
+    "ios/KalmanFilter.h",
+    "ios/LoaderUtils.h",
+    "ios/MatrixUtils.h",
+    "ios/NitroVto.h",,mm}",,mm}",,mm}",,mm}",  
+  # Public headers for Objective-C++ bridge
+  s.public_header_files = "ios/*.h"
+  
+  # Add our custom public headers AFTER nitrogen autolinking
+  current_public_headers = Array(s.attributes_hash['public_header_files'])
+  s.public_header_files = current_public_headers + ["ios/*.h"]
+  
+  # Explicitly set public headers to only VTORendererBridge
+  current_public_headers = Array(s.attributes_hash['public_header_files'])
+  s.public_header_files = current_public_headers + ["ios/VTORendererBridge.h"]
+  
+  # Mark other headers as private to avoid C++ module conflicts
+  current_private_headers = Array(s.attributes_hash['private_header_files'])  
+  s.private_header_files = current_private_headers + [
+    "ios/CameraTextureRenderer.h",
+    "ios/EnvironmentLightingRenderer.h",
+    "ios/GlassesRenderer.h",
+    "ios/KalmanFilter.h",
+    "ios/LoaderUtils.h",
+    "ios/MatrixUtils.h",
+    "ios/NitroVto.h"
+  ]
+  
+  # Only expose VTORendererBridge.h as public to avoid C++ module conflicts
+  # Nitrogen already added its headers, we just add ours
+  current_public_headers = Array(s.attributes_hash['public_header_files'])
+  s.public_header_files = current_public_headers + ["ios/VTORendererBridge.h"]
+  
+  # Add our custom public headers AFTER nitrogen autolinking
+  # Only expose VTORendererBridge to Swift, keep utility headers private
+  current_public_headers = Array(s.attributes_hash['public_header_files'])
+  s.public_header_files = current_public_headers + ["ios/VTORendererBridge.h"]
+  
+  # Keep utility headers private to avoid C++ module conflicts with Filament
+  current_private_headers = Array(s.attributes_hash['private_header_files'])
+  s.private_header_files = current_private_headers + [
+    "ios/CameraTextureRenderer.h",
+    "ios/EnvironmentLightingRenderer.h", 
+    "ios/GlassesRenderer.h",
+    "ios/KalmanFilter.h",
+    "ios/LoaderUtils.h",
+    "ios/MatrixUtils.h",
+    "ios/NitroVto.h"
+  ]

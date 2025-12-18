@@ -28,6 +28,6 @@ vertex {
 fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
-        material.baseColor.rgb = texture(materialParams_cameraFeed, getUV0()).rgb;
+        material.baseColor.rgb = inverseTonemapSRGB(texture(materialParams_cameraFeed, getUV0()).rgb);
     }
 }

@@ -83,10 +83,8 @@ static const float INTENSITY_FACTOR = 60000.0f;
                 .environment(_skyboxTexture)
                 .build(*engine);
 
-            // DON'T set the skybox on the scene for AR - we want to see the camera feed!
-            // The skybox is only used for environment lighting reflections on 3D models
-            // scene->setSkybox(_skybox);  // Commented out for AR
-            NSLog(@"%@: Skybox texture loaded for reflections (not displayed)", TAG);
+            scene->setSkybox(_skybox);
+            NSLog(@"%@: Loaded skybox", TAG);
         } else {
             NSLog(@"%@: Failed to create skybox texture", TAG);
         }

@@ -28,8 +28,7 @@ static NSString *const TAG = @"GlassesRenderer";
 @property (nonatomic, assign) ResourceLoader *resourceLoader;
 @property (nonatomic, assign) FilamentAsset *glassesAsset;
 @property (nonatomic, assign) MaterialProvider *materialProvider;
-@property (nonatomic, assign) TextureProvider *stbTextureProvider;
-@property (nonatomic, assign) TextureProvider *ktx2TextureProvider;
+@property (nonatomic, assign) TextureProvider *textureProvider;
 
 // Thread management
 @property (nonatomic, strong) dispatch_queue_t loadQueue;
@@ -84,16 +83,11 @@ static NSString *const TAG = @"GlassesRenderer";
         .entities = &EntityManager::get()
     });
     _resourceLoader = new ResourceLoader({engine, ".", true});
-    
-    // Setup texture providers for loading textures from GLB files
-    _stbTextureProvider = createStbProvider(engine);
-    _ktx2TextureProvider = createKtx2Provider(engine);
-    
-    // Register texture providers for different MIME types
-    _resourceLoader->addTextureProvider("image/png", _stbTextureProvider);
-    _resourceLoader->addTextureProvider("image/jpeg", _stbTextureProvider);
-    _resourceLoader->addTextureProvider("image/jpg", _stbTextureProvider);
-    _resourceLoader->addTextureProvider("image/ktx2", _ktx2TextureProvider);
+
+    // Create texture provider for PNG/JPEG decoding using stb_image
+    _textureProvider = createStbProvider(engine);
+    _resourceLoader->addTextureProvider("image/png", _textureProvider);
+    _resourceLoader->addTextureProvider("image/jpeg", _textureProvider);
 
     // Load model
     [self loadModelFromUrl:modelUrl];
@@ -323,16 +317,12 @@ static NSString *const TAG = @"GlassesRenderer";
         _assetLoader->destroyAsset(_glassesAsset);
     }
 
+    // ResourceLoader must be destroyed before TextureProvider
     if (_resourceLoader) {
         delete _resourceLoader;
     }
-    if (_stbTextureProvider) {
-        delete _stbTextureProvider;
-        _stbTextureProvider = nullptr;
-    }
-    if (_ktx2TextureProvider) {
-        delete _ktx2TextureProvider;
-        _ktx2TextureProvider = nullptr;
+    if (_textureProvider) {
+        delete _textureProvider;
     }
     if (_assetLoader) {
         AssetLoader::destroy(&_assetLoader);

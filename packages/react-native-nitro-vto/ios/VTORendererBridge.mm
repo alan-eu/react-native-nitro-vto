@@ -82,13 +82,6 @@ static NSString *const TAG = @"VTORenderer";
     _renderer = _engine->createRenderer();
     _scene = _engine->createScene();
     _filamentView = _engine->createView();
-    
-    // Configure renderer for AR - don't clear color buffer (camera texture is the background)
-    Renderer::ClearOptions clearOptions = {};
-    clearOptions.clearColor = {0.0f, 0.0f, 0.0f, 0.0f};  // Transparent black
-    clearOptions.clear = false;  // Don't clear color buffer - camera texture fills it
-    clearOptions.discard = true;  // Discard previous frame content
-    _renderer->setClearOptions(clearOptions);
 
     // Create camera
     utils::EntityManager &em = utils::EntityManager::get();
@@ -98,11 +91,12 @@ static NSString *const TAG = @"VTORenderer";
     _filamentView->setCamera(_camera);
     _filamentView->setScene(_scene);
 
-    // Configure view for AR rendering
+    // Configure view
     _filamentView->setPostProcessingEnabled(false);
 
     // Create swap chain from Metal layer
     CAMetalLayer *metalLayer = (CAMetalLayer *)_metalView.layer;
+    metalLayer.opaque = YES;  // We don't need transparency - we render full camera background
     _swapChain = _engine->createSwapChain((__bridge void *)metalLayer);
 
     // Setup environment lighting
@@ -129,22 +123,14 @@ static NSString *const TAG = @"VTORenderer";
 
 - (void)setViewportSizeWithWidth:(int)width height:(int)height {
     if (width <= 0 || height <= 0) return;
-    
-    // Skip if size hasn't changed
-    if (_width == width && _height == height) return;
 
     _width = width;
     _height = height;
 
-    // Update Filament viewport
     _filamentView->setViewport({0, 0, (uint32_t)width, (uint32_t)height});
     [self updateCameraProjection];
-    
-    // Update glasses renderer viewport
     [_glassesRenderer setViewportSizeWithWidth:width height:height];
-    
-    // Note: Swap chain doesn't need to be recreated for size changes
-    // as it's bound to the CAMetalLayer which handles resizing automatically
+    [_cameraTextureRenderer setViewportSize:CGSizeMake(width, height)];
 }
 
 - (void)updateCameraProjection {
@@ -168,12 +154,11 @@ static NSString *const TAG = @"VTORenderer";
 }
 
 - (void)resetSession {
-    [_cameraTextureRenderer resetUvTransform];
     [_glassesRenderer hide];
 }
 
 - (void)renderWithFrame:(ARFrame *)frame faces:(NSArray<ARFaceAnchor *> *)faces {
-    if (!_initialized || !_renderer || !_swapChain || !_filamentView) return;
+    if (!_initialized) return;
 
     // Update camera texture from ARKit frame
     [_cameraTextureRenderer updateTextureWithFrame:frame];
@@ -191,7 +176,6 @@ static NSString *const TAG = @"VTORenderer";
     }
 
     // Render frame with Filament
-    // beginFrame returns false if no drawable is available (e.g., app is backgrounded)
     if (_renderer->beginFrame(_swapChain)) {
         _renderer->render(_filamentView);
         _renderer->endFrame();
