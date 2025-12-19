@@ -3,46 +3,47 @@ PODS:
   - DoubleConversion (1.1.6)
   - fast_float (8.0.0)
   - FBLazyVector (0.82.0)
-  - Filament (1.67.0):
-    - Filament/camutils (= 1.67.0)
-    - Filament/filamat (= 1.67.0)
-    - Filament/filament (= 1.67.0)
-    - Filament/filameshio (= 1.67.0)
-    - Filament/gltfio_core (= 1.67.0)
-    - Filament/image (= 1.67.0)
-    - Filament/ktxreader (= 1.67.0)
-    - Filament/math (= 1.67.0)
-    - Filament/tsl (= 1.67.0)
-    - Filament/uberz (= 1.67.0)
-    - Filament/utils (= 1.67.0)
-    - Filament/viewer (= 1.67.0)
-  - Filament/camutils (1.67.0):
+  - Filament (1.56.6):
+    - Filament/camutils (= 1.56.6)
+    - Filament/filamat (= 1.56.6)
+    - Filament/filament (= 1.56.6)
+    - Filament/filameshio (= 1.56.6)
+    - Filament/gltfio_core (= 1.56.6)
+    - Filament/image (= 1.56.6)
+    - Filament/ktxreader (= 1.56.6)
+    - Filament/math (= 1.56.6)
+    - Filament/tsl (= 1.56.6)
+    - Filament/uberz (= 1.56.6)
+    - Filament/utils (= 1.56.6)
+    - Filament/viewer (= 1.56.6)
+  - Filament/camutils (1.56.6):
     - Filament/math
-  - Filament/filamat (1.67.0):
-    - Filament/math
-    - Filament/utils
-  - Filament/filament (1.67.0):
+  - Filament/filamat (1.56.6):
     - Filament/math
     - Filament/utils
-  - Filament/filameshio (1.67.0):
+  - Filament/filament (1.56.6):
+    - Filament/math
+    - Filament/utils
+  - Filament/filameshio (1.56.6):
     - Filament/filament
-  - Filament/gltfio_core (1.67.0):
+  - Filament/gltfio_core (1.56.6):
     - Filament/filament
     - Filament/ktxreader
     - Filament/uberz
-  - Filament/image (1.67.0):
+  - Filament/image (1.56.6):
     - Filament/filament
-  - Filament/ktxreader (1.67.0):
+  - Filament/ktxreader (1.56.6):
     - Filament/filament
     - Filament/image
-  - Filament/math (1.67.0)
-  - Filament/tsl (1.67.0)
-  - Filament/uberz (1.67.0):
+  - Filament/math (1.56.6)
+  - Filament/tsl (1.56.6)
+  - Filament/uberz (1.56.6):
     - Filament/filamat
     - Filament/tsl
-  - Filament/utils (1.67.0):
+    - Filament/utils
+  - Filament/utils (1.56.6):
     - Filament/tsl
-  - Filament/viewer (1.67.0):
+  - Filament/viewer (1.56.6):
     - Filament/filament
     - Filament/gltfio_core
   - fmt (11.0.2)
@@ -79,7 +80,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - NitroVto (0.5.0):
+  - NitroVto (0.5.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -2431,7 +2432,6 @@ DEPENDENCIES:
   - DoubleConversion (from `../../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - fast_float (from `../../node_modules/react-native/third-party-podspecs/fast_float.podspec`)
   - FBLazyVector (from `../../node_modules/react-native/Libraries/FBLazyVector`)
-  - "Filament (from `../../node_modules/@alaneu/react-native-nitro-vto`)"
   - fmt (from `../../node_modules/react-native/third-party-podspecs/fmt.podspec`)
   - glog (from `../../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - hermes-engine (from `../../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
@@ -2508,6 +2508,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - Filament
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -2519,8 +2520,6 @@ EXTERNAL SOURCES:
     :podspec: "../../node_modules/react-native/third-party-podspecs/fast_float.podspec"
   FBLazyVector:
     :path: "../../node_modules/react-native/Libraries/FBLazyVector"
-  Filament:
-    :path: "../../node_modules/@alaneu/react-native-nitro-vto"
   fmt:
     :podspec: "../../node_modules/react-native/third-party-podspecs/fmt.podspec"
   glog:
@@ -2670,12 +2669,12 @@ SPEC CHECKSUMS:
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
   FBLazyVector: 41b4dd99afd0aad861444ee141abdedaa6c3d238
-  Filament: d5999d7349ae5c7fa82cb1b93c9266766b8db126
+  Filament: f1f5cbe63c41a62882aeda3d594beed5b2c86fcd
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 8642d8f14a548ab718ec112e9bebdfdd154138b5
   NitroModules: 22837572f1ecf8f1560f5aac7c9f687825754901
-  NitroVto: cf26214f0ba2bbbde026f92c0ffb653e02cb6cea
+  NitroVto: 992d22b35de303332d0c03064b8f81d7da509b9f
   RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
   RCTDeprecation: 22bf66112da540a7d40e536366ddd8557934fca1
   RCTRequired: a0ed4dc41b35f79fbb6d8ba320e06882a8c792cf
