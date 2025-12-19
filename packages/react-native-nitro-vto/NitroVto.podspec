@@ -49,6 +49,10 @@ Pod::Spec.new do |s|
     "ios/NitroVto.h"
   ]
 
+  s.resource_bundles = {
+    'NitroVtoAssets' => ['ios/assets/**/*']
+  }
+
   load 'nitrogen/generated/ios/NitroVto+autolinking.rb'
   add_nitrogen_files(s)
 
