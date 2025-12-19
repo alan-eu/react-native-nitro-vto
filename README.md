@@ -115,6 +115,10 @@ function App() {
 
 ## Technical Details
 
+### Filament `matc` and `cmgen` tools
+
+Version 1.67.1 for Android and 1.56.6 for iOS.
+
 ### Compile Materials for Android
 
 For Android, compile materials with OpenGL and Vulkan backends:
