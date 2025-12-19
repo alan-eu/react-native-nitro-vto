@@ -1,6 +1,6 @@
 {
   "name": "@alaneu/react-native-nitro-vto",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "React Native library for glasses virtual try-on using ARCore and Filament",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
