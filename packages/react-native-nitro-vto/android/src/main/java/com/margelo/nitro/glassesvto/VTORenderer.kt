@@ -209,9 +209,10 @@ class VTORenderer(private val context: Context) {
             // Make EGL context current for ARCore texture operations
             cameraTextureRenderer.makeEglContextCurrent()
 
-            // Set camera texture name on ARCore session (only once)
+            // Set camera texture names on ARCore session (only once)
+            // Using multiple textures avoids read/write sync issues (green flashes)
             if (!cameraTextureNameSet) {
-                session.setCameraTextureName(cameraTextureRenderer.getCameraTextureId())
+                session.setCameraTextureNames(cameraTextureRenderer.getCameraTextureIds())
                 cameraTextureNameSet = true
             }
 
@@ -229,6 +230,9 @@ class VTORenderer(private val context: Context) {
 
             // Update ARCore and get frame
             val frame = session.update()
+
+            // Update material to use the correct texture for this frame
+            cameraTextureRenderer.updateCameraTexture(frame)
 
             // Update lighting from ARCore light estimation
             environmentLightingRenderer.updateFromARCore(frame)
