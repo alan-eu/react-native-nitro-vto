@@ -38,9 +38,10 @@ class CameraTextureRenderer(private val context: Context) {
     private var eglContext: EGLContext = EGL14.EGL_NO_CONTEXT
     private var eglSurface: EGLSurface = EGL14.EGL_NO_SURFACE
 
-    // Camera texture
-    private var cameraTextureId: Int = 0
-    private var cameraTexture: Texture? = null
+    // Camera textures (multiple to avoid read/write conflicts with ARCore)
+    // @see https://github.com/google/filament/issues/5498
+    private var cameraTextureIds: IntArray = IntArray(4)
+    private var cameraTextures: Array<Texture?> = arrayOfNulls(4)
 
     // Background quad
     private lateinit var cameraMaterial: Material
@@ -59,9 +60,9 @@ class CameraTextureRenderer(private val context: Context) {
     fun getEglContext(): EGLContext = eglContext
 
     /**
-     * Returns the camera texture ID for ARCore
+     * Returns the camera texture IDs for ARCore (multiple textures to avoid sync issues)
      */
-    fun getCameraTextureId(): Int = cameraTextureId
+    fun getCameraTextureIds(): IntArray = cameraTextureIds
 
     /**
      * Initialize EGL context and create camera texture.
@@ -70,8 +71,11 @@ class CameraTextureRenderer(private val context: Context) {
     fun initializeEglContext() {
         createEglContext()
         makeEglContextCurrent()
-        cameraTextureId = createExternalTextureId()
-        Log.d(TAG, "Created camera texture ID: $cameraTextureId")
+        // Create multiple textures to avoid read/write sync issues with ARCore
+        for (i in cameraTextureIds.indices) {
+            cameraTextureIds[i] = createExternalTextureId()
+        }
+        Log.d(TAG, "Created camera texture IDs: ${cameraTextureIds.contentToString()}")
     }
 
     /**
@@ -89,17 +93,19 @@ class CameraTextureRenderer(private val context: Context) {
             .build(engine)
         cameraMaterialInstance = cameraMaterial.createInstance()
 
-        // Import the external OES texture that ARCore writes to
-        cameraTexture = Texture.Builder()
-            .sampler(Texture.Sampler.SAMPLER_EXTERNAL)
-            .format(Texture.InternalFormat.RGB8)
-            .importTexture(cameraTextureId.toLong())
-            .build(engine)
+        // Import all external OES textures that ARCore cycles through
+        for (i in cameraTextureIds.indices) {
+            cameraTextures[i] = Texture.Builder()
+                .sampler(Texture.Sampler.SAMPLER_EXTERNAL)
+                .format(Texture.InternalFormat.RGB8)
+                .importTexture(cameraTextureIds[i].toLong())
+                .build(engine)
+        }
 
-        // Set texture on material
+        // Set initial texture on material (will be updated each frame)
         cameraMaterialInstance.setParameter(
             "cameraTexture",
-            cameraTexture!!,
+            cameraTextures[0]!!,
             TextureSampler(
                 TextureSampler.MinFilter.LINEAR,
                 TextureSampler.MagFilter.LINEAR,
@@ -107,7 +113,7 @@ class CameraTextureRenderer(private val context: Context) {
             )
         )
 
-        Log.d(TAG, "Camera texture imported and set on material, ID: $cameraTextureId")
+        Log.d(TAG, "Camera textures imported, IDs: ${cameraTextureIds.contentToString()}")
 
         // Create fullscreen quad geometry
         createBackgroundQuad()
@@ -119,6 +125,26 @@ class CameraTextureRenderer(private val context: Context) {
     fun makeEglContextCurrent() {
         if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
             throw RuntimeException("Unable to make EGL context current")
+        }
+    }
+
+    /**
+     * Update the material to use the correct texture for the current frame.
+     * ARCore cycles through the texture array, so we need to bind the right one.
+     */
+    fun updateCameraTexture(frame: Frame) {
+        val currentTextureId = frame.cameraTextureName
+        val index = cameraTextureIds.indexOf(currentTextureId)
+        if (index >= 0 && cameraTextures[index] != null) {
+            cameraMaterialInstance.setParameter(
+                "cameraTexture",
+                cameraTextures[index]!!,
+                TextureSampler(
+                    TextureSampler.MinFilter.LINEAR,
+                    TextureSampler.MagFilter.LINEAR,
+                    TextureSampler.WrapMode.CLAMP_TO_EDGE
+                )
+            )
         }
     }
 
@@ -180,7 +206,10 @@ class CameraTextureRenderer(private val context: Context) {
         scene.removeEntity(backgroundQuadEntity)
         EntityManager.get().destroy(backgroundQuadEntity)
 
-        cameraTexture?.let { engine.destroyTexture(it) }
+        // Destroy all camera textures
+        for (texture in cameraTextures) {
+            texture?.let { engine.destroyTexture(it) }
+        }
 
         // Destroy EGL context
         EGL14.eglDestroySurface(eglDisplay, eglSurface)
