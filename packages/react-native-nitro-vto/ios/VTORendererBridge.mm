@@ -127,8 +127,6 @@ static NSString *const TAG = @"VTORenderer";
     _height = height;
 
     _filamentView->setViewport({0, 0, (uint32_t)width, (uint32_t)height});
-    // Camera projection is now updated per-frame in renderWithFrame using ARKit matrices
-    [_glassesRenderer setViewportSizeWithWidth:width height:height];
     [_cameraTextureRenderer setViewportSize:CGSizeMake(width, height)];
 }
 

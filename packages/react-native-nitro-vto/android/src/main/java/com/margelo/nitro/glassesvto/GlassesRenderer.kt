@@ -130,13 +130,6 @@ class GlassesRenderer(private val context: Context) {
     }
 
     /**
-     * Set viewport dimensions (no longer needed for world-space positioning).
-     */
-    fun setViewportSize(width: Int, height: Int) {
-        // No longer needed - world-space positioning doesn't require aspect ratio correction
-    }
-
-    /**
      * Update glasses transform based on detected face.
      */
     fun updateTransform(face: AugmentedFace, frame: Frame) {

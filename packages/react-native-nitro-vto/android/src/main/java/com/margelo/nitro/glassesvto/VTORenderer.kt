@@ -144,8 +144,6 @@ class VTORenderer(private val context: Context) {
                     this@VTORenderer.width = width
                     this@VTORenderer.height = height
                     view.viewport = Viewport(0, 0, width, height)
-                    // Camera projection is now updated per-frame in doFrame using ARCore matrices
-                    glassesRenderer.setViewportSize(width, height)
                 }
             }
             attachTo(surfaceView)

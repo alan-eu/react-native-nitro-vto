@@ -22,9 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
                   scene:(filament::Scene *)scene
                modelUrl:(NSString *)modelUrl;
 
-/// Set viewport size (no longer needed for world-space positioning)
-- (void)setViewportSizeWithWidth:(int)width height:(int)height;
-
 /// Update glasses transform based on detected face
 - (void)updateTransformWithFace:(ARFaceAnchor *)face frame:(ARFrame *)frame;
 
