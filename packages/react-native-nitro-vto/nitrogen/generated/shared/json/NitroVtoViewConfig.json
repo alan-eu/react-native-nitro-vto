@@ -5,7 +5,6 @@
   "directEventTypes": {},
   "validAttributes": {
     "modelUrl": true,
-    "modelWidthMeters": true,
     "isActive": true,
     "onModelLoaded": true,
     "hybridRef": true

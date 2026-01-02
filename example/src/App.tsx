@@ -12,14 +12,8 @@ import { NitroVtoView } from "@alaneu/react-native-nitro-vto";
 import { callback } from "react-native-nitro-modules";
 
 const MODELS = [
-  {
-    url: "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/680048.glb",
-    width: 0.152,
-  },
-  {
-    url: "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/878082.glb",
-    width: 0.155,
-  },
+  "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/680048.glb",
+  "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/878082.glb",
 ];
 
 function App(): React.JSX.Element {
@@ -95,8 +89,7 @@ function App(): React.JSX.Element {
     <View style={styles.container}>
       <NitroVtoView
         style={styles.vtoView}
-        modelUrl={currentModel.url}
-        modelWidthMeters={currentModel.width}
+        modelUrl={currentModel}
         isActive={true}
         onModelLoaded={callback(handleModelLoaded)}
       />

@@ -42,7 +42,6 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
 
     // Configuration
     private var modelUrl: String = ""
-    private var modelWidthMeters: Float = 0f
     private var isActive: Boolean = true
 
     // Callbacks
@@ -67,19 +66,7 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
         if (modelUrl != url) {
             modelUrl = url
             if (isInitialized) {
-                vtoRenderer?.switchModel(modelUrl, modelWidthMeters)
-            }
-        }
-    }
-
-    /**
-     * Set the model width in meters
-     */
-    fun setModelWidthMeters(width: Float) {
-        if (modelWidthMeters != width) {
-            modelWidthMeters = width
-            if (isInitialized) {
-                vtoRenderer?.switchModel(modelUrl, modelWidthMeters)
+                vtoRenderer?.switchModel(modelUrl)
             }
         }
     }
@@ -101,10 +88,9 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     /**
      * Switch to a different glasses model
      */
-    fun switchModel(modelUrl: String, widthMeters: Float) {
+    fun switchModel(modelUrl: String) {
         this.modelUrl = modelUrl
-        this.modelWidthMeters = widthMeters
-        vtoRenderer?.switchModel(modelUrl, widthMeters)
+        vtoRenderer?.switchModel(modelUrl)
     }
 
     /**
@@ -134,7 +120,7 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
         // Create and initialize renderer
         vtoRenderer = VTORenderer(context)
         vtoRenderer?.onModelLoaded = onModelLoaded
-        vtoRenderer?.initialize(surfaceView, modelUrl, modelWidthMeters)
+        vtoRenderer?.initialize(surfaceView, modelUrl)
 
         isInitialized = true
         Log.d(TAG, "NitroVtoView initialized")

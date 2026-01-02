@@ -85,7 +85,6 @@ class VTORenderer(private val context: Context) {
 
     // Model configuration
     private var modelUrl: String = ""
-    private var modelWidthMeters: Float = 0f
 
     // Reusable matrices for camera update (avoid per-frame allocations)
     private val viewMatrix = FloatArray(16)
@@ -98,9 +97,8 @@ class VTORenderer(private val context: Context) {
     /**
      * Initialize Filament and attach to surface view
      */
-    fun initialize(surfaceView: SurfaceView, modelUrl: String, widthMeters: Float) {
+    fun initialize(surfaceView: SurfaceView, modelUrl: String) {
         this.modelUrl = modelUrl
-        this.modelWidthMeters = widthMeters
         surfaceViewRef = surfaceView
 
         // Initialize camera texture renderer (creates EGL context)
@@ -165,7 +163,7 @@ class VTORenderer(private val context: Context) {
         // Setup glasses renderer
         glassesRenderer = GlassesRenderer(context)
         glassesRenderer.onModelLoaded = onModelLoaded
-        glassesRenderer.setup(engine, scene, modelUrl, widthMeters)
+        glassesRenderer.setup(engine, scene, modelUrl)
 
         initialized = true
     }
@@ -200,10 +198,9 @@ class VTORenderer(private val context: Context) {
     /**
      * Switch to a different glasses model
      */
-    fun switchModel(modelUrl: String, widthMeters: Float) {
+    fun switchModel(modelUrl: String) {
         this.modelUrl = modelUrl
-        this.modelWidthMeters = widthMeters
-        glassesRenderer.switchModel(modelUrl, widthMeters)
+        glassesRenderer.switchModel(modelUrl)
     }
 
     /**

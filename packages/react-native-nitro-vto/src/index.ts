@@ -21,21 +21,26 @@ export type { HybridRef } from "react-native-nitro-modules";
  * ```tsx
  * import { NitroVtoView, type NitroVtoViewProps, type NitroVtoViewMethods, type HybridRef } from '@alaneu/react-native-nitro-vto'
  * import { useRef } from 'react'
+ * import { callback } from 'react-native-nitro-modules'
  *
  * type NitroVtoRef = HybridRef<NitroVtoViewProps, NitroVtoViewMethods>
  *
  * function App() {
  *   const vtoRef = useRef<NitroVtoRef>(null)
  *
+ *   const handleModelLoaded = (url: string) => {
+ *     console.log("Model loaded:", url)
+ *   }
+ *
  *   const switchGlasses = () => {
- *     vtoRef.current?.switchModel('https://example.com/glasses.glb', 0.138)
+ *     vtoRef.current?.switchModel('https://example.com/glasses.glb')
  *   }
  *
  *   return (
  *     <NitroVtoView
  *       modelUrl="https://example.com/glasses.glb"
- *       modelWidthMeters={0.135}
  *       isActive={true}
+ *       onModelLoaded={callback(handleModelLoaded)}
  *       style={{ flex: 1 }}
  *       hybridRef={(ref) => {
  *         vtoRef.current = ref

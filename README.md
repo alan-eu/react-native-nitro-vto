@@ -51,7 +51,6 @@ function App() {
       <NitroVtoView
         style={{ flex: 1 }}
         modelUrl="https://example.com/glasses.glb"
-        modelWidthMeters={0.135}
         isActive={true}
         onModelLoaded={callback((url) => console.log("Model loaded:", url))}
       />
@@ -66,13 +65,12 @@ function App() {
 
 ### Props
 
-| Prop               | Type                         | Description                                                    |
-| ------------------ | ---------------------------- | -------------------------------------------------------------- |
-| `modelUrl`         | `string`                     | URL to the GLB model file                                      |
-| `modelWidthMeters` | `number`                     | Width of the glasses frame in meters for proper scaling        |
-| `isActive`         | `boolean`                    | Whether the AR session is active                               |
-| `onModelLoaded`    | `(modelUrl: string) => void` | Callback when model loading completes (wrap with `callback()`) |
-| `style`            | `ViewStyle`                  | Standard React Native view styles                              |
+| Prop            | Type                         | Description                                                                                    |
+| --------------- | ---------------------------- | ---------------------------------------------------------------------------------------------- |
+| `modelUrl`      | `string`                     | URL to the GLB model file. Models should be authored in meters at real-world size.            |
+| `isActive`      | `boolean`                    | Whether the AR session is active                                                               |
+| `onModelLoaded` | `(modelUrl: string) => void` | Callback when model loading completes (wrap with `callback()`)                                 |
+| `style`         | `ViewStyle`                  | Standard React Native view styles                                                              |
 
 ### Methods
 
@@ -92,13 +90,12 @@ function App() {
   const vtoRef = useRef<VtoRef>(null);
 
   const switchGlasses = () => {
-    vtoRef.current?.switchModel("https://example.com/other.glb", 0.138);
+    vtoRef.current?.switchModel("https://example.com/other.glb");
   };
 
   return (
     <NitroVtoView
       modelUrl="https://example.com/glasses.glb"
-      modelWidthMeters={0.135}
       isActive={true}
       hybridRef={(ref) => {
         vtoRef.current = ref;
@@ -108,10 +105,10 @@ function App() {
 }
 ```
 
-| Method                                               | Description                                    |
-| ---------------------------------------------------- | ---------------------------------------------- |
-| `switchModel(modelUrl: string, widthMeters: number)` | Switch to a different glasses model at runtime |
-| `resetSession()`                                     | Reset the AR session and face tracking         |
+| Method                        | Description                                    |
+| ----------------------------- | ---------------------------------------------- |
+| `switchModel(modelUrl: string)` | Switch to a different glasses model at runtime |
+| `resetSession()`              | Reset the AR session and face tracking         |
 
 ## Technical Details
 
@@ -157,11 +154,10 @@ The glasses positioning uses world-space coordinates with ARKit/ARCore perspecti
 2. **Position**: World-space coordinates from face mesh nose bridge vertices
    - Android (ARCore): vertices 351 and 122
    - iOS (ARKit): vertices 818 and 366
-3. **Scale**: Computed from model bounding box to match target width in meters (`targetWidth / modelBoundingBoxWidth`)
-4. **Rotation**: Face transform rotation quaternion in world space
-5. **Smoothing**: Kalman filters applied to position and rotation for stability
+3. **Rotation**: Face transform rotation quaternion in world space
+4. **Smoothing**: Kalman filters applied to position and rotation for stability
 
-This world-space approach ensures correct perspective projection and natural glasses behavior when moving the head.
+Models should be authored in meters at real-world size (e.g., a glasses frame width of ~0.135m). This world-space approach ensures correct perspective projection and natural glasses behavior when moving the head.
 
 ## License
 

@@ -17,8 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// Initialize with Metal view
 - (instancetype)initWithMetalView:(MTKView *)metalView;
 
-/// Initialize the renderer with model URL and width
-- (void)initializeWithModelUrl:(NSString *)modelUrl widthMeters:(float)widthMeters;
+/// Initialize the renderer with model URL
+- (void)initializeWithModelUrl:(NSString *)modelUrl;
 
 /// Set viewport size
 - (void)setViewportSizeWithWidth:(int)width height:(int)height;
@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)pause;
 
 /// Switch to a different model
-- (void)switchModelWithUrl:(NSString *)modelUrl widthMeters:(float)widthMeters;
+- (void)switchModelWithUrl:(NSString *)modelUrl;
 
 /// Reset the AR session
 - (void)resetSession;

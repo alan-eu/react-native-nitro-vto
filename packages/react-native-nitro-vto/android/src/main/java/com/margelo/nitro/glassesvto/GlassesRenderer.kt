@@ -42,8 +42,6 @@ class GlassesRenderer(private val context: Context) {
 
     // Current model info
     private var currentModelUrl: String = ""
-    private var currentWidthMeters: Float = 0f
-    private var modelScaleFactor: Float = 1f  // targetWidth / modelBoundingBoxWidth
 
     // Callbacks
     var onModelLoaded: ((modelUrl: String) -> Unit)? = null
@@ -62,13 +60,11 @@ class GlassesRenderer(private val context: Context) {
      * @param engine Filament engine instance
      * @param scene Scene to add glasses entities to
      * @param modelUrl URL to the glasses model (GLB format)
-     * @param widthMeters Width of the glasses in meters
      */
-    fun setup(engine: Engine, scene: Scene, modelUrl: String, widthMeters: Float) {
+    fun setup(engine: Engine, scene: Scene, modelUrl: String) {
         this.engine = engine
         this.scene = scene
         this.currentModelUrl = modelUrl
-        this.currentWidthMeters = widthMeters
 
         // Setup GLTF loader
         val materialProvider = UbershaderProvider(engine)
@@ -125,16 +121,6 @@ class GlassesRenderer(private val context: Context) {
             resourceLoader.loadResources(asset)
             asset.releaseSourceData()
 
-            // Calculate scale factor from bounding box
-            val boundingBox = asset.boundingBox
-            val modelWidth = boundingBox.halfExtent[0] * 2f  // halfExtent[0] is half-width in X
-            if (modelWidth > 0.0001f) {
-                modelScaleFactor = currentWidthMeters / modelWidth
-            } else {
-                modelScaleFactor = 1f
-            }
-            Log.d(TAG, "Model bounding box width: $modelWidth, target width: $currentWidthMeters, scale factor: $modelScaleFactor")
-
             scene.addEntities(asset.entities)
             Log.d(TAG, "Glasses model loaded: ${asset.entities.size} entities")
             hide()
@@ -167,14 +153,9 @@ class GlassesRenderer(private val context: Context) {
             val smoothedPosition = positionFilter.update(noseBridgeWorld)
             val smoothedRotation = rotationFilter.update(faceQuaternion)
 
-            // Build world-space transform matrix
-            // Scale to match target width in meters (computed from bounding box)
-            val scale = modelScaleFactor
-
+            // Build world-space transform matrix (no scaling - models are in real-world meters)
             val rotationMatrix = MatrixUtils.quaternionToMatrix(smoothedRotation)
-            Matrix.setIdentityM(tempMatrix16, 0)
-            Matrix.scaleM(tempMatrix16, 0, scale, scale, scale)
-            Matrix.multiplyMM(tempMatrix16, 0, rotationMatrix, 0, tempMatrix16.copyOf(), 0)
+            System.arraycopy(rotationMatrix, 0, tempMatrix16, 0, 16)
 
             // Set world-space position
             tempMatrix16[12] = smoothedPosition[0]
@@ -220,9 +201,8 @@ class GlassesRenderer(private val context: Context) {
     /**
      * Switch to a different glasses model.
      * @param modelUrl URL to the new model (GLB format)
-     * @param widthMeters Width of the new model in meters
      */
-    fun switchModel(modelUrl: String, widthMeters: Float) {
+    fun switchModel(modelUrl: String) {
         // Remove current model from scene
         glassesAsset?.let { asset ->
             scene.removeEntities(asset.entities)
@@ -233,7 +213,6 @@ class GlassesRenderer(private val context: Context) {
 
         // Update current model info
         currentModelUrl = modelUrl
-        currentWidthMeters = widthMeters
 
         // Load new model
         loadModel(modelUrl)

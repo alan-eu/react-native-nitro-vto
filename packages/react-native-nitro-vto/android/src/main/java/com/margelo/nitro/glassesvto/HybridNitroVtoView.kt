@@ -27,12 +27,6 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.setModelUrl(value)
         }
 
-    override var modelWidthMeters: Double = 0.0
-        set(value) {
-            field = value
-            nitroVtoView.setModelWidthMeters(value.toFloat())
-        }
-
     override var isActive: Boolean = true
         set(value) {
             field = value
@@ -46,8 +40,8 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
         }
 
     // Methods implementation
-    override fun switchModel(modelUrl: String, widthMeters: Double) {
-        nitroVtoView.switchModel(modelUrl, widthMeters.toFloat())
+    override fun switchModel(modelUrl: String) {
+        nitroVtoView.switchModel(modelUrl)
     }
 
     override fun resetSession() {
