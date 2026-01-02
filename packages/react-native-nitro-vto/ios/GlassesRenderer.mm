@@ -146,10 +146,6 @@ static NSString *const TAG = @"GlassesRenderer";
     }
 }
 
-- (void)setViewportSizeWithWidth:(int)width height:(int)height {
-    // No longer needed - models are in real-world meters
-}
-
 - (void)updateTransformWithFace:(ARFaceAnchor *)face frame:(ARFrame *)frame {
     if (!_glassesAsset || !_engine) return;
 
