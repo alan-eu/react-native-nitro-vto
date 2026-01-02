@@ -9,7 +9,7 @@ A React Native library for glasses virtual try-on using ARCore (Android) and ARK
 - GLB model loading from URLs with automatic caching
 - Runtime model switching
 - Callback when model is loaded
-- Proper depth-based scaling for accurate sizing
+- World-space positioning with proper perspective projection
 
 ## Requirements
 
@@ -151,16 +151,17 @@ cmgen --format=ktx --size=256 --deploy=./output/path/ ./input/path/your_env.hdr
 
 ### Transform Pipeline
 
-The glasses positioning uses a depth-based scaling approach:
+The glasses positioning uses world-space coordinates with ARKit/ARCore perspective camera:
 
-1. **Position**: Computed from face mesh nose bridge vertices
+1. **Camera**: Filament camera uses ARKit/ARCore view and projection matrices directly
+2. **Position**: World-space coordinates from face mesh nose bridge vertices
    - Android (ARCore): vertices 351 and 122
    - iOS (ARKit): vertices 818 and 366
-2. **Scale**: `focalLength / depth` - ensures consistent size regardless of head orientation
-3. **Rotation**: Uses face transform rotation quaternion with camera compensation (iOS)
-4. **Aspect Ratio**: Applied after rotation to prevent skewing during head tilt
+3. **Scale**: Computed from model bounding box to match target width in meters (`targetWidth / modelBoundingBoxWidth`)
+4. **Rotation**: Face transform rotation quaternion in world space
+5. **Smoothing**: Kalman filters applied to position and rotation for stability
 
-This approach solves common issues like glasses shrinking when turning the head (perspective foreshortening) and skewing during roll rotation.
+This world-space approach ensures correct perspective projection and natural glasses behavior when moving the head.
 
 ## License
 

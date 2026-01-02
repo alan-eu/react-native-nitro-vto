@@ -17,23 +17,6 @@
     return result;
 }
 
-+ (simd_float2)projectToNdcWithWorldPos:(simd_float3)worldPos
-                             viewMatrix:(simd_float4x4)viewMatrix
-                             projMatrix:(simd_float4x4)projMatrix {
-    simd_float4 pos4 = simd_make_float4(worldPos.x, worldPos.y, worldPos.z, 1.0f);
-    simd_float4 viewPos = simd_mul(viewMatrix, pos4);
-    simd_float4 clipPos = simd_mul(projMatrix, viewPos);
-
-    return simd_make_float2(clipPos.x / clipPos.w, clipPos.y / clipPos.w);
-}
-
-+ (float)getDepthInViewSpaceWithWorldPos:(simd_float3)worldPos
-                              viewMatrix:(simd_float4x4)viewMatrix {
-    simd_float4 pos4 = simd_make_float4(worldPos.x, worldPos.y, worldPos.z, 1.0f);
-    simd_float4 viewPos = simd_mul(viewMatrix, pos4);
-    return fabsf(viewPos.z);
-}
-
 + (filament::math::mat4f)createHideMatrix {
     filament::math::mat4f hideMatrix;
     // Set identity

@@ -8,6 +8,7 @@ import android.opengl.EGLDisplay
 import android.opengl.EGLSurface
 import android.opengl.GLES11Ext
 import android.opengl.GLES30
+import android.opengl.Matrix
 import android.util.Log
 import com.google.android.filament.Engine
 import com.google.android.filament.Entity
@@ -53,6 +54,12 @@ class CameraTextureRenderer(private val context: Context) {
     // Reference to engine and scene (set during setup)
     private lateinit var engine: Engine
     private lateinit var scene: Scene
+
+    // Reusable matrices for transform calculation
+    private val viewMatrix = FloatArray(16)
+    private val projMatrix = FloatArray(16)
+    private val viewProjMatrix = FloatArray(16)
+    private val invViewProjMatrix = FloatArray(16)
 
     /**
      * Returns the EGL context for sharing with Filament engine
@@ -197,6 +204,24 @@ class CameraTextureRenderer(private val context: Context) {
      */
     fun resetUvTransform() {
         uvTransformSet = false
+    }
+
+    /**
+     * Update background transform to compensate for perspective camera.
+     * Sets transform to inverse(viewProj) so after MVP, vertices end up at original NDC positions.
+     */
+    fun updateTransform(frame: Frame) {
+        // Get ARCore camera matrices
+        frame.camera.getViewMatrix(viewMatrix, 0)
+        frame.camera.getProjectionMatrix(projMatrix, 0, 0.01f, 100f)
+
+        // Compute viewProj and its inverse
+        Matrix.multiplyMM(viewProjMatrix, 0, projMatrix, 0, viewMatrix, 0)
+        Matrix.invertM(invViewProjMatrix, 0, viewProjMatrix, 0)
+
+        // Apply transform to background quad
+        val instance = engine.transformManager.getInstance(backgroundQuadEntity)
+        engine.transformManager.setTransform(instance, invViewProjMatrix)
     }
 
     /**

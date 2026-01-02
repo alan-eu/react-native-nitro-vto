@@ -8,6 +8,7 @@
 #include <filament/SwapChain.h>
 #include <filament/Viewport.h>
 #include <utils/EntityManager.h>
+#include <math/mat4.h>
 
 #import "CameraTextureRenderer.h"
 #import "EnvironmentLightingRenderer.h"
@@ -128,15 +129,42 @@ static NSString *const TAG = @"VTORenderer";
     _height = height;
 
     _filamentView->setViewport({0, 0, (uint32_t)width, (uint32_t)height});
-    [self updateCameraProjection];
+    // Camera projection is now updated per-frame in renderWithFrame using ARKit matrices
     [_glassesRenderer setViewportSizeWithWidth:width height:height];
     [_cameraTextureRenderer setViewportSize:CGSizeMake(width, height)];
 }
 
-- (void)updateCameraProjection {
-    if (_width <= 0 || _height <= 0) return;
+- (void)updateCameraProjectionWithFrame:(ARFrame *)frame {
+    if (_width <= 0 || _height <= 0 || !frame) return;
 
-    _camera->setProjection(Camera::Projection::ORTHO, -1.0, 1.0, -1.0, 1.0, -1.0, 1.15);
+    CGSize viewportSize = CGSizeMake(_width, _height);
+
+    // Get ARKit camera matrices
+    simd_float4x4 viewMatrix = [frame.camera viewMatrixForOrientation:UIInterfaceOrientationPortrait];
+    simd_float4x4 projMatrix = [frame.camera projectionMatrixForOrientation:UIInterfaceOrientationPortrait
+                                                               viewportSize:viewportSize
+                                                                      zNear:0.01
+                                                                       zFar:100.0];
+
+    // ARKit viewMatrix transforms world -> camera space
+    // Filament camera needs model matrix (camera -> world), which is inverse(viewMatrix)
+    simd_float4x4 cameraModelMatrix = simd_inverse(viewMatrix);
+
+    // Convert simd matrices to Filament matrices
+    // Note: setCustomProjection requires mat4 (double), setModelMatrix requires mat4f (float)
+    filament::math::mat4f filamentModel;
+    filament::math::mat4 filamentProj;  // double precision for projection
+
+    for (int col = 0; col < 4; col++) {
+        for (int row = 0; row < 4; row++) {
+            filamentModel[col][row] = cameraModelMatrix.columns[col][row];
+            filamentProj[col][row] = (double)projMatrix.columns[col][row];
+        }
+    }
+
+    // Set custom projection and camera model matrix
+    _camera->setCustomProjection(filamentProj, 0.01, 100.0);
+    _camera->setModelMatrix(filamentModel);
 }
 
 - (void)resume {
@@ -160,8 +188,12 @@ static NSString *const TAG = @"VTORenderer";
 - (void)renderWithFrame:(ARFrame *)frame faces:(NSArray<ARFaceAnchor *> *)faces {
     if (!_initialized) return;
 
-    // Update camera texture from ARKit frame
+    // Update Filament camera with ARKit camera matrices
+    [self updateCameraProjectionWithFrame:frame];
+
+    // Update camera texture and background transform
     [_cameraTextureRenderer updateTextureWithFrame:frame];
+    [_cameraTextureRenderer updateTransformWithFrame:frame];
 
     // Update lighting from ARKit light estimation
     if (frame.lightEstimate) {

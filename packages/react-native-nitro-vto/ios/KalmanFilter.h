@@ -24,20 +24,6 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- * Kalman filter for 2D points (e.g., NDC coordinates).
- */
-@interface KalmanFilter2D : NSObject
-
-- (instancetype)initWithProcessNoise:(float)processNoise
-                    measurementNoise:(float)measurementNoise;
-
-- (simd_float2)updateWithX:(float)x y:(float)y;
-
-- (void)reset;
-
-@end
-
-/**
  * Kalman filter for 3D points (e.g., world coordinates).
  */
 @interface KalmanFilter3D : NSObject

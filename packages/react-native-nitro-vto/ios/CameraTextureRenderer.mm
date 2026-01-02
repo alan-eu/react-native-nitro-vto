@@ -10,9 +10,11 @@
 #include <filament/VertexBuffer.h>
 #include <filament/IndexBuffer.h>
 #include <filament/RenderableManager.h>
+#include <filament/TransformManager.h>
 #include <filament/Box.h>
 #include <utils/EntityManager.h>
 #include <math/mat3.h>
+#include <math/mat4.h>
 #include <math/half.h>
 
 using namespace filament;
@@ -191,6 +193,35 @@ static constexpr uint16_t kIndices[6] = { 0, 1, 2, 2, 1, 3 };
     _cameraMaterialInstance->setParameter("cameraFeed", _cameraFeedTexture, TextureSampler());
 
     _scene->addEntity(_cameraFeedTriangle);
+}
+
+- (void)updateTransformWithFrame:(ARFrame *)frame {
+    if (!_engine || !frame) return;
+
+    // Get ARKit camera matrices
+    simd_float4x4 viewMatrix = [frame.camera viewMatrixForOrientation:UIInterfaceOrientationPortrait];
+    simd_float4x4 projMatrix = [frame.camera projectionMatrixForOrientation:UIInterfaceOrientationPortrait
+                                                               viewportSize:_viewportSize
+                                                                      zNear:0.01
+                                                                       zFar:100.0];
+
+    // Compute inverse(viewProj) to transform NDC coordinates back to world space
+    // This way, after MVP is applied, the quad vertices end up at their original NDC positions
+    simd_float4x4 viewProj = simd_mul(projMatrix, viewMatrix);
+    simd_float4x4 invViewProj = simd_inverse(viewProj);
+
+    // Convert to Filament matrix
+    mat4f backgroundTransform;
+    for (int col = 0; col < 4; col++) {
+        for (int row = 0; row < 4; row++) {
+            backgroundTransform[col][row] = invViewProj.columns[col][row];
+        }
+    }
+
+    // Apply transform to background quad
+    TransformManager &transformManager = _engine->getTransformManager();
+    TransformManager::Instance instance = transformManager.getInstance(_cameraFeedTriangle);
+    transformManager.setTransform(instance, backgroundTransform);
 }
 
 - (void)destroy {

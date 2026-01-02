@@ -29,25 +29,6 @@ object MatrixUtils {
     }
 
     /**
-     * Project a world position to NDC (Normalized Device Coordinates).
-     */
-    fun projectToNdc(worldPos: FloatArray, viewMatrix: FloatArray, projMatrix: FloatArray, tempVec4: FloatArray): FloatArray {
-        tempVec4[0] = worldPos[0]
-        tempVec4[1] = worldPos[1]
-        tempVec4[2] = worldPos[2]
-        tempVec4[3] = 1f
-        return projectVec4ToNdc(tempVec4, viewMatrix, projMatrix)
-    }
-
-    private fun projectVec4ToNdc(vec4: FloatArray, viewMatrix: FloatArray, projMatrix: FloatArray): FloatArray {
-        val viewPos = FloatArray(4)
-        val clipPos = FloatArray(4)
-        Matrix.multiplyMV(viewPos, 0, viewMatrix, 0, vec4, 0)
-        Matrix.multiplyMV(clipPos, 0, projMatrix, 0, viewPos, 0)
-        return floatArrayOf(clipPos[0] / clipPos[3], clipPos[1] / clipPos[3])
-    }
-
-    /**
      * Transform a local position to world coordinates using a pose matrix.
      */
     fun transformToWorld(

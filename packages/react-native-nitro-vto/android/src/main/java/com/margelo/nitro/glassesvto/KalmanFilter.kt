@@ -48,26 +48,6 @@ class KalmanFilter(
 }
 
 /**
- * Kalman filter for 2D points (e.g., NDC coordinates).
- */
-class KalmanFilter2D(
-    processNoise: Float = 0.01f,
-    measurementNoise: Float = 0.1f
-) {
-    private val filterX = KalmanFilter(processNoise, measurementNoise)
-    private val filterY = KalmanFilter(processNoise, measurementNoise)
-
-    fun update(x: Float, y: Float): FloatArray {
-        return floatArrayOf(filterX.update(x), filterY.update(y))
-    }
-
-    fun reset() {
-        filterX.reset()
-        filterY.reset()
-    }
-}
-
-/**
  * Kalman filter for 3D points (e.g., world coordinates).
  */
 class KalmanFilter3D(

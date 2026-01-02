@@ -23,6 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Update camera texture from ARKit frame
 - (void)updateTextureWithFrame:(ARFrame *)frame;
 
+/// Update background transform to compensate for perspective camera
+- (void)updateTransformWithFrame:(ARFrame *)frame;
+
 /// Cleanup and destroy resources
 - (void)destroy;
 

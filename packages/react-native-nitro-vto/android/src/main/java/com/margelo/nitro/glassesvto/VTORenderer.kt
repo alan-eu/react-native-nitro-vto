@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.Choreographer
 import android.view.Surface
 import android.view.SurfaceView
+import android.opengl.Matrix
 import com.google.android.filament.Camera
 import com.google.android.filament.Engine
 import com.google.android.filament.Entity
@@ -14,6 +15,7 @@ import com.google.android.filament.Scene
 import com.google.android.filament.SwapChain
 import com.google.android.filament.View
 import com.google.android.filament.Viewport
+import com.google.ar.core.Frame
 import com.google.android.filament.android.DisplayHelper
 import com.google.android.filament.android.UiHelper
 import com.google.android.filament.gltfio.Gltfio
@@ -85,6 +87,11 @@ class VTORenderer(private val context: Context) {
     private var modelUrl: String = ""
     private var modelWidthMeters: Float = 0f
 
+    // Reusable matrices for camera update (avoid per-frame allocations)
+    private val viewMatrix = FloatArray(16)
+    private val projMatrix = FloatArray(16)
+    private val cameraModelMatrix = FloatArray(16)
+
     // Callbacks
     var onModelLoaded: ((modelUrl: String) -> Unit)? = null
 
@@ -139,7 +146,7 @@ class VTORenderer(private val context: Context) {
                     this@VTORenderer.width = width
                     this@VTORenderer.height = height
                     view.viewport = Viewport(0, 0, width, height)
-                    updateCameraProjection()
+                    // Camera projection is now updated per-frame in doFrame using ARCore matrices
                     glassesRenderer.setViewportSize(width, height)
                 }
             }
@@ -163,12 +170,23 @@ class VTORenderer(private val context: Context) {
         initialized = true
     }
 
-    private fun updateCameraProjection() {
+    private fun updateCameraProjection(frame: Frame) {
         if (width == 0 || height == 0) return
-        filamentCamera.setProjection(
-            Camera.Projection.ORTHO,
-            -1.0, 1.0, -1.0, 1.0, -1.0, 1.15
-        )
+
+        // Get ARCore camera matrices
+        frame.camera.getViewMatrix(viewMatrix, 0)
+        frame.camera.getProjectionMatrix(projMatrix, 0, 0.01f, 100f)
+
+        // ARCore viewMatrix transforms world -> camera space
+        // Filament camera needs model matrix (camera -> world), which is inverse(viewMatrix)
+        Matrix.invertM(cameraModelMatrix, 0, viewMatrix, 0)
+
+        // Convert to double arrays for Filament
+        val projMatrixDouble = DoubleArray(16) { projMatrix[it].toDouble() }
+
+        // Set custom projection and camera model matrix
+        filamentCamera.setCustomProjection(projMatrixDouble, 0.01, 100.0)
+        filamentCamera.setModelMatrix(cameraModelMatrix)
     }
 
     fun resume() {
@@ -231,6 +249,9 @@ class VTORenderer(private val context: Context) {
             // Update ARCore and get frame
             val frame = session.update()
 
+            // Update Filament camera with ARCore camera matrices
+            updateCameraProjection(frame)
+
             // Update material to use the correct texture for this frame
             cameraTextureRenderer.updateCameraTexture(frame)
 
@@ -241,6 +262,9 @@ class VTORenderer(private val context: Context) {
             if (width > 0 && height > 0) {
                 cameraTextureRenderer.updateUvTransform(frame)
             }
+
+            // Update camera background transform to compensate for perspective camera
+            cameraTextureRenderer.updateTransform(frame)
 
             // Get tracked faces
             val faces = session.getAllTrackables(AugmentedFace::class.java)
