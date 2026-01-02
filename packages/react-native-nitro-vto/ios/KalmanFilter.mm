@@ -51,42 +51,6 @@
 
 @end
 
-#pragma mark - KalmanFilter2D
-
-@interface KalmanFilter2D ()
-
-@property (nonatomic, strong) KalmanFilter *filterX;
-@property (nonatomic, strong) KalmanFilter *filterY;
-
-@end
-
-@implementation KalmanFilter2D
-
-- (instancetype)initWithProcessNoise:(float)processNoise
-                    measurementNoise:(float)measurementNoise {
-    self = [super init];
-    if (self) {
-        _filterX = [[KalmanFilter alloc] initWithProcessNoise:processNoise
-                                             measurementNoise:measurementNoise
-                                              initialEstimate:0.0f];
-        _filterY = [[KalmanFilter alloc] initWithProcessNoise:processNoise
-                                             measurementNoise:measurementNoise
-                                              initialEstimate:0.0f];
-    }
-    return self;
-}
-
-- (simd_float2)updateWithX:(float)x y:(float)y {
-    return simd_make_float2([_filterX updateWithValue:x], [_filterY updateWithValue:y]);
-}
-
-- (void)reset {
-    [_filterX reset];
-    [_filterY reset];
-}
-
-@end
-
 #pragma mark - KalmanFilter3D
 
 @interface KalmanFilter3D ()
