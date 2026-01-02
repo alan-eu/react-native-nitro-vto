@@ -12,6 +12,7 @@
 #include <gltfio/TextureProvider.h>
 #include <gltfio/materials/uberarchive.h>
 #include <gltfio/FilamentAsset.h>
+#include <filament/Box.h>
 #include <utils/EntityManager.h>
 
 using namespace filament;
@@ -39,13 +40,13 @@ static NSString *const TAG = @"GlassesRenderer";
 // Current model info
 @property (nonatomic, copy) NSString *currentModelUrl;
 @property (nonatomic, assign) float currentWidthMeters;
+@property (nonatomic, assign) float modelScaleFactor;  // targetWidth / modelBoundingBoxWidth
 
 // Aspect ratio for scale correction
 @property (nonatomic, assign) float aspectRatio;
 
 // Kalman filters for smoothing
-@property (nonatomic, strong) KalmanFilter2D *positionFilter;
-@property (nonatomic, strong) KalmanFilter *scaleFilter;
+@property (nonatomic, strong) KalmanFilter3D *positionFilter;
 @property (nonatomic, strong) KalmanFilterQuaternion *rotationFilter;
 
 @end
@@ -58,8 +59,8 @@ static NSString *const TAG = @"GlassesRenderer";
         _loadQueue = dispatch_queue_create("com.nitrovto.glassesloader", DISPATCH_QUEUE_SERIAL);
         _isLoading = NO;
         _aspectRatio = 1.0f;
-        _positionFilter = [[KalmanFilter2D alloc] initWithProcessNoise:0.1f measurementNoise:0.05f];
-        _scaleFilter = [[KalmanFilter alloc] initWithProcessNoise:0.1f measurementNoise:0.05f initialEstimate:0.0f];
+        _modelScaleFactor = 1.0f;
+        _positionFilter = [[KalmanFilter3D alloc] initWithProcessNoise:0.1f measurementNoise:0.05f];
         _rotationFilter = [[KalmanFilterQuaternion alloc] initWithProcessNoise:0.1f measurementNoise:0.05f];
     }
     return self;
@@ -141,6 +142,17 @@ static NSString *const TAG = @"GlassesRenderer";
         _resourceLoader->loadResources(_glassesAsset);
         _glassesAsset->releaseSourceData();
 
+        // Calculate scale factor from bounding box
+        filament::Aabb boundingBox = _glassesAsset->getBoundingBox();
+        float modelWidth = boundingBox.max.x - boundingBox.min.x;
+        if (modelWidth > 0.0001f) {
+            _modelScaleFactor = _currentWidthMeters / modelWidth;
+        } else {
+            _modelScaleFactor = 1.0f;
+        }
+        NSLog(@"%@: Model bounding box width: %f, target width: %f, scale factor: %f",
+              TAG, modelWidth, _currentWidthMeters, _modelScaleFactor);
+
         // Add all entities to scene
         const Entity *entities = _glassesAsset->getEntities();
         size_t entityCount = _glassesAsset->getEntityCount();
@@ -167,53 +179,25 @@ static NSString *const TAG = @"GlassesRenderer";
     TransformManager &transformManager = _engine->getTransformManager();
     TransformManager::Instance instance = transformManager.getInstance(_glassesAsset->getRoot());
 
-    simd_float4x4 viewMatrix = [frame.camera viewMatrixForOrientation:UIInterfaceOrientationPortrait];
-    CGSize viewportSize = CGSizeMake(1, _aspectRatio > 0 ? 1.0 / _aspectRatio : 1);
-    simd_float4x4 projMatrix = [frame.camera projectionMatrixForOrientation:UIInterfaceOrientationPortrait
-                                                               viewportSize:viewportSize
-                                                                      zNear:0.1
-                                                                       zFar:100];
-
-    // Get nose bridge in world and NDC space
+    // Get nose bridge position in world space
     simd_float3 noseBridgeWorld = [self getNoseBridgeWorldPosWithFace:face];
-    simd_float2 noseBridgeNdcRaw = [MatrixUtils projectToNdcWithWorldPos:noseBridgeWorld
-                                                              viewMatrix:viewMatrix
-                                                              projMatrix:projMatrix];
 
-    // Calculate depth (distance from camera) for scale calculation
-    float depth = [MatrixUtils getDepthInViewSpaceWithWorldPos:noseBridgeWorld viewMatrix:viewMatrix];
-
-    // Scale: use depth-based projection to maintain consistent size regardless of head turn
-    float focalLength = fabsf(projMatrix.columns[0].x);
-    float scaleRaw = focalLength / depth;
-
-    // Apply Kalman filters to smooth position, scale, and rotation
-    simd_float2 noseBridgeNdc = [_positionFilter updateWithX:noseBridgeNdcRaw.x y:noseBridgeNdcRaw.y];
-    float scale = [_scaleFilter updateWithValue:scaleRaw];
-
-    // Get face rotation from transform
+    // Get face rotation from transform (world space)
     simd_quatf faceRotationWorld = simd_quaternion(face.transform);
 
-    // Extract camera pitch and roll from view matrix and compensate
-    // This keeps glasses anchored to face regardless of phone orientation
-    float cameraPitch = asinf(-viewMatrix.columns[2].y);
-    float cameraRoll = atan2f(viewMatrix.columns[0].y, viewMatrix.columns[1].y);
+    // Apply Kalman filter smoothing
+    simd_float3 smoothedPosition = [_positionFilter updateWithX:noseBridgeWorld.x y:noseBridgeWorld.y z:noseBridgeWorld.z];
+    simd_quatf smoothedRotation = [_rotationFilter updateWithQuaternion:faceRotationWorld];
 
-    simd_quatf pitchCompensation = simd_quaternion(cameraPitch, simd_make_float3(1, 0, 0));
-    simd_quatf rollCompensation = simd_quaternion(cameraRoll, simd_make_float3(0, 0, 1));
+    // Build world-space transform matrix
+    // Scale to match target width in meters (computed from bounding box)
+    float scale = _modelScaleFactor;
 
-    // Apply both compensations
-    simd_quatf compensation = simd_mul(rollCompensation, pitchCompensation);
-    simd_quatf faceRotation = simd_mul(compensation, faceRotationWorld);
-
-    simd_quatf smoothedQuaternion = [_rotationFilter updateWithQuaternion:faceRotation];
-
-    // Build transform matrix: rotation * uniform scale
-    simd_float4x4 rotationMatrix = [MatrixUtils quaternionToMatrix:smoothedQuaternion];
+    simd_float4x4 rotationMatrix = [MatrixUtils quaternionToMatrix:smoothedRotation];
 
     simd_float4x4 transformMatrix = matrix_identity_float4x4;
 
-    // Apply scale
+    // Apply uniform scale
     transformMatrix.columns[0] *= scale;
     transformMatrix.columns[1] *= scale;
     transformMatrix.columns[2] *= scale;
@@ -221,15 +205,10 @@ static NSString *const TAG = @"GlassesRenderer";
     // Multiply with rotation
     transformMatrix = simd_mul(rotationMatrix, transformMatrix);
 
-    // Apply aspect ratio correction in screen space (after rotation)
-    transformMatrix.columns[0].y *= _aspectRatio;
-    transformMatrix.columns[1].y *= _aspectRatio;
-    transformMatrix.columns[2].y *= _aspectRatio;
-
-    // Set position
-    transformMatrix.columns[3].x = noseBridgeNdc.x;
-    transformMatrix.columns[3].y = noseBridgeNdc.y;
-    transformMatrix.columns[3].z = -0.5f;
+    // Set world-space position
+    transformMatrix.columns[3].x = smoothedPosition.x;
+    transformMatrix.columns[3].y = smoothedPosition.y;
+    transformMatrix.columns[3].z = smoothedPosition.z;
 
     // Convert simd matrix to filament matrix
     filament::math::mat4f filamentTransform;
@@ -288,7 +267,6 @@ static NSString *const TAG = @"GlassesRenderer";
 
 - (void)resetFilters {
     [_positionFilter reset];
-    [_scaleFilter reset];
     [_rotationFilter reset];
 }
 

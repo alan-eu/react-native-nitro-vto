@@ -14,11 +14,11 @@ import { callback } from "react-native-nitro-modules";
 const MODELS = [
   {
     url: "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/680048.glb",
-    width: 0.138,
+    width: 0.152,
   },
   {
     url: "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/878082.glb",
-    width: 0.135,
+    width: 0.155,
   },
 ];
 

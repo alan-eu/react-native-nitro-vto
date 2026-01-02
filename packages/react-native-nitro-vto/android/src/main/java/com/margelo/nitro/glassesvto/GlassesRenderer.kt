@@ -43,6 +43,7 @@ class GlassesRenderer(private val context: Context) {
     // Current model info
     private var currentModelUrl: String = ""
     private var currentWidthMeters: Float = 0f
+    private var modelScaleFactor: Float = 1f  // targetWidth / modelBoundingBoxWidth
 
     // Callbacks
     var onModelLoaded: ((modelUrl: String) -> Unit)? = null
@@ -50,16 +51,10 @@ class GlassesRenderer(private val context: Context) {
     // Reusable arrays to avoid per-frame allocations
     private val tempVec4 = FloatArray(4)
     private val tempMatrix16 = FloatArray(16)
-    private val viewMatrix = FloatArray(16)
-    private val projMatrix = FloatArray(16)
-
-    // Aspect ratio for scale correction
-    private var aspectRatio = 1f
 
     // Kalman filters for smoothing (reduce jitter)
     // Higher processNoise = more responsive, higher measurementNoise = smoother
-    private val positionFilter = KalmanFilter2D(processNoise = 0.1f, measurementNoise = 0.05f)
-    private val scaleFilter = KalmanFilter(processNoise = 0.1f, measurementNoise = 0.05f)
+    private val positionFilter = KalmanFilter3D(processNoise = 0.1f, measurementNoise = 0.05f)
     private val rotationFilter = KalmanFilterQuaternion(processNoise = 0.1f, measurementNoise = 0.05f)
 
     /**
@@ -129,6 +124,17 @@ class GlassesRenderer(private val context: Context) {
         glassesAsset?.let { asset ->
             resourceLoader.loadResources(asset)
             asset.releaseSourceData()
+
+            // Calculate scale factor from bounding box
+            val boundingBox = asset.boundingBox
+            val modelWidth = boundingBox.halfExtent[0] * 2f  // halfExtent[0] is half-width in X
+            if (modelWidth > 0.0001f) {
+                modelScaleFactor = currentWidthMeters / modelWidth
+            } else {
+                modelScaleFactor = 1f
+            }
+            Log.d(TAG, "Model bounding box width: $modelWidth, target width: $currentWidthMeters, scale factor: $modelScaleFactor")
+
             scene.addEntities(asset.entities)
             Log.d(TAG, "Glasses model loaded: ${asset.entities.size} entities")
             hide()
@@ -138,12 +144,10 @@ class GlassesRenderer(private val context: Context) {
     }
 
     /**
-     * Set viewport dimensions for aspect ratio correction.
+     * Set viewport dimensions (no longer needed for world-space positioning).
      */
     fun setViewportSize(width: Int, height: Int) {
-        if (height > 0) {
-            aspectRatio = width.toFloat() / height.toFloat()
-        }
+        // No longer needed - world-space positioning doesn't require aspect ratio correction
     }
 
     /**
@@ -153,52 +157,29 @@ class GlassesRenderer(private val context: Context) {
         glassesAsset?.let { asset ->
             val instance = engine.transformManager.getInstance(asset.root)
 
-            frame.camera.getViewMatrix(viewMatrix, 0)
-            frame.camera.getProjectionMatrix(projMatrix, 0, 0.1f, 100f)
-
-            // Get nose bridge in world and NDC space
+            // Get nose bridge position in world space
             val noseBridgeWorld = getNoseBridgeWorldPos(face)
-            val noseBridgeNdcRaw = projectToNdc(noseBridgeWorld)
 
-            // Calculate depth (distance from camera) for scale calculation
-            val depth = getDepthInViewSpace(noseBridgeWorld)
-
-            // Scale: use depth-based projection to maintain consistent size regardless of head turn
-            // Derived from: scale = pdNdc / pdMeters, where pdNdc = pdMeters * focalLength / depth
-            // Simplifies to: scale = focalLength / depth
-            val focalLength = kotlin.math.abs(projMatrix[0])
-            val scaleRaw = focalLength / depth
-
-            // Apply Kalman filters to smooth position, scale, and rotation
-            val noseBridgeNdc = positionFilter.update(noseBridgeNdcRaw[0], noseBridgeNdcRaw[1])
-            val scale = scaleFilter.update(scaleRaw)
-
-            // Negate Y and Z rotation components to compensate for horizontal camera mirror
+            // Get face rotation from pose (world space)
             val faceQuaternion = face.centerPose.rotationQuaternion
-            val mirroredQuaternion = floatArrayOf(
-                faceQuaternion[0],   // X unchanged
-                -faceQuaternion[1],  // Y negated
-                -faceQuaternion[2],  // Z negated
-                faceQuaternion[3]    // W unchanged
-            )
-            val smoothedQuaternion = rotationFilter.update(mirroredQuaternion)
 
-            // Build transform matrix: rotation * uniform scale
-            val rotationMatrix = MatrixUtils.quaternionToMatrix(smoothedQuaternion)
+            // Apply Kalman filter smoothing
+            val smoothedPosition = positionFilter.update(noseBridgeWorld)
+            val smoothedRotation = rotationFilter.update(faceQuaternion)
+
+            // Build world-space transform matrix
+            // Scale to match target width in meters (computed from bounding box)
+            val scale = modelScaleFactor
+
+            val rotationMatrix = MatrixUtils.quaternionToMatrix(smoothedRotation)
             Matrix.setIdentityM(tempMatrix16, 0)
             Matrix.scaleM(tempMatrix16, 0, scale, scale, scale)
             Matrix.multiplyMM(tempMatrix16, 0, rotationMatrix, 0, tempMatrix16.copyOf(), 0)
 
-            // Apply aspect ratio correction in screen space (after rotation)
-            // Multiplying Y components of each column stretches vertically
-            tempMatrix16[1] *= aspectRatio
-            tempMatrix16[5] *= aspectRatio
-            tempMatrix16[9] *= aspectRatio
-
-            // Set position
-            tempMatrix16[12] = noseBridgeNdc[0]
-            tempMatrix16[13] = noseBridgeNdc[1]
-            tempMatrix16[14] = -0.5f
+            // Set world-space position
+            tempMatrix16[12] = smoothedPosition[0]
+            tempMatrix16[13] = smoothedPosition[1]
+            tempMatrix16[14] = smoothedPosition[2]
 
             engine.transformManager.setTransform(instance, tempMatrix16)
         }
@@ -221,26 +202,6 @@ class GlassesRenderer(private val context: Context) {
     }
 
     /**
-     * Project world position to NDC (Normalized Device Coordinates).
-     */
-    private fun projectToNdc(worldPos: FloatArray): FloatArray {
-        return MatrixUtils.projectToNdc(worldPos, viewMatrix, projMatrix, tempVec4)
-    }
-
-    /**
-     * Get depth (Z distance) from camera in view space.
-     */
-    private fun getDepthInViewSpace(worldPos: FloatArray): Float {
-        tempVec4[0] = worldPos[0]
-        tempVec4[1] = worldPos[1]
-        tempVec4[2] = worldPos[2]
-        tempVec4[3] = 1f
-        val viewPos = FloatArray(4)
-        Matrix.multiplyMV(viewPos, 0, viewMatrix, 0, tempVec4, 0)
-        return kotlin.math.abs(viewPos[2])
-    }
-
-    /**
      * Hide glasses by moving off-screen.
      */
     fun hide() {
@@ -253,7 +214,6 @@ class GlassesRenderer(private val context: Context) {
 
     private fun resetFilters() {
         positionFilter.reset()
-        scaleFilter.reset()
         rotationFilter.reset()
     }
 
