@@ -12,7 +12,6 @@
 #include <gltfio/TextureProvider.h>
 #include <gltfio/materials/uberarchive.h>
 #include <gltfio/FilamentAsset.h>
-#include <filament/Box.h>
 #include <utils/EntityManager.h>
 
 using namespace filament;
@@ -39,11 +38,6 @@ static NSString *const TAG = @"GlassesRenderer";
 
 // Current model info
 @property (nonatomic, copy) NSString *currentModelUrl;
-@property (nonatomic, assign) float currentWidthMeters;
-@property (nonatomic, assign) float modelScaleFactor;  // targetWidth / modelBoundingBoxWidth
-
-// Aspect ratio for scale correction
-@property (nonatomic, assign) float aspectRatio;
 
 // Kalman filters for smoothing
 @property (nonatomic, strong) KalmanFilter3D *positionFilter;
@@ -58,8 +52,6 @@ static NSString *const TAG = @"GlassesRenderer";
     if (self) {
         _loadQueue = dispatch_queue_create("com.nitrovto.glassesloader", DISPATCH_QUEUE_SERIAL);
         _isLoading = NO;
-        _aspectRatio = 1.0f;
-        _modelScaleFactor = 1.0f;
         _positionFilter = [[KalmanFilter3D alloc] initWithProcessNoise:0.1f measurementNoise:0.05f];
         _rotationFilter = [[KalmanFilterQuaternion alloc] initWithProcessNoise:0.1f measurementNoise:0.05f];
     }
@@ -68,12 +60,10 @@ static NSString *const TAG = @"GlassesRenderer";
 
 - (void)setupWithEngine:(Engine *)engine
                   scene:(Scene *)scene
-               modelUrl:(NSString *)modelUrl
-            widthMeters:(float)widthMeters {
+               modelUrl:(NSString *)modelUrl {
     _engine = engine;
     _scene = scene;
     _currentModelUrl = modelUrl;
-    _currentWidthMeters = widthMeters;
 
     // Setup GLTF loader
     _materialProvider = createUbershaderProvider(engine, UBERARCHIVE_DEFAULT_DATA, UBERARCHIVE_DEFAULT_SIZE);
@@ -142,17 +132,6 @@ static NSString *const TAG = @"GlassesRenderer";
         _resourceLoader->loadResources(_glassesAsset);
         _glassesAsset->releaseSourceData();
 
-        // Calculate scale factor from bounding box
-        filament::Aabb boundingBox = _glassesAsset->getBoundingBox();
-        float modelWidth = boundingBox.max.x - boundingBox.min.x;
-        if (modelWidth > 0.0001f) {
-            _modelScaleFactor = _currentWidthMeters / modelWidth;
-        } else {
-            _modelScaleFactor = 1.0f;
-        }
-        NSLog(@"%@: Model bounding box width: %f, target width: %f, scale factor: %f",
-              TAG, modelWidth, _currentWidthMeters, _modelScaleFactor);
-
         // Add all entities to scene
         const Entity *entities = _glassesAsset->getEntities();
         size_t entityCount = _glassesAsset->getEntityCount();
@@ -168,9 +147,7 @@ static NSString *const TAG = @"GlassesRenderer";
 }
 
 - (void)setViewportSizeWithWidth:(int)width height:(int)height {
-    if (height > 0) {
-        _aspectRatio = (float)width / (float)height;
-    }
+    // No longer needed - models are in real-world meters
 }
 
 - (void)updateTransformWithFace:(ARFaceAnchor *)face frame:(ARFrame *)frame {
@@ -189,32 +166,19 @@ static NSString *const TAG = @"GlassesRenderer";
     simd_float3 smoothedPosition = [_positionFilter updateWithX:noseBridgeWorld.x y:noseBridgeWorld.y z:noseBridgeWorld.z];
     simd_quatf smoothedRotation = [_rotationFilter updateWithQuaternion:faceRotationWorld];
 
-    // Build world-space transform matrix
-    // Scale to match target width in meters (computed from bounding box)
-    float scale = _modelScaleFactor;
-
+    // Build world-space transform matrix (no scaling - models are in real-world meters)
     simd_float4x4 rotationMatrix = [MatrixUtils quaternionToMatrix:smoothedRotation];
 
-    simd_float4x4 transformMatrix = matrix_identity_float4x4;
-
-    // Apply uniform scale
-    transformMatrix.columns[0] *= scale;
-    transformMatrix.columns[1] *= scale;
-    transformMatrix.columns[2] *= scale;
-
-    // Multiply with rotation
-    transformMatrix = simd_mul(rotationMatrix, transformMatrix);
-
     // Set world-space position
-    transformMatrix.columns[3].x = smoothedPosition.x;
-    transformMatrix.columns[3].y = smoothedPosition.y;
-    transformMatrix.columns[3].z = smoothedPosition.z;
+    rotationMatrix.columns[3].x = smoothedPosition.x;
+    rotationMatrix.columns[3].y = smoothedPosition.y;
+    rotationMatrix.columns[3].z = smoothedPosition.z;
 
     // Convert simd matrix to filament matrix
     filament::math::mat4f filamentTransform;
     for (int col = 0; col < 4; col++) {
         for (int row = 0; row < 4; row++) {
-            filamentTransform[col][row] = transformMatrix.columns[col][row];
+            filamentTransform[col][row] = rotationMatrix.columns[col][row];
         }
     }
 
@@ -270,7 +234,7 @@ static NSString *const TAG = @"GlassesRenderer";
     [_rotationFilter reset];
 }
 
-- (void)switchModelWithUrl:(NSString *)modelUrl widthMeters:(float)widthMeters {
+- (void)switchModelWithUrl:(NSString *)modelUrl {
     if (!_scene || !_assetLoader) return;
 
     // Remove current model from scene
@@ -288,7 +252,6 @@ static NSString *const TAG = @"GlassesRenderer";
 
     // Update current model info
     _currentModelUrl = modelUrl;
-    _currentWidthMeters = widthMeters;
 
     // Load new model
     [self loadModelFromUrl:modelUrl];

@@ -30,12 +30,6 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
         }
     }
 
-    public var modelWidthMeters: Double = 0.0 {
-        didSet {
-            nitroVtoView.setModelWidthMeters(Float(modelWidthMeters))
-        }
-    }
-
     public var isActive: Bool = true {
         didSet {
             nitroVtoView.setIsActive(isActive)
@@ -50,8 +44,8 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
 
     // MARK: - Methods implementation
 
-    public func switchModel(modelUrl: String, widthMeters: Double) throws {
-        nitroVtoView.switchModel(modelUrl: modelUrl, widthMeters: Float(widthMeters))
+    public func switchModel(modelUrl: String) throws {
+        nitroVtoView.switchModel(modelUrl: modelUrl)
     }
 
     public func resetSession() throws {

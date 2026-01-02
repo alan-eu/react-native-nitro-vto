@@ -10,15 +10,10 @@ import type {
 export interface NitroVtoViewProps extends HybridViewProps {
   /**
    * The URL to the glasses model file (GLB format).
+   * Models should be authored in meters at real-world size.
    * Example: "https://example.com/glasses.glb"
    */
   modelUrl: string;
-
-  /**
-   * The width of the glasses frame in meters.
-   * Used for proper scaling on the face.
-   */
-  modelWidthMeters: number;
 
   /**
    * Whether the AR session is active.
@@ -40,9 +35,8 @@ export interface NitroVtoViewMethods extends HybridViewMethods {
   /**
    * Switch to a different glasses model at runtime.
    * @param modelUrl - URL to the new model file (GLB format)
-   * @param widthMeters - Width of the new model in meters
    */
-  switchModel(modelUrl: string, widthMeters: number): void;
+  switchModel(modelUrl: string): void;
 
   /**
    * Reset the AR session and face tracking.

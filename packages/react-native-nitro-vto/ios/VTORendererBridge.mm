@@ -48,7 +48,6 @@ static NSString *const TAG = @"VTORenderer";
 
 // Model configuration
 @property (nonatomic, copy) NSString *modelUrl;
-@property (nonatomic, assign) float modelWidthMeters;
 
 @end
 
@@ -67,9 +66,8 @@ static NSString *const TAG = @"VTORenderer";
     return self;
 }
 
-- (void)initializeWithModelUrl:(NSString *)modelUrl widthMeters:(float)widthMeters {
+- (void)initializeWithModelUrl:(NSString *)modelUrl {
     _modelUrl = modelUrl;
-    _modelWidthMeters = widthMeters;
 
     // Initialize Filament engine with Metal backend
     // In Filament 1.67.0, the Engine creates and manages its own Metal backend
@@ -116,7 +114,7 @@ static NSString *const TAG = @"VTORenderer";
             weakSelf.onModelLoaded(url);
         }
     };
-    [_glassesRenderer setupWithEngine:_engine scene:_scene modelUrl:modelUrl widthMeters:widthMeters];
+    [_glassesRenderer setupWithEngine:_engine scene:_scene modelUrl:modelUrl];
 
     _initialized = YES;
     NSLog(@"%@: Filament renderer initialized", TAG);
@@ -175,10 +173,9 @@ static NSString *const TAG = @"VTORenderer";
     // Nothing specific needed for pause
 }
 
-- (void)switchModelWithUrl:(NSString *)modelUrl widthMeters:(float)widthMeters {
+- (void)switchModelWithUrl:(NSString *)modelUrl {
     _modelUrl = modelUrl;
-    _modelWidthMeters = widthMeters;
-    [_glassesRenderer switchModelWithUrl:modelUrl widthMeters:widthMeters];
+    [_glassesRenderer switchModelWithUrl:modelUrl];
 }
 
 - (void)resetSession {

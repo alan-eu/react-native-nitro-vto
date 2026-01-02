@@ -10,7 +10,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Renderer for glasses model with face tracking transform.
- * Handles GLTF loading and NDC-space positioning based on ARKit face mesh.
+ * Handles GLTF loading and world-space positioning based on ARKit face mesh.
  */
 @interface GlassesRenderer : NSObject
 
@@ -20,10 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Setup the glasses renderer with Filament engine and scene
 - (void)setupWithEngine:(filament::Engine *)engine
                   scene:(filament::Scene *)scene
-               modelUrl:(NSString *)modelUrl
-            widthMeters:(float)widthMeters;
+               modelUrl:(NSString *)modelUrl;
 
-/// Set viewport size for aspect ratio correction
+/// Set viewport size (no longer needed for world-space positioning)
 - (void)setViewportSizeWithWidth:(int)width height:(int)height;
 
 /// Update glasses transform based on detected face
@@ -33,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)hide;
 
 /// Switch to a different glasses model
-- (void)switchModelWithUrl:(NSString *)modelUrl widthMeters:(float)widthMeters;
+- (void)switchModelWithUrl:(NSString *)modelUrl;
 
 /// Cleanup and destroy resources
 - (void)destroy;

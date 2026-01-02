@@ -29,7 +29,6 @@ class NitroVtoView: UIView {
 
     // Configuration
     private var modelUrl: String = ""
-    private var modelWidthMeters: Float = 0
     private var isActiveState: Bool = true
 
     // Callbacks
@@ -75,16 +74,7 @@ class NitroVtoView: UIView {
         if modelUrl != url {
             modelUrl = url
             if isInitialized {
-                vtoRenderer?.switchModel(withUrl: modelUrl, widthMeters: modelWidthMeters)
-            }
-        }
-    }
-
-    func setModelWidthMeters(_ width: Float) {
-        if modelWidthMeters != width {
-            modelWidthMeters = width
-            if isInitialized {
-                vtoRenderer?.switchModel(withUrl: modelUrl, widthMeters: modelWidthMeters)
+                vtoRenderer?.switchModel(withUrl: modelUrl)
             }
         }
     }
@@ -100,10 +90,9 @@ class NitroVtoView: UIView {
         }
     }
 
-    func switchModel(modelUrl: String, widthMeters: Float) {
+    func switchModel(modelUrl: String) {
         self.modelUrl = modelUrl
-        self.modelWidthMeters = widthMeters
-        vtoRenderer?.switchModel(withUrl: modelUrl, widthMeters: widthMeters)
+        vtoRenderer?.switchModel(withUrl: modelUrl)
     }
 
     func resetSession() {
@@ -126,7 +115,7 @@ class NitroVtoView: UIView {
         // Create and initialize renderer
         vtoRenderer = VTORendererBridge(metalView: mtkView)
         vtoRenderer?.onModelLoaded = onModelLoaded
-        vtoRenderer?.initialize(withModelUrl: modelUrl, widthMeters: modelWidthMeters)
+        vtoRenderer?.initialize(withModelUrl: modelUrl)
 
         isInitialized = true
         print("\(NitroVtoView.TAG): NitroVtoView initialized")
