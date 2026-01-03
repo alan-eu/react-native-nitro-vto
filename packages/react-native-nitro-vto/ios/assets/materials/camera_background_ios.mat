@@ -2,6 +2,8 @@ material {
     name : camera_feed,
     shadingModel : unlit,
     vertexDomain : device,
+    depthCulling : false,
+    depthWrite : false,
     requires : [
         uv0
     ],

@@ -12,6 +12,7 @@
 
 #import "CameraTextureRenderer.h"
 #import "EnvironmentLightingRenderer.h"
+#import "FaceOcclusionRenderer.h"
 #import "GlassesRenderer.h"
 
 using namespace filament;
@@ -36,6 +37,7 @@ static NSString *const TAG = @"VTORenderer";
 // Sub-renderers
 @property (nonatomic, strong) CameraTextureRenderer *cameraTextureRenderer;
 @property (nonatomic, strong) EnvironmentLightingRenderer *environmentLightingRenderer;
+@property (nonatomic, strong) FaceOcclusionRenderer *faceOcclusionRenderer;
 @property (nonatomic, strong) GlassesRenderer *glassesRenderer;
 
 // ARKit
@@ -105,6 +107,10 @@ static NSString *const TAG = @"VTORenderer";
     // Setup camera background
     _cameraTextureRenderer = [[CameraTextureRenderer alloc] init];
     [_cameraTextureRenderer setupWithEngine:_engine scene:_scene];
+
+    // Setup face occlusion (renders face mesh to depth buffer for occlusion)
+    _faceOcclusionRenderer = [[FaceOcclusionRenderer alloc] init];
+    [_faceOcclusionRenderer setupWithEngine:_engine scene:_scene];
 
     // Setup glasses renderer
     _glassesRenderer = [[GlassesRenderer alloc] init];
@@ -195,10 +201,12 @@ static NSString *const TAG = @"VTORenderer";
         [_environmentLightingRenderer updateFromARKitWithLightEstimate:frame.lightEstimate];
     }
 
-    // Update glasses transform if face detected
+    // Update face occlusion and glasses transform if face detected
     if (faces.count > 0) {
+        [_faceOcclusionRenderer updateWithFace:faces[0]];
         [_glassesRenderer updateTransformWithFace:faces[0] frame:frame];
     } else {
+        [_faceOcclusionRenderer hide];
         [_glassesRenderer hide];
     }
 
@@ -217,6 +225,7 @@ static NSString *const TAG = @"VTORenderer";
     if (!_engine) return;
 
     [_glassesRenderer destroy];
+    [_faceOcclusionRenderer destroy];
     [_cameraTextureRenderer destroy];
     [_environmentLightingRenderer destroy];
 
