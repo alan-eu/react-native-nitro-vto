@@ -22,7 +22,6 @@ material {
 
 vertex {
     void materialVertex(inout MaterialVertexInputs material) {
-        // This applies the transform we received from displayTransformForOrientation.
         material.uv0 = (materialParams.textureTransform * float3(material.uv0, 1.0)).rg;
     }
 }
@@ -30,6 +29,7 @@ vertex {
 fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
-        material.baseColor.rgb = texture(materialParams_cameraFeed, getUV0()).rgb;
+        vec2 uv = getUV0();
+        material.baseColor = texture(materialParams_cameraFeed, uv);
     }
 }
