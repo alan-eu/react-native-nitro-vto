@@ -150,10 +150,16 @@ class GlassesRenderer(private val context: Context) {
             val rotationMatrix = MatrixUtils.quaternionToMatrix(smoothedRotation)
             System.arraycopy(rotationMatrix, 0, tempMatrix16, 0, 16)
 
-            // Set world-space position
-            tempMatrix16[12] = smoothedPosition[0]
-            tempMatrix16[13] = smoothedPosition[1]
-            tempMatrix16[14] = smoothedPosition[2]
+            // Offset glasses slightly forward (along face's Z axis) to avoid face occlusion clipping
+            val forwardOffset = 0.0015f  // 1.5mm forward
+            val forwardX = rotationMatrix[8]   // Z axis X component (column 2, row 0)
+            val forwardY = rotationMatrix[9]   // Z axis Y component (column 2, row 1)
+            val forwardZ = rotationMatrix[10]  // Z axis Z component (column 2, row 2)
+
+            // Set world-space position with forward offset
+            tempMatrix16[12] = smoothedPosition[0] + forwardX * forwardOffset
+            tempMatrix16[13] = smoothedPosition[1] + forwardY * forwardOffset
+            tempMatrix16[14] = smoothedPosition[2] + forwardZ * forwardOffset
 
             engine.transformManager.setTransform(instance, tempMatrix16)
         }

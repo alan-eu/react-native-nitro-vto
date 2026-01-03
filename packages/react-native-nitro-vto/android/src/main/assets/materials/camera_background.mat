@@ -1,17 +1,17 @@
 material {
-    name : "Camera Background",
+    name : camera_feed,
     shadingModel : unlit,
+    vertexDomain : device,
     depthWrite : false,
     depthCulling : false,
-    doubleSided : true,
+    requires : [
+        uv0
+    ],
     parameters : [
         {
             type : samplerExternal,
             name : cameraTexture
         }
-    ],
-    requires : [
-        uv0
     ]
 }
 

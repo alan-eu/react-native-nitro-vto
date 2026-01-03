@@ -61,6 +61,9 @@ class VTORenderer(private val context: Context) {
     // Glasses renderer
     private lateinit var glassesRenderer: GlassesRenderer
 
+    // Face occlusion renderer
+    private lateinit var faceOcclusionRenderer: FaceOcclusionRenderer
+
     // ARCore
     var session: Session? = null
 
@@ -158,6 +161,10 @@ class VTORenderer(private val context: Context) {
         // Setup camera background
         cameraTextureRenderer.setup(engine, scene)
 
+        // Setup face occlusion renderer
+        faceOcclusionRenderer = FaceOcclusionRenderer(context)
+        faceOcclusionRenderer.setup(engine, scene)
+
         // Setup glasses renderer
         glassesRenderer = GlassesRenderer(context)
         glassesRenderer.onModelLoaded = onModelLoaded
@@ -207,6 +214,7 @@ class VTORenderer(private val context: Context) {
     fun resetSession() {
         cameraTextureNameSet = false
         cameraTextureRenderer.resetUvTransform()
+        faceOcclusionRenderer.hide()
         glassesRenderer.hide()
     }
 
@@ -258,17 +266,17 @@ class VTORenderer(private val context: Context) {
                 cameraTextureRenderer.updateUvTransform(frame)
             }
 
-            // Update camera background transform to compensate for perspective camera
-            cameraTextureRenderer.updateTransform(frame)
-
             // Get tracked faces
             val faces = session.getAllTrackables(AugmentedFace::class.java)
                 .filter { it.trackingState == TrackingState.TRACKING }
 
-            // Update glasses transform if face detected
+            // Update face occlusion and glasses transform if face detected
             if (faces.isNotEmpty()) {
-                glassesRenderer.updateTransform(faces.first(), frame)
+                val face = faces.first()
+                faceOcclusionRenderer.update(face)
+                glassesRenderer.updateTransform(face, frame)
             } else {
+                faceOcclusionRenderer.hide()
                 glassesRenderer.hide()
             }
 
@@ -289,6 +297,7 @@ class VTORenderer(private val context: Context) {
         if (!initialized) return
 
         glassesRenderer.destroy()
+        faceOcclusionRenderer.destroy()
         cameraTextureRenderer.destroy()
         environmentLightingRenderer.destroy()
 
