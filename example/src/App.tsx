@@ -8,7 +8,10 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { NitroVtoView } from "@alaneu/react-native-nitro-vto";
+import {
+  NitroVtoView,
+  type OcclusionSettings,
+} from "@alaneu/react-native-nitro-vto";
 import { callback } from "react-native-nitro-modules";
 
 const MODELS = [
@@ -20,6 +23,10 @@ function App(): React.JSX.Element {
   const [hasPermission, setHasPermission] = useState(false);
   const [currentModelIndex, setCurrentModelIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [faceMeshOcclusionEnabled, setFaceMeshOcclusionEnabled] =
+    useState(true);
+  const [backPlaneOcclusionEnabled, setBackPlaneOcclusionEnabled] =
+    useState(true);
 
   const requestCameraPermission = useCallback(async () => {
     if (Platform.OS === "android") {
@@ -69,6 +76,14 @@ function App(): React.JSX.Element {
     return () => clearTimeout(timeout);
   }, []);
 
+  const handleFaceMeshOcclusion = useCallback(() => {
+    setFaceMeshOcclusionEnabled((prev) => !prev);
+  }, []);
+
+  const handleBackPlaneOcclusion = useCallback(() => {
+    setBackPlaneOcclusionEnabled((prev) => !prev);
+  }, []);
+
   const currentModel = MODELS[currentModelIndex];
 
   if (!hasPermission) {
@@ -91,6 +106,10 @@ function App(): React.JSX.Element {
         style={styles.vtoView}
         modelUrl={currentModel}
         isActive={true}
+        occlusion={{
+          faceMesh: faceMeshOcclusionEnabled,
+          backPlane: backPlaneOcclusionEnabled,
+        }}
         onModelLoaded={callback(handleModelLoaded)}
       />
       {isLoading && (
@@ -105,6 +124,26 @@ function App(): React.JSX.Element {
           disabled={isLoading}
         >
           <Text style={styles.buttonText}>Next Model</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={handleFaceMeshOcclusion}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            Face Mesh Occlusion{" "}
+            {faceMeshOcclusionEnabled ? "Enabled" : "Disabled"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={handleBackPlaneOcclusion}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            Back Plane Occlusion{" "}
+            {backPlaneOcclusionEnabled ? "Enabled" : "Disabled"}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -125,6 +164,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: "center",
+    gap: 10,
   },
   button: {
     backgroundColor: "#007AFF",

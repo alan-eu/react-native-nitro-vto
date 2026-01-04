@@ -13,11 +13,13 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
-
+// Forward declaration of `OcclusionSettings` to properly resolve imports.
+namespace margelo::nitro::nitrovto { struct OcclusionSettings; }
 
 #include <string>
 #include <functional>
 #include <optional>
+#include "OcclusionSettings.hpp"
 
 namespace margelo::nitro::nitrovto {
 
@@ -52,6 +54,8 @@ namespace margelo::nitro::nitrovto {
       virtual void setIsActive(bool isActive) = 0;
       virtual std::optional<std::function<void(const std::string& /* modelUrl */)>> getOnModelLoaded() = 0;
       virtual void setOnModelLoaded(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onModelLoaded) = 0;
+      virtual std::optional<OcclusionSettings> getOcclusion() = 0;
+      virtual void setOcclusion(const std::optional<OcclusionSettings>& occlusion) = 0;
 
     public:
       // Methods

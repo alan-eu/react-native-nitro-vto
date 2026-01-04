@@ -67,6 +67,12 @@ abstract class HybridNitroVtoViewSpec: HybridView() {
     set(value) {
       onModelLoaded = value?.let { it }
     }
+  
+  @get:DoNotStrip
+  @get:Keep
+  @set:DoNotStrip
+  @set:Keep
+  abstract var occlusion: OcclusionSettings?
 
   // Methods
   @DoNotStrip

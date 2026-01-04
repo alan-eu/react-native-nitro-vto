@@ -47,6 +47,10 @@ static const size_t MAX_INDICES = 8000;
 @property (nonatomic, assign) size_t currentVertexCount;
 @property (nonatomic, assign) size_t currentIndexCount;
 
+// Occlusion settings (both enabled by default)
+@property (nonatomic, assign) BOOL faceMeshEnabled;
+@property (nonatomic, assign) BOOL backPlaneEnabled;
+
 // Reusable buffer for vertex data
 @property (nonatomic, assign) float3 *vertexData;
 
@@ -65,6 +69,8 @@ static const size_t MAX_INDICES = 8000;
         _backPlaneVisible = NO;
         _currentVertexCount = 0;
         _currentIndexCount = 0;
+        _faceMeshEnabled = YES;
+        _backPlaneEnabled = YES;
         _vertexData = (float3 *)malloc(MAX_VERTICES * sizeof(float3));
         _backPlaneVertices = (float3 *)malloc(4 * sizeof(float3));
     }
@@ -198,6 +204,25 @@ static const size_t MAX_INDICES = 8000;
 
 }
 
+- (void)setOcclusionWithFaceMesh:(BOOL)faceMesh backPlane:(BOOL)backPlane {
+    // If face mesh is being disabled, remove from scene
+    if (_faceMeshEnabled && !faceMesh && _isVisible) {
+        _scene->remove(_faceMeshEntity);
+        _isVisible = NO;
+    }
+
+    // If back plane is being disabled, remove from scene
+    if (_backPlaneEnabled && !backPlane && _backPlaneVisible) {
+        _scene->remove(_backPlaneEntity);
+        _backPlaneVisible = NO;
+    }
+
+    _faceMeshEnabled = faceMesh;
+    _backPlaneEnabled = backPlane;
+
+    NSLog(@"%@: Occlusion settings updated: faceMesh=%d, backPlane=%d", TAG, faceMesh, backPlane);
+}
+
 - (void)updateWithFace:(ARFaceAnchor *)face {
     if (!_isSetup || !_engine) return;
 
@@ -280,13 +305,14 @@ static const size_t MAX_INDICES = 8000;
 
     transformManager.setTransform(backPlaneInstance, backPlaneTransform);
 
-    // Add to scene if not already visible
-    if (!_isVisible) {
+    // Add face mesh to scene if enabled and not already visible
+    if (_faceMeshEnabled && !_isVisible) {
         _scene->addEntity(_faceMeshEntity);
         _isVisible = YES;
     }
 
-    if (!_backPlaneVisible) {
+    // Add back plane to scene if enabled and not already visible
+    if (_backPlaneEnabled && !_backPlaneVisible) {
         _scene->addEntity(_backPlaneEntity);
         _backPlaneVisible = YES;
     }

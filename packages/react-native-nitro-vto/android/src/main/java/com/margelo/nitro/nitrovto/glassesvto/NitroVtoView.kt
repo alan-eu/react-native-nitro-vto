@@ -43,6 +43,7 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     // Configuration
     private var modelUrl: String = ""
     private var isActive: Boolean = true
+    private var occlusionSettings: OcclusionSettings? = null
 
     // Callbacks
     var onModelLoaded: ((modelUrl: String) -> Unit)? = null
@@ -83,6 +84,14 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
                 pause()
             }
         }
+    }
+
+    /**
+     * Set occlusion settings
+     */
+    fun setOcclusion(settings: OcclusionSettings?) {
+        occlusionSettings = settings
+        vtoRenderer?.setOcclusion(settings)
     }
 
     /**

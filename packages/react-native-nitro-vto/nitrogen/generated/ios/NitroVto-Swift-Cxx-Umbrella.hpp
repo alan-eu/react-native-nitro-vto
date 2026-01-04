@@ -10,9 +10,12 @@
 // Forward declarations of C++ defined types
 // Forward declaration of `HybridNitroVtoViewSpec` to properly resolve imports.
 namespace margelo::nitro::nitrovto { class HybridNitroVtoViewSpec; }
+// Forward declaration of `OcclusionSettings` to properly resolve imports.
+namespace margelo::nitro::nitrovto { struct OcclusionSettings; }
 
 // Include C++ defined types
 #include "HybridNitroVtoViewSpec.hpp"
+#include "OcclusionSettings.hpp"
 #include <NitroModules/Result.hpp>
 #include <exception>
 #include <functional>

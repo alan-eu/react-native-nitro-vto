@@ -86,6 +86,11 @@ using namespace margelo::nitro::nitrovto::views;
     swiftPart.setOnModelLoaded(newViewProps.onModelLoaded.value);
     newViewProps.onModelLoaded.isDirty = false;
   }
+  // occlusion: optional
+  if (newViewProps.occlusion.isDirty) {
+    swiftPart.setOcclusion(newViewProps.occlusion.value);
+    newViewProps.occlusion.isDirty = false;
+  }
 
   swiftPart.afterUpdate();
 

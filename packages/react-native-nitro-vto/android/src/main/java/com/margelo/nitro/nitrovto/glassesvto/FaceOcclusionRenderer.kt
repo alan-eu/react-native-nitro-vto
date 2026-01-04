@@ -52,6 +52,10 @@ class FaceOcclusionRenderer(private val context: Context) {
     private val tempMatrix16 = FloatArray(16)
     private val backPlaneMatrix16 = FloatArray(16)
 
+    // Occlusion settings (both enabled by default)
+    private var faceMeshEnabled = true
+    private var backPlaneEnabled = true
+
     /**
      * Setup the face occlusion renderer with Filament engine and scene.
      */
@@ -100,6 +104,31 @@ class FaceOcclusionRenderer(private val context: Context) {
         createBackPlane()
 
         Log.d(TAG, "Face occlusion renderer setup complete")
+    }
+
+    /**
+     * Set occlusion settings to enable/disable face mesh and back plane.
+     */
+    fun setOcclusion(settings: OcclusionSettings?) {
+        val newFaceMeshEnabled = settings?.faceMesh ?: true
+        val newBackPlaneEnabled = settings?.backPlane ?: true
+
+        // If face mesh is being disabled, remove from scene
+        if (faceMeshEnabled && !newFaceMeshEnabled && entityInScene) {
+            scene.removeEntity(faceMeshEntity)
+            entityInScene = false
+        }
+
+        // If back plane is being disabled, remove from scene
+        if (backPlaneEnabled && !newBackPlaneEnabled && backPlaneInScene) {
+            scene.removeEntity(backPlaneEntity)
+            backPlaneInScene = false
+        }
+
+        faceMeshEnabled = newFaceMeshEnabled
+        backPlaneEnabled = newBackPlaneEnabled
+
+        Log.d(TAG, "Occlusion settings updated: faceMesh=$faceMeshEnabled, backPlane=$backPlaneEnabled")
     }
 
     /**
@@ -198,8 +227,8 @@ class FaceOcclusionRenderer(private val context: Context) {
             indexBufferInitialized = true
         }
 
-        // Create renderable if entity not in scene yet
-        if (!entityInScene) {
+        // Create renderable if entity not in scene yet (only if face mesh is enabled)
+        if (!entityInScene && faceMeshEnabled) {
             // Create bounding box (approximate head size)
             val boundingBox = Box(0f, 0f, 0f, 0.15f, 0.15f, 0.15f)
 
@@ -249,13 +278,16 @@ class FaceOcclusionRenderer(private val context: Context) {
         backPlaneMatrix16[13] += offsetY  // translation Y
         backPlaneMatrix16[14] += offsetZ  // translation Z
 
-        val backPlaneInstance = engine.transformManager.getInstance(backPlaneEntity)
-        engine.transformManager.setTransform(backPlaneInstance, backPlaneMatrix16)
+        // Only update back plane if enabled
+        if (backPlaneEnabled) {
+            val backPlaneInstance = engine.transformManager.getInstance(backPlaneEntity)
+            engine.transformManager.setTransform(backPlaneInstance, backPlaneMatrix16)
 
-        // Add back plane to scene
-        if (!backPlaneInScene) {
-            scene.addEntity(backPlaneEntity)
-            backPlaneInScene = true
+            // Add back plane to scene
+            if (!backPlaneInScene) {
+                scene.addEntity(backPlaneEntity)
+                backPlaneInScene = true
+            }
         }
     }
 

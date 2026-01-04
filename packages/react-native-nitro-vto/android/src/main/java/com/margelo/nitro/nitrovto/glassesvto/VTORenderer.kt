@@ -218,6 +218,15 @@ class VTORenderer(private val context: Context) {
         glassesRenderer.hide()
     }
 
+    /**
+     * Set occlusion settings
+     */
+    fun setOcclusion(settings: OcclusionSettings?) {
+        if (initialized) {
+            faceOcclusionRenderer.setOcclusion(settings)
+        }
+    }
+
     private fun doFrame() {
         if (!initialized) return
 

@@ -39,6 +39,12 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.onModelLoaded = value
         }
 
+    override var occlusion: OcclusionSettings? = null
+        set(value) {
+            field = value
+            nitroVtoView.setOcclusion(value)
+        }
+
     // Methods implementation
     override fun switchModel(modelUrl: String) {
         nitroVtoView.switchModel(modelUrl)
