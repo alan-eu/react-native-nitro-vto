@@ -10,6 +10,7 @@ A React Native library for glasses virtual try-on using ARCore (Android) and ARK
 - Runtime model switching
 - Callback when model is loaded
 - World-space positioning with proper perspective projection
+- Face occlusion support (glasses appear behind face when appropriate)
 
 ## Requirements
 
@@ -52,6 +53,7 @@ function App() {
         style={{ flex: 1 }}
         modelUrl="https://example.com/glasses.glb"
         isActive={true}
+        occlusion={{ faceMesh: true, backPlane: true }}
         onModelLoaded={callback((url) => console.log("Model loaded:", url))}
       />
     </View>
@@ -69,8 +71,16 @@ function App() {
 | --------------- | ---------------------------- | ---------------------------------------------------------------------------------------------- |
 | `modelUrl`      | `string`                     | URL to the GLB model file. Models should be authored in meters at real-world size.            |
 | `isActive`      | `boolean`                    | Whether the AR session is active                                                               |
+| `occlusion`     | `OcclusionSettings`          | Optional. Controls face occlusion behavior. See below.                                         |
 | `onModelLoaded` | `(modelUrl: string) => void` | Callback when model loading completes (wrap with `callback()`)                                 |
 | `style`         | `ViewStyle`                  | Standard React Native view styles                                                              |
+
+#### OcclusionSettings
+
+| Property    | Type      | Default | Description                                                                 |
+| ----------- | --------- | ------- | --------------------------------------------------------------------------- |
+| `faceMesh`  | `boolean` | `true`  | Enable face mesh occlusion (glasses appear behind face edges)               |
+| `backPlane` | `boolean` | `true`  | Enable back plane occlusion (clips glasses temples extending behind head)   |
 
 ### Methods
 

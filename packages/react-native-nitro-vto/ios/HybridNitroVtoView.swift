@@ -42,6 +42,12 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
         }
     }
 
+    public var occlusion: OcclusionSettings? = nil {
+        didSet {
+            nitroVtoView.setOcclusion(occlusion)
+        }
+    }
+
     // MARK: - Methods implementation
 
     public func switchModel(modelUrl: String) throws {

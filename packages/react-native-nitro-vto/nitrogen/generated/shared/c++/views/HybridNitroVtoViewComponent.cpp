@@ -55,6 +55,16 @@ namespace margelo::nitro::nitrovto::views {
         throw std::runtime_error(std::string("NitroVtoView.onModelLoaded: ") + exc.what());
       }
     }()),
+    occlusion([&]() -> CachedProp<std::optional<OcclusionSettings>> {
+      try {
+        const react::RawValue* rawValue = rawProps.at("occlusion", nullptr, nullptr);
+        if (rawValue == nullptr) return sourceProps.occlusion;
+        const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
+        return CachedProp<std::optional<OcclusionSettings>>::fromRawValue(*runtime, value, sourceProps.occlusion);
+      } catch (const std::exception& exc) {
+        throw std::runtime_error(std::string("NitroVtoView.occlusion: ") + exc.what());
+      }
+    }()),
     hybridRef([&]() -> CachedProp<std::optional<std::function<void(const std::shared_ptr<HybridNitroVtoViewSpec>& /* ref */)>>> {
       try {
         const react::RawValue* rawValue = rawProps.at("hybridRef", nullptr, nullptr);
@@ -71,6 +81,7 @@ namespace margelo::nitro::nitrovto::views {
     modelUrl(other.modelUrl),
     isActive(other.isActive),
     onModelLoaded(other.onModelLoaded),
+    occlusion(other.occlusion),
     hybridRef(other.hybridRef) { }
 
   bool HybridNitroVtoViewProps::filterObjectKeys(const std::string& propName) {
@@ -78,6 +89,7 @@ namespace margelo::nitro::nitrovto::views {
       case hashString("modelUrl"): return true;
       case hashString("isActive"): return true;
       case hashString("onModelLoaded"): return true;
+      case hashString("occlusion"): return true;
       case hashString("hybridRef"): return true;
       default: return false;
     }

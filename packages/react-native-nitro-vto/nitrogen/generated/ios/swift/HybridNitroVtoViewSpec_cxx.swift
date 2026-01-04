@@ -167,6 +167,23 @@ open class HybridNitroVtoViewSpec_cxx {
       }()
     }
   }
+  
+  public final var occlusion: bridge.std__optional_OcclusionSettings_ {
+    @inline(__always)
+    get {
+      return { () -> bridge.std__optional_OcclusionSettings_ in
+        if let __unwrappedValue = self.__implementation.occlusion {
+          return bridge.create_std__optional_OcclusionSettings_(__unwrappedValue)
+        } else {
+          return .init()
+        }
+      }()
+    }
+    @inline(__always)
+    set {
+      self.__implementation.occlusion = newValue.value
+    }
+  }
 
   // Methods
   @inline(__always)

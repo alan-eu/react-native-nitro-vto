@@ -56,6 +56,8 @@ namespace margelo::nitro::nitrovto {
     void setIsActive(bool isActive) override;
     std::optional<std::function<void(const std::string& /* modelUrl */)>> getOnModelLoaded() override;
     void setOnModelLoaded(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onModelLoaded) override;
+    std::optional<OcclusionSettings> getOcclusion() override;
+    void setOcclusion(const std::optional<OcclusionSettings>& occlusion) override;
 
   public:
     // Methods

@@ -103,6 +103,12 @@ class NitroVtoView: UIView {
         }
     }
 
+    func setOcclusion(_ settings: OcclusionSettings?) {
+        let faceMesh = settings?.faceMesh ?? true
+        let backPlane = settings?.backPlane ?? true
+        vtoRenderer?.setOcclusionWithFaceMesh(faceMesh, backPlane: backPlane)
+    }
+
     // MARK: - Initialization
 
     private func initialize() {

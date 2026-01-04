@@ -8,8 +8,8 @@ import android.opengl.EGLDisplay
 import android.opengl.EGLSurface
 import android.opengl.GLES11Ext
 import android.opengl.GLES30
-import android.opengl.Matrix
 import android.util.Log
+import com.google.android.filament.Box
 import com.google.android.filament.Engine
 import com.google.android.filament.Entity
 import com.google.android.filament.EntityManager
@@ -54,12 +54,6 @@ class CameraTextureRenderer(private val context: Context) {
     // Reference to engine and scene (set during setup)
     private lateinit var engine: Engine
     private lateinit var scene: Scene
-
-    // Reusable matrices for transform calculation
-    private val viewMatrix = FloatArray(16)
-    private val projMatrix = FloatArray(16)
-    private val viewProjMatrix = FloatArray(16)
-    private val invViewProjMatrix = FloatArray(16)
 
     /**
      * Returns the EGL context for sharing with Filament engine
@@ -207,24 +201,6 @@ class CameraTextureRenderer(private val context: Context) {
     }
 
     /**
-     * Update background transform to compensate for perspective camera.
-     * Sets transform to inverse(viewProj) so after MVP, vertices end up at original NDC positions.
-     */
-    fun updateTransform(frame: Frame) {
-        // Get ARCore camera matrices
-        frame.camera.getViewMatrix(viewMatrix, 0)
-        frame.camera.getProjectionMatrix(projMatrix, 0, 0.01f, 100f)
-
-        // Compute viewProj and its inverse
-        Matrix.multiplyMM(viewProjMatrix, 0, projMatrix, 0, viewMatrix, 0)
-        Matrix.invertM(invViewProjMatrix, 0, viewProjMatrix, 0)
-
-        // Apply transform to background quad
-        val instance = engine.transformManager.getInstance(backgroundQuadEntity)
-        engine.transformManager.setTransform(instance, invViewProjMatrix)
-    }
-
-    /**
      * Destroy all resources
      */
     fun destroy() {
@@ -327,10 +303,16 @@ class CameraTextureRenderer(private val context: Context) {
             .build(engine)
         indexBuffer.setBuffer(engine, MatrixUtils.createShortBuffer(indices))
 
+        // Create entity
         backgroundQuadEntity = EntityManager.get().create()
+
+        // Bounding box for the fullscreen quad (prevents frustum culling)
+        val boundingBox = Box(-1f, -1f, 0f, 1f, 1f, 0f)
+
         RenderableManager.Builder(1)
-            .geometry(0, RenderableManager.PrimitiveType.TRIANGLES, backgroundQuadVertexBuffer!!, indexBuffer)
             .material(0, cameraMaterialInstance)
+            .geometry(0, RenderableManager.PrimitiveType.TRIANGLES, backgroundQuadVertexBuffer!!, indexBuffer)
+            .boundingBox(boundingBox)
             .culling(false)
             .receiveShadows(false)
             .castShadows(false)

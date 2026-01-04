@@ -35,6 +35,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Reset the AR session
 - (void)resetSession;
 
+/// Set occlusion settings (faceMesh and backPlane)
+- (void)setOcclusionWithFaceMesh:(BOOL)faceMesh backPlane:(BOOL)backPlane;
+
 /// Render a frame with ARKit data
 - (void)renderWithFrame:(ARFrame *)frame faces:(NSArray<ARFaceAnchor *> *)faces;
 

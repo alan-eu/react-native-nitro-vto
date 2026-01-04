@@ -165,10 +165,16 @@ static NSString *const TAG = @"GlassesRenderer";
     // Build world-space transform matrix (no scaling - models are in real-world meters)
     simd_float4x4 rotationMatrix = [MatrixUtils quaternionToMatrix:smoothedRotation];
 
-    // Set world-space position
-    rotationMatrix.columns[3].x = smoothedPosition.x;
-    rotationMatrix.columns[3].y = smoothedPosition.y;
-    rotationMatrix.columns[3].z = smoothedPosition.z;
+    // Offset glasses slightly forward (along face's Z axis) to avoid face occlusion clipping
+    const float forwardOffset = 0.0015f; // 1.5mm forward
+    simd_float3 forward = simd_make_float3(rotationMatrix.columns[2].x,
+                                            rotationMatrix.columns[2].y,
+                                            rotationMatrix.columns[2].z);
+
+    // Set world-space position with forward offset
+    rotationMatrix.columns[3].x = smoothedPosition.x + forward.x * forwardOffset;
+    rotationMatrix.columns[3].y = smoothedPosition.y + forward.y * forwardOffset;
+    rotationMatrix.columns[3].z = smoothedPosition.z + forward.z * forwardOffset;
 
     // Convert simd matrix to filament matrix
     filament::math::mat4f filamentTransform;

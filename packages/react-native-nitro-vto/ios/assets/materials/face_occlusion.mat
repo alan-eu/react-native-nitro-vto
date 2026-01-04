@@ -1,0 +1,17 @@
+material {
+    name : face_occlusion,
+    shadingModel : unlit,
+    blending : opaque,
+    depthWrite : true,
+    depthCulling : true,
+    doubleSided : true,
+    colorWrite : false
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        // Color doesn't matter - will be overwritten by camera background
+        material.baseColor = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+}
