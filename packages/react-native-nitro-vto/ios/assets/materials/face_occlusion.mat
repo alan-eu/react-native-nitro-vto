@@ -4,7 +4,8 @@ material {
     blending : opaque,
     depthWrite : true,
     depthCulling : true,
-    doubleSided : false
+    doubleSided : true,
+    colorWrite : false
 }
 
 fragment {

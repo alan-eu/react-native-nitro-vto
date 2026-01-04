@@ -41,9 +41,16 @@ class FaceOcclusionRenderer(private val context: Context) {
     private var entityInScene = false
     private var indexBufferInitialized = false
 
+    // Back clipping plane to occlude glasses behind the head
+    private var backPlaneVertexBuffer: VertexBuffer? = null
+    private var backPlaneIndexBuffer: IndexBuffer? = null
+    @Entity private var backPlaneEntity: Int = 0
+    private var backPlaneInScene = false
+
     // Reusable arrays to avoid per-frame allocations
     private val vertexData = FloatArray(VERTEX_COUNT * 3)
     private val tempMatrix16 = FloatArray(16)
+    private val backPlaneMatrix16 = FloatArray(16)
 
     /**
      * Setup the face occlusion renderer with Filament engine and scene.
@@ -89,7 +96,66 @@ class FaceOcclusionRenderer(private val context: Context) {
         // Create entity (but don't add to scene yet - wait for valid face data)
         faceMeshEntity = EntityManager.get().create()
 
+        // Create back clipping plane
+        createBackPlane()
+
         Log.d(TAG, "Face occlusion renderer setup complete")
+    }
+
+    /**
+     * Create back clipping plane to occlude glasses behind the head.
+     */
+    private fun createBackPlane() {
+        val planeSizeX = 0.12f  // 12cm half-width (24cm total)
+        val planeSizeY = 0.08f  // 8cm half-height (16cm total)
+
+        val vertices = floatArrayOf(
+            -planeSizeX, -planeSizeY, 0f,  // bottom-left
+             planeSizeX, -planeSizeY, 0f,  // bottom-right
+            -planeSizeX,  planeSizeY, 0f,  // top-left
+             planeSizeX,  planeSizeY, 0f   // top-right
+        )
+
+        backPlaneVertexBuffer = VertexBuffer.Builder()
+            .vertexCount(4)
+            .bufferCount(1)
+            .attribute(
+                VertexBuffer.VertexAttribute.POSITION,
+                0,
+                VertexBuffer.AttributeType.FLOAT3,
+                0,
+                12
+            )
+            .build(engine)
+        backPlaneVertexBuffer!!.setBufferAt(engine, 0, MatrixUtils.createFloatBuffer(vertices))
+
+        val indices = shortArrayOf(0, 1, 2, 2, 1, 3)
+        backPlaneIndexBuffer = IndexBuffer.Builder()
+            .indexCount(6)
+            .bufferType(IndexBuffer.Builder.IndexType.USHORT)
+            .build(engine)
+        backPlaneIndexBuffer!!.setBuffer(engine, MatrixUtils.createShortBuffer(indices))
+
+        backPlaneEntity = EntityManager.get().create()
+
+        val boundingBox = Box(0f, 0f, 0f, planeSizeX, planeSizeY, 0.1f)
+
+        RenderableManager.Builder(1)
+            .geometry(
+                0,
+                RenderableManager.PrimitiveType.TRIANGLES,
+                backPlaneVertexBuffer!!,
+                backPlaneIndexBuffer!!,
+                0,
+                6
+            )
+            .material(0, occlusionMaterialInstance)
+            .boundingBox(boundingBox)
+            .culling(false)
+            .receiveShadows(false)
+            .castShadows(false)
+            .priority(0)
+            .build(engine, backPlaneEntity)
     }
 
     /**
@@ -159,19 +225,51 @@ class FaceOcclusionRenderer(private val context: Context) {
             Log.d(TAG, "Face mesh entity added to scene")
         }
 
+        // Calculate min Z (furthest from camera in face local space)
+        var minZ = Float.MAX_VALUE
+        for (i in 0 until VERTEX_COUNT) {
+            val z = vertexData[i * 3 + 2]
+            if (z < minZ) minZ = z
+        }
+
         // Apply face pose transform to entity (transforms local vertices to world space)
         face.centerPose.toMatrix(tempMatrix16, 0)
-        val instance = engine.transformManager.getInstance(faceMeshEntity)
-        engine.transformManager.setTransform(instance, tempMatrix16)
+        val faceInstance = engine.transformManager.getInstance(faceMeshEntity)
+        engine.transformManager.setTransform(faceInstance, tempMatrix16)
+
+        // Position back plane behind the face
+        val zOffset = minZ + 0.03f  // 3cm behind the furthest face point
+        // Copy face transform and add offset along local Z axis
+        tempMatrix16.copyInto(backPlaneMatrix16)
+        // Apply local Z offset (multiply by rotation part of matrix)
+        val offsetX = backPlaneMatrix16[8] * zOffset   // column 2, row 0
+        val offsetY = backPlaneMatrix16[9] * zOffset   // column 2, row 1
+        val offsetZ = backPlaneMatrix16[10] * zOffset  // column 2, row 2
+        backPlaneMatrix16[12] += offsetX  // translation X
+        backPlaneMatrix16[13] += offsetY  // translation Y
+        backPlaneMatrix16[14] += offsetZ  // translation Z
+
+        val backPlaneInstance = engine.transformManager.getInstance(backPlaneEntity)
+        engine.transformManager.setTransform(backPlaneInstance, backPlaneMatrix16)
+
+        // Add back plane to scene
+        if (!backPlaneInScene) {
+            scene.addEntity(backPlaneEntity)
+            backPlaneInScene = true
+        }
     }
 
     /**
-     * Hide face mesh (remove from scene).
+     * Hide face mesh and back plane (remove from scene).
      */
     fun hide() {
         if (entityInScene) {
             scene.removeEntity(faceMeshEntity)
             entityInScene = false
+        }
+        if (backPlaneInScene) {
+            scene.removeEntity(backPlaneEntity)
+            backPlaneInScene = false
         }
     }
 
@@ -182,10 +280,16 @@ class FaceOcclusionRenderer(private val context: Context) {
         if (entityInScene) {
             scene.removeEntity(faceMeshEntity)
         }
+        if (backPlaneInScene) {
+            scene.removeEntity(backPlaneEntity)
+        }
         EntityManager.get().destroy(faceMeshEntity)
+        EntityManager.get().destroy(backPlaneEntity)
 
         vertexBuffer?.let { engine.destroyVertexBuffer(it) }
         indexBuffer?.let { engine.destroyIndexBuffer(it) }
+        backPlaneVertexBuffer?.let { engine.destroyVertexBuffer(it) }
+        backPlaneIndexBuffer?.let { engine.destroyIndexBuffer(it) }
         engine.destroyMaterialInstance(occlusionMaterialInstance)
         engine.destroyMaterial(occlusionMaterial)
     }
