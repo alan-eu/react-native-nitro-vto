@@ -36,6 +36,12 @@ static const size_t MAX_INDICES = 8000;
 @property (nonatomic, assign) VertexBuffer *vertexBuffer;
 @property (nonatomic, assign) IndexBuffer *indexBuffer;
 
+// Back clipping plane to occlude glasses behind the head
+@property (nonatomic, assign) Entity backPlaneEntity;
+@property (nonatomic, assign) VertexBuffer *backPlaneVertexBuffer;
+@property (nonatomic, assign) IndexBuffer *backPlaneIndexBuffer;
+@property (nonatomic, assign) BOOL backPlaneVisible;
+
 @property (nonatomic, assign) BOOL isSetup;
 @property (nonatomic, assign) BOOL isVisible;
 @property (nonatomic, assign) size_t currentVertexCount;
@@ -43,6 +49,9 @@ static const size_t MAX_INDICES = 8000;
 
 // Reusable buffer for vertex data
 @property (nonatomic, assign) float3 *vertexData;
+
+// Persistent back plane vertex data (to avoid dangling pointer)
+@property (nonatomic, assign) float3 *backPlaneVertices;
 
 @end
 
@@ -53,9 +62,11 @@ static const size_t MAX_INDICES = 8000;
     if (self) {
         _isSetup = NO;
         _isVisible = NO;
+        _backPlaneVisible = NO;
         _currentVertexCount = 0;
         _currentIndexCount = 0;
         _vertexData = (float3 *)malloc(MAX_VERTICES * sizeof(float3));
+        _backPlaneVertices = (float3 *)malloc(4 * sizeof(float3));
     }
     return self;
 }
@@ -64,6 +75,10 @@ static const size_t MAX_INDICES = 8000;
     if (_vertexData) {
         free(_vertexData);
         _vertexData = nullptr;
+    }
+    if (_backPlaneVertices) {
+        free(_backPlaneVertices);
+        _backPlaneVertices = nullptr;
     }
 }
 
@@ -124,8 +139,63 @@ static const size_t MAX_INDICES = 8000;
         .build(*engine, _faceMeshEntity);
 
     // Don't add to scene yet - will add when we have valid face data
+
+    // Create back clipping plane (a simple quad)
+    [self createBackPlane];
+
     _isSetup = YES;
     NSLog(@"%@: Face occlusion renderer setup complete", TAG);
+}
+
+- (void)createBackPlane {
+    // Create a quad that clips glasses behind the face
+    // Size should cover temple area behind ears
+    const float planeSizeX = 0.12f;  // 12cm half-width (24cm total)
+    const float planeSizeY = 0.08f;  // 8cm half-height (16cm total)
+
+    // Use persistent memory for vertices
+    _backPlaneVertices[0] = float3(-planeSizeX, -planeSizeY, 0.0f);  // bottom-left
+    _backPlaneVertices[1] = float3( planeSizeX, -planeSizeY, 0.0f);  // bottom-right
+    _backPlaneVertices[2] = float3(-planeSizeX,  planeSizeY, 0.0f);  // top-left
+    _backPlaneVertices[3] = float3( planeSizeX,  planeSizeY, 0.0f);  // top-right
+
+    _backPlaneVertexBuffer = VertexBuffer::Builder()
+        .vertexCount(4)
+        .bufferCount(1)
+        .attribute(VertexAttribute::POSITION, 0,
+                   VertexBuffer::AttributeType::FLOAT3, 0, sizeof(float3))
+        .build(*_engine);
+
+    _backPlaneVertexBuffer->setBufferAt(*_engine, 0,
+        VertexBuffer::BufferDescriptor(_backPlaneVertices, 4 * sizeof(float3), nullptr));
+
+    // Use static indices (constant lifetime)
+    static const uint16_t planeIndices[6] = {0, 1, 2, 2, 1, 3};
+
+    _backPlaneIndexBuffer = IndexBuffer::Builder()
+        .indexCount(6)
+        .bufferType(IndexBuffer::IndexType::USHORT)
+        .build(*_engine);
+
+    _backPlaneIndexBuffer->setBuffer(*_engine,
+        IndexBuffer::BufferDescriptor(planeIndices, sizeof(planeIndices), nullptr));
+
+    _backPlaneEntity = EntityManager::get().create();
+
+    filament::Box boundingBox = {{-planeSizeX, -planeSizeY, -0.1f}, {planeSizeX, planeSizeY, 0.1f}};
+
+    // Use same occlusion material - writes depth only
+    RenderableManager::Builder(1)
+        .material(0, _occlusionMaterialInstance)
+        .geometry(0, RenderableManager::PrimitiveType::TRIANGLES,
+                  _backPlaneVertexBuffer, _backPlaneIndexBuffer, 0, 6)
+        .boundingBox(boundingBox)
+        .culling(false)
+        .receiveShadows(false)
+        .castShadows(false)
+        .priority(0)
+        .build(*_engine, _backPlaneEntity);
+
 }
 
 - (void)updateWithFace:(ARFaceAnchor *)face {
@@ -171,9 +241,17 @@ static const size_t MAX_INDICES = 8000;
         _currentVertexCount = vertexCount;
     }
 
+    // Calculate min Z (furthest from camera in face local space)
+    float minZ = FLT_MAX;
+    for (NSUInteger i = 0; i < vertexCount; i++) {
+        if (vertices[i].z < minZ) {
+            minZ = vertices[i].z;
+        }
+    }
+
     // Update transform to match face position/rotation in world space
     TransformManager &transformManager = _engine->getTransformManager();
-    TransformManager::Instance instance = transformManager.getInstance(_faceMeshEntity);
+    TransformManager::Instance faceInstance = transformManager.getInstance(_faceMeshEntity);
 
     // Convert ARKit transform to Filament matrix
     mat4f filamentTransform;
@@ -183,12 +261,34 @@ static const size_t MAX_INDICES = 8000;
         }
     }
 
-    transformManager.setTransform(instance, filamentTransform);
+    transformManager.setTransform(faceInstance, filamentTransform);
+
+    // Position back plane behind the face to clip glasses temples
+    TransformManager::Instance backPlaneInstance = transformManager.getInstance(_backPlaneEntity);
+    mat4f backPlaneTransform = filamentTransform;
+    // Offset along local Z axis (minZ is behind the face in ARKit coords)
+    float3 localOffset(0.0f, 0.0f, minZ + 0.03f);
+    // Transform the offset by the rotation part of the face transform
+    float3 worldOffset(
+        filamentTransform[0][0] * localOffset.x + filamentTransform[1][0] * localOffset.y + filamentTransform[2][0] * localOffset.z,
+        filamentTransform[0][1] * localOffset.x + filamentTransform[1][1] * localOffset.y + filamentTransform[2][1] * localOffset.z,
+        filamentTransform[0][2] * localOffset.x + filamentTransform[1][2] * localOffset.y + filamentTransform[2][2] * localOffset.z
+    );
+    backPlaneTransform[3][0] += worldOffset.x;
+    backPlaneTransform[3][1] += worldOffset.y;
+    backPlaneTransform[3][2] += worldOffset.z;
+
+    transformManager.setTransform(backPlaneInstance, backPlaneTransform);
 
     // Add to scene if not already visible
     if (!_isVisible) {
         _scene->addEntity(_faceMeshEntity);
         _isVisible = YES;
+    }
+
+    if (!_backPlaneVisible) {
+        _scene->addEntity(_backPlaneEntity);
+        _backPlaneVisible = YES;
     }
 }
 
@@ -200,6 +300,11 @@ static const size_t MAX_INDICES = 8000;
         _scene->remove(_faceMeshEntity);
         _isVisible = NO;
     }
+
+    if (_backPlaneVisible) {
+        _scene->remove(_backPlaneEntity);
+        _backPlaneVisible = NO;
+    }
 }
 
 - (void)destroy {
@@ -208,13 +313,24 @@ static const size_t MAX_INDICES = 8000;
     if (_isVisible) {
         _scene->remove(_faceMeshEntity);
     }
+    if (_backPlaneVisible) {
+        _scene->remove(_backPlaneEntity);
+    }
+
     EntityManager::get().destroy(_faceMeshEntity);
+    EntityManager::get().destroy(_backPlaneEntity);
 
     if (_vertexBuffer) {
         _engine->destroy(_vertexBuffer);
     }
     if (_indexBuffer) {
         _engine->destroy(_indexBuffer);
+    }
+    if (_backPlaneVertexBuffer) {
+        _engine->destroy(_backPlaneVertexBuffer);
+    }
+    if (_backPlaneIndexBuffer) {
+        _engine->destroy(_backPlaneIndexBuffer);
     }
     if (_occlusionMaterial) {
         _engine->destroy(_occlusionMaterial);
