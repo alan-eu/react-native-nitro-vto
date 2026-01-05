@@ -1,4 +1,4 @@
-import { NitroVtoView } from "@alaneu/react-native-nitro-vto";
+import { NitroVtoView, nitroVtoVersion } from "@alaneu/react-native-nitro-vto";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
@@ -118,14 +118,19 @@ const App = () => {
       )}
       <View style={styles.controls}>
         <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
+          style={[styles.button, isLoading && styles.buttonLoading]}
           onPress={handleNextModel}
           disabled={isLoading}
         >
           <Text style={styles.buttonText}>Next Model</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
+          style={[
+            styles.button,
+            faceMeshOcclusionEnabled
+              ? styles.buttonEnabled
+              : styles.buttonDisabled,
+          ]}
           onPress={handleFaceMeshOcclusion}
           disabled={isLoading}
         >
@@ -135,7 +140,12 @@ const App = () => {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
+          style={[
+            styles.button,
+            backPlaneOcclusionEnabled
+              ? styles.buttonEnabled
+              : styles.buttonDisabled,
+          ]}
           onPress={handleBackPlaneOcclusion}
           disabled={isLoading}
         >
@@ -144,6 +154,7 @@ const App = () => {
             {backPlaneOcclusionEnabled ? "Enabled" : "Disabled"}
           </Text>
         </TouchableOpacity>
+        <Text style={styles.text}>Nitro VTO Version: {nitroVtoVersion}</Text>
       </View>
     </View>
   );
@@ -159,7 +170,7 @@ const styles = StyleSheet.create({
   },
   controls: {
     position: "absolute",
-    bottom: 60,
+    bottom: 48,
     left: 0,
     right: 0,
     alignItems: "center",
@@ -171,8 +182,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
   },
-  buttonDisabled: {
+  buttonLoading: {
     backgroundColor: "#666",
+  },
+  buttonEnabled: {
+    backgroundColor: "#060",
+  },
+  buttonDisabled: {
+    backgroundColor: "#600",
   },
   buttonText: {
     color: "#fff",
