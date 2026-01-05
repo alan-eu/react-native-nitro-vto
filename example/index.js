@@ -1,5 +1,10 @@
-import { AppRegistry } from 'react-native';
-import App from './src/App';
-import { name as appName } from './app.json';
+import { registerRootComponent } from "expo";
+import { ExpoRoot } from "expo-router";
 
-AppRegistry.registerComponent(appName, () => App);
+// Must be exported or Fast Refresh won't update the context
+export function App() {
+  const ctx = require.context("./app");
+  return <ExpoRoot context={ctx} />;
+}
+
+registerRootComponent(App);

@@ -1,17 +1,14 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { NitroVtoView } from "@alaneu/react-native-nitro-vto";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
+  Alert,
   PermissionsAndroid,
   Platform,
-  Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import {
-  NitroVtoView,
-  type OcclusionSettings,
-} from "@alaneu/react-native-nitro-vto";
 import { callback } from "react-native-nitro-modules";
 
 const MODELS = [
@@ -19,7 +16,7 @@ const MODELS = [
   "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/878082.glb",
 ];
 
-function App(): React.JSX.Element {
+const App = () => {
   const [hasPermission, setHasPermission] = useState(false);
   const [currentModelIndex, setCurrentModelIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,6 +83,11 @@ function App(): React.JSX.Element {
 
   const currentModel = MODELS[currentModelIndex];
 
+  const occlusion = {
+    faceMesh: faceMeshOcclusionEnabled,
+    backPlane: backPlaneOcclusionEnabled,
+  };
+
   if (!hasPermission) {
     return (
       <View style={styles.container}>
@@ -106,10 +108,7 @@ function App(): React.JSX.Element {
         style={styles.vtoView}
         modelUrl={currentModel}
         isActive={true}
-        occlusion={{
-          faceMesh: faceMeshOcclusionEnabled,
-          backPlane: backPlaneOcclusionEnabled,
-        }}
+        occlusion={occlusion}
         onModelLoaded={callback(handleModelLoaded)}
       />
       {isLoading && (
@@ -148,7 +147,7 @@ function App(): React.JSX.Element {
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -160,7 +159,7 @@ const styles = StyleSheet.create({
   },
   controls: {
     position: "absolute",
-    bottom: 40,
+    bottom: 60,
     left: 0,
     right: 0,
     alignItems: "center",

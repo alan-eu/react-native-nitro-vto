@@ -24,6 +24,7 @@
     "ios/**/*.swift",
     "ios/assets/**/*",
     "app.plugin.js",
+    "app.plugin.d.ts",
     "nitro.json",
     "*.podspec",
     "README.md"
@@ -65,10 +66,11 @@
     "access": "public"
   },
   "devDependencies": {
-    "@types/react": "19.1.1",
+    "@expo/config-plugins": "*",
+    "@types/react": "19.1.0",
     "nitrogen": "0.31.10",
-    "react": "19.1.1",
-    "react-native": "0.82.0",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
     "react-native-builder-bob": "0.40.17",
     "react-native-nitro-modules": "0.31.10",
     "typescript": "5.9.3"

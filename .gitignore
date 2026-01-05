@@ -7,6 +7,7 @@ lib/
 
 # OS files
 .DS_Store
+*.pem
 
 # IDE
 .idea/
@@ -22,17 +23,17 @@ local.properties
 **/android/build/
 
 # iOS
-example/ios/Pods/
-example/ios/build/
+example/ios/
 **/ios/*.xcodeproj/xcuserdata/
 **/ios/*.xcworkspace/xcuserdata/
 
 # Example app
 example/node_modules/
-example/android/.gradle/
-example/android/app/build/
-example/android/app/.cxx/
-example/android/build/
+example/android/
+
+# Expo
+example/.expo/
+expo-env.d.ts
 
 # Misc
 *.log
