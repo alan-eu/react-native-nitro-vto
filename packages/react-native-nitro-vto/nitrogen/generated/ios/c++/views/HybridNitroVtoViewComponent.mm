@@ -86,10 +86,15 @@ using namespace margelo::nitro::nitrovto::views;
     swiftPart.setOnModelLoaded(newViewProps.onModelLoaded.value);
     newViewProps.onModelLoaded.isDirty = false;
   }
-  // occlusion: optional
-  if (newViewProps.occlusion.isDirty) {
-    swiftPart.setOcclusion(newViewProps.occlusion.value);
-    newViewProps.occlusion.isDirty = false;
+  // faceMeshOcclusion: optional
+  if (newViewProps.faceMeshOcclusion.isDirty) {
+    swiftPart.setFaceMeshOcclusion(newViewProps.faceMeshOcclusion.value);
+    newViewProps.faceMeshOcclusion.isDirty = false;
+  }
+  // backPlaneOcclusion: optional
+  if (newViewProps.backPlaneOcclusion.isDirty) {
+    swiftPart.setBackPlaneOcclusion(newViewProps.backPlaneOcclusion.value);
+    newViewProps.backPlaneOcclusion.isDirty = false;
   }
 
   swiftPart.afterUpdate();

@@ -12,13 +12,11 @@
 // Forward declaration of `HybridNitroVtoViewSpec_cxx` to properly resolve imports.
 namespace NitroVto { class HybridNitroVtoViewSpec_cxx; }
 
-// Forward declaration of `OcclusionSettings` to properly resolve imports.
-namespace margelo::nitro::nitrovto { struct OcclusionSettings; }
+
 
 #include <string>
 #include <functional>
 #include <optional>
-#include "OcclusionSettings.hpp"
 
 #include "NitroVto-Swift-Cxx-Umbrella.hpp"
 
@@ -80,12 +78,19 @@ namespace margelo::nitro::nitrovto {
     inline void setOnModelLoaded(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onModelLoaded) noexcept override {
       _swiftPart.setOnModelLoaded(onModelLoaded);
     }
-    inline std::optional<OcclusionSettings> getOcclusion() noexcept override {
-      auto __result = _swiftPart.getOcclusion();
+    inline std::optional<bool> getFaceMeshOcclusion() noexcept override {
+      auto __result = _swiftPart.getFaceMeshOcclusion();
       return __result;
     }
-    inline void setOcclusion(const std::optional<OcclusionSettings>& occlusion) noexcept override {
-      _swiftPart.setOcclusion(occlusion);
+    inline void setFaceMeshOcclusion(std::optional<bool> faceMeshOcclusion) noexcept override {
+      _swiftPart.setFaceMeshOcclusion(faceMeshOcclusion);
+    }
+    inline std::optional<bool> getBackPlaneOcclusion() noexcept override {
+      auto __result = _swiftPart.getBackPlaneOcclusion();
+      return __result;
+    }
+    inline void setBackPlaneOcclusion(std::optional<bool> backPlaneOcclusion) noexcept override {
+      _swiftPart.setBackPlaneOcclusion(backPlaneOcclusion);
     }
 
   public:

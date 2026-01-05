@@ -54,6 +54,9 @@ static const size_t MAX_INDICES = 8000;
 // Reusable buffer for vertex data
 @property (nonatomic, assign) float3 *vertexData;
 
+// Reusable buffer for index data (to avoid dangling pointer to ARKit data)
+@property (nonatomic, assign) int16_t *indexData;
+
 // Persistent back plane vertex data (to avoid dangling pointer)
 @property (nonatomic, assign) float3 *backPlaneVertices;
 
@@ -72,6 +75,7 @@ static const size_t MAX_INDICES = 8000;
         _faceMeshEnabled = YES;
         _backPlaneEnabled = YES;
         _vertexData = (float3 *)malloc(MAX_VERTICES * sizeof(float3));
+        _indexData = (int16_t *)malloc(MAX_INDICES * sizeof(int16_t));
         _backPlaneVertices = (float3 *)malloc(4 * sizeof(float3));
     }
     return self;
@@ -81,6 +85,10 @@ static const size_t MAX_INDICES = 8000;
     if (_vertexData) {
         free(_vertexData);
         _vertexData = nullptr;
+    }
+    if (_indexData) {
+        free(_indexData);
+        _indexData = nullptr;
     }
     if (_backPlaneVertices) {
         free(_backPlaneVertices);
@@ -204,23 +212,26 @@ static const size_t MAX_INDICES = 8000;
 
 }
 
-- (void)setOcclusionWithFaceMesh:(BOOL)faceMesh backPlane:(BOOL)backPlane {
+- (void)setFaceMeshOcclusion:(BOOL)enabled {
     // If face mesh is being disabled, remove from scene
-    if (_faceMeshEnabled && !faceMesh && _isVisible) {
+    if (_faceMeshEnabled && !enabled && _isVisible) {
         _scene->remove(_faceMeshEntity);
         _isVisible = NO;
     }
 
+    _faceMeshEnabled = enabled;
+    NSLog(@"%@: Face mesh occlusion updated: %d", TAG, enabled);
+}
+
+- (void)setBackPlaneOcclusion:(BOOL)enabled {
     // If back plane is being disabled, remove from scene
-    if (_backPlaneEnabled && !backPlane && _backPlaneVisible) {
+    if (_backPlaneEnabled && !enabled && _backPlaneVisible) {
         _scene->remove(_backPlaneEntity);
         _backPlaneVisible = NO;
     }
 
-    _faceMeshEnabled = faceMesh;
-    _backPlaneEnabled = backPlane;
-
-    NSLog(@"%@: Occlusion settings updated: faceMesh=%d, backPlane=%d", TAG, faceMesh, backPlane);
+    _backPlaneEnabled = enabled;
+    NSLog(@"%@: Back plane occlusion updated: %d", TAG, enabled);
 }
 
 - (void)updateWithFace:(ARFaceAnchor *)face {
@@ -249,9 +260,11 @@ static const size_t MAX_INDICES = 8000;
 
     // Update index buffer only if index count changed
     if (indexCount != _currentIndexCount) {
+        // Copy indices to persistent buffer (ARKit data may be deallocated before Filament uses it)
         const int16_t *indices = geometry.triangleIndices;
+        memcpy(_indexData, indices, indexCount * sizeof(int16_t));
         _indexBuffer->setBuffer(*_engine,
-            IndexBuffer::BufferDescriptor(indices, indexCount * sizeof(int16_t), nullptr));
+            IndexBuffer::BufferDescriptor(_indexData, indexCount * sizeof(int16_t), nullptr));
         _currentIndexCount = indexCount;
     }
 

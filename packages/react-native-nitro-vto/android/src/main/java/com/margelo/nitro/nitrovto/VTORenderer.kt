@@ -219,11 +219,20 @@ class VTORenderer(private val context: Context) {
     }
 
     /**
-     * Set occlusion settings
+     * Set face mesh occlusion enabled
      */
-    fun setOcclusion(settings: OcclusionSettings?) {
+    fun setFaceMeshOcclusion(enabled: Boolean) {
         if (initialized) {
-            faceOcclusionRenderer.setOcclusion(settings)
+            faceOcclusionRenderer.setFaceMeshOcclusion(enabled)
+        }
+    }
+
+    /**
+     * Set back plane occlusion enabled
+     */
+    fun setBackPlaneOcclusion(enabled: Boolean) {
+        if (initialized) {
+            faceOcclusionRenderer.setBackPlaneOcclusion(enabled)
         }
     }
 

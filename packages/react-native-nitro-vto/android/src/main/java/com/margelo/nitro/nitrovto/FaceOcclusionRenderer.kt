@@ -107,28 +107,31 @@ class FaceOcclusionRenderer(private val context: Context) {
     }
 
     /**
-     * Set occlusion settings to enable/disable face mesh and back plane.
+     * Set face mesh occlusion enabled.
      */
-    fun setOcclusion(settings: OcclusionSettings?) {
-        val newFaceMeshEnabled = settings?.faceMesh ?: true
-        val newBackPlaneEnabled = settings?.backPlane ?: true
-
+    fun setFaceMeshOcclusion(enabled: Boolean) {
         // If face mesh is being disabled, remove from scene
-        if (faceMeshEnabled && !newFaceMeshEnabled && entityInScene) {
+        if (faceMeshEnabled && !enabled && entityInScene) {
             scene.removeEntity(faceMeshEntity)
             entityInScene = false
         }
 
+        faceMeshEnabled = enabled
+        Log.d(TAG, "Face mesh occlusion updated: $enabled")
+    }
+
+    /**
+     * Set back plane occlusion enabled.
+     */
+    fun setBackPlaneOcclusion(enabled: Boolean) {
         // If back plane is being disabled, remove from scene
-        if (backPlaneEnabled && !newBackPlaneEnabled && backPlaneInScene) {
+        if (backPlaneEnabled && !enabled && backPlaneInScene) {
             scene.removeEntity(backPlaneEntity)
             backPlaneInScene = false
         }
 
-        faceMeshEnabled = newFaceMeshEnabled
-        backPlaneEnabled = newBackPlaneEnabled
-
-        Log.d(TAG, "Occlusion settings updated: faceMesh=$faceMeshEnabled, backPlane=$backPlaneEnabled")
+        backPlaneEnabled = enabled
+        Log.d(TAG, "Back plane occlusion updated: $enabled")
     }
 
     /**

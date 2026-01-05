@@ -43,7 +43,6 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     // Configuration
     private var modelUrl: String = ""
     private var isActive: Boolean = true
-    private var occlusionSettings: OcclusionSettings? = null
 
     // Callbacks
     var onModelLoaded: ((modelUrl: String) -> Unit)? = null
@@ -87,11 +86,17 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     }
 
     /**
-     * Set occlusion settings
+     * Set face mesh occlusion enabled
      */
-    fun setOcclusion(settings: OcclusionSettings?) {
-        occlusionSettings = settings
-        vtoRenderer?.setOcclusion(settings)
+    fun setFaceMeshOcclusion(enabled: Boolean?) {
+        vtoRenderer?.setFaceMeshOcclusion(enabled ?: true)
+    }
+
+    /**
+     * Set back plane occlusion enabled
+     */
+    fun setBackPlaneOcclusion(enabled: Boolean?) {
+        vtoRenderer?.setBackPlaneOcclusion(enabled ?: true)
     }
 
     /**

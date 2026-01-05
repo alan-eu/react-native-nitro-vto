@@ -19,7 +19,6 @@
 #include <string>
 #include <functional>
 #include <optional>
-#include "OcclusionSettings.hpp"
 #include <memory>
 #include "HybridNitroVtoViewSpec.hpp"
 
@@ -47,7 +46,8 @@ namespace margelo::nitro::nitrovto::views {
     CachedProp<std::string> modelUrl;
     CachedProp<bool> isActive;
     CachedProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>> onModelLoaded;
-    CachedProp<std::optional<OcclusionSettings>> occlusion;
+    CachedProp<std::optional<bool>> faceMeshOcclusion;
+    CachedProp<std::optional<bool>> backPlaneOcclusion;
     CachedProp<std::optional<std::function<void(const std::shared_ptr<HybridNitroVtoViewSpec>& /* ref */)>>> hybridRef;
 
   private:

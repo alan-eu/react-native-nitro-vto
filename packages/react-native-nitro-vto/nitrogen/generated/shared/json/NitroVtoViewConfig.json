@@ -7,7 +7,8 @@
     "modelUrl": true,
     "isActive": true,
     "onModelLoaded": true,
-    "occlusion": true,
+    "faceMeshOcclusion": true,
+    "backPlaneOcclusion": true,
     "hybridRef": true
   }
 }

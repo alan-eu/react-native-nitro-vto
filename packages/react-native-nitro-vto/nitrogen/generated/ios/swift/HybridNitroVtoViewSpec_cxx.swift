@@ -168,12 +168,12 @@ open class HybridNitroVtoViewSpec_cxx {
     }
   }
   
-  public final var occlusion: bridge.std__optional_OcclusionSettings_ {
+  public final var faceMeshOcclusion: bridge.std__optional_bool_ {
     @inline(__always)
     get {
-      return { () -> bridge.std__optional_OcclusionSettings_ in
-        if let __unwrappedValue = self.__implementation.occlusion {
-          return bridge.create_std__optional_OcclusionSettings_(__unwrappedValue)
+      return { () -> bridge.std__optional_bool_ in
+        if let __unwrappedValue = self.__implementation.faceMeshOcclusion {
+          return bridge.create_std__optional_bool_(__unwrappedValue)
         } else {
           return .init()
         }
@@ -181,7 +181,38 @@ open class HybridNitroVtoViewSpec_cxx {
     }
     @inline(__always)
     set {
-      self.__implementation.occlusion = newValue.value
+      self.__implementation.faceMeshOcclusion = { () -> Bool? in
+        if bridge.has_value_std__optional_bool_(newValue) {
+          let __unwrapped = bridge.get_std__optional_bool_(newValue)
+          return __unwrapped
+        } else {
+          return nil
+        }
+      }()
+    }
+  }
+  
+  public final var backPlaneOcclusion: bridge.std__optional_bool_ {
+    @inline(__always)
+    get {
+      return { () -> bridge.std__optional_bool_ in
+        if let __unwrappedValue = self.__implementation.backPlaneOcclusion {
+          return bridge.create_std__optional_bool_(__unwrappedValue)
+        } else {
+          return .init()
+        }
+      }()
+    }
+    @inline(__always)
+    set {
+      self.__implementation.backPlaneOcclusion = { () -> Bool? in
+        if bridge.has_value_std__optional_bool_(newValue) {
+          let __unwrapped = bridge.get_std__optional_bool_(newValue)
+          return __unwrapped
+        } else {
+          return nil
+        }
+      }()
     }
   }
 

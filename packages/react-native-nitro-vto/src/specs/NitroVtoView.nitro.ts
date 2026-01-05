@@ -5,23 +5,6 @@ import type {
 } from "react-native-nitro-modules";
 
 /**
- * Occlusion settings for controlling face mesh and back plane occlusion.
- */
-export interface OcclusionSettings {
-  /**
-   * Whether to enable face mesh occlusion.
-   * When enabled, the face mesh writes to depth buffer to occlude glasses behind the face.
-   */
-  faceMesh: boolean;
-
-  /**
-   * Whether to enable back plane occlusion.
-   * When enabled, a plane behind the face clips glasses temples that extend too far back.
-   */
-  backPlane: boolean;
-}
-
-/**
  * Props for the NitroVtoView component.
  */
 export interface NitroVtoViewProps extends HybridViewProps {
@@ -45,10 +28,18 @@ export interface NitroVtoViewProps extends HybridViewProps {
   onModelLoaded?: (modelUrl: string) => void;
 
   /**
-   * Occlusion settings for controlling face mesh and back plane occlusion.
-   * Default: { faceMesh: true, backPlane: true }
+   * Whether to enable face mesh occlusion.
+   * When enabled, the face mesh writes to depth buffer to occlude glasses behind the face.
+   * Default: true
    */
-  occlusion?: OcclusionSettings;
+  faceMeshOcclusion?: boolean;
+
+  /**
+   * Whether to enable back plane occlusion.
+   * When enabled, a plane behind the face clips glasses temples that extend too far back.
+   * Default: true
+   */
+  backPlaneOcclusion?: boolean;
 }
 
 /**

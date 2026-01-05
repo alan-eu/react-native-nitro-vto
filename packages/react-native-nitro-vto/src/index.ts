@@ -2,15 +2,16 @@ import { getHostComponent } from "react-native-nitro-modules";
 import type {
   NitroVtoViewProps,
   NitroVtoViewMethods,
-  OcclusionSettings,
 } from "./specs/NitroVtoView.nitro";
 import NitroVtoViewConfig from "../nitrogen/generated/shared/json/NitroVtoViewConfig.json";
+import { version } from "../package.json";
 // Re-export types
-export type { NitroVtoViewProps, NitroVtoViewMethods, OcclusionSettings };
+export type { NitroVtoViewProps, NitroVtoViewMethods };
 
 // Export the HybridRef type for use with hybridRef prop
 export type { HybridRef } from "react-native-nitro-modules";
 
+export const nitroVtoVersion = version;
 /**
  * NitroVtoView is a React Native component for virtual try-on of glasses.
  * It uses ARCore/ARKit for face tracking and Filament for 3D rendering.
@@ -42,7 +43,8 @@ export type { HybridRef } from "react-native-nitro-modules";
  *       modelUrl="https://example.com/glasses.glb"
  *       isActive={true}
  *       onModelLoaded={callback(handleModelLoaded)}
- *       occlusion={{ faceMesh: true, backPlane: true }}
+ *       faceMeshOcclusion={true}
+ *       backPlaneOcclusion={true}
  *       style={{ flex: 1 }}
  *       hybridRef={(ref) => {
  *         vtoRef.current = ref
