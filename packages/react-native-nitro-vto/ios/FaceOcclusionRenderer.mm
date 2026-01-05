@@ -36,11 +36,14 @@ static const size_t MAX_INDICES = 8000;
 @property (nonatomic, assign) VertexBuffer *vertexBuffer;
 @property (nonatomic, assign) IndexBuffer *indexBuffer;
 
-// Back clipping plane to occlude glasses behind the head
-@property (nonatomic, assign) Entity backPlaneEntity;
-@property (nonatomic, assign) VertexBuffer *backPlaneVertexBuffer;
-@property (nonatomic, assign) IndexBuffer *backPlaneIndexBuffer;
-@property (nonatomic, assign) BOOL backPlaneVisible;
+// Back clipping planes (split left/right for better occlusion based on head rotation)
+@property (nonatomic, assign) Entity backPlaneLeftEntity;
+@property (nonatomic, assign) Entity backPlaneRightEntity;
+@property (nonatomic, assign) VertexBuffer *backPlaneLeftVertexBuffer;
+@property (nonatomic, assign) VertexBuffer *backPlaneRightVertexBuffer;
+@property (nonatomic, assign) IndexBuffer *backPlaneIndexBuffer;  // Shared between both planes
+@property (nonatomic, assign) BOOL backPlaneLeftVisible;
+@property (nonatomic, assign) BOOL backPlaneRightVisible;
 
 @property (nonatomic, assign) BOOL isSetup;
 @property (nonatomic, assign) BOOL isVisible;
@@ -58,7 +61,8 @@ static const size_t MAX_INDICES = 8000;
 @property (nonatomic, assign) int16_t *indexData;
 
 // Persistent back plane vertex data (to avoid dangling pointer)
-@property (nonatomic, assign) float3 *backPlaneVertices;
+@property (nonatomic, assign) float3 *backPlaneLeftVertices;
+@property (nonatomic, assign) float3 *backPlaneRightVertices;
 
 @end
 
@@ -69,14 +73,16 @@ static const size_t MAX_INDICES = 8000;
     if (self) {
         _isSetup = NO;
         _isVisible = NO;
-        _backPlaneVisible = NO;
+        _backPlaneLeftVisible = NO;
+        _backPlaneRightVisible = NO;
         _currentVertexCount = 0;
         _currentIndexCount = 0;
         _faceMeshEnabled = YES;
         _backPlaneEnabled = YES;
         _vertexData = (float3 *)malloc(MAX_VERTICES * sizeof(float3));
         _indexData = (int16_t *)malloc(MAX_INDICES * sizeof(int16_t));
-        _backPlaneVertices = (float3 *)malloc(4 * sizeof(float3));
+        _backPlaneLeftVertices = (float3 *)malloc(4 * sizeof(float3));
+        _backPlaneRightVertices = (float3 *)malloc(4 * sizeof(float3));
     }
     return self;
 }
@@ -90,9 +96,13 @@ static const size_t MAX_INDICES = 8000;
         free(_indexData);
         _indexData = nullptr;
     }
-    if (_backPlaneVertices) {
-        free(_backPlaneVertices);
-        _backPlaneVertices = nullptr;
+    if (_backPlaneLeftVertices) {
+        free(_backPlaneLeftVertices);
+        _backPlaneLeftVertices = nullptr;
+    }
+    if (_backPlaneRightVertices) {
+        free(_backPlaneRightVertices);
+        _backPlaneRightVertices = nullptr;
     }
 }
 
@@ -162,28 +172,48 @@ static const size_t MAX_INDICES = 8000;
 }
 
 - (void)createBackPlane {
-    // Create a quad that clips glasses behind the face
-    // Size should cover temple area behind ears
-    const float planeSizeX = 0.12f;  // 12cm half-width (24cm total)
+    // Create two quads (left and right) that clip glasses behind the face
+    // Split vertically so we can show/hide based on head rotation
+    const float planeSizeX = 0.12f;  // 12cm half-width for each plane
     const float planeSizeY = 0.08f;  // 8cm half-height (16cm total)
+    const float gap = 0.01f;  // Small gap between planes at center
 
-    // Use persistent memory for vertices
-    _backPlaneVertices[0] = float3(-planeSizeX, -planeSizeY, 0.0f);  // bottom-left
-    _backPlaneVertices[1] = float3( planeSizeX, -planeSizeY, 0.0f);  // bottom-right
-    _backPlaneVertices[2] = float3(-planeSizeX,  planeSizeY, 0.0f);  // top-left
-    _backPlaneVertices[3] = float3( planeSizeX,  planeSizeY, 0.0f);  // top-right
+    // Left back plane (user's left side, camera's right side)
+    // X range: -planeSizeX to -gap
+    _backPlaneLeftVertices[0] = float3(-planeSizeX, -planeSizeY, 0.0f);  // bottom-left
+    _backPlaneLeftVertices[1] = float3(-gap,        -planeSizeY, 0.0f);  // bottom-right
+    _backPlaneLeftVertices[2] = float3(-planeSizeX,  planeSizeY, 0.0f);  // top-left
+    _backPlaneLeftVertices[3] = float3(-gap,         planeSizeY, 0.0f);  // top-right
 
-    _backPlaneVertexBuffer = VertexBuffer::Builder()
+    // Right back plane (user's right side, camera's left side)
+    // X range: gap to planeSizeX
+    _backPlaneRightVertices[0] = float3(gap,        -planeSizeY, 0.0f);  // bottom-left
+    _backPlaneRightVertices[1] = float3(planeSizeX, -planeSizeY, 0.0f);  // bottom-right
+    _backPlaneRightVertices[2] = float3(gap,         planeSizeY, 0.0f);  // top-left
+    _backPlaneRightVertices[3] = float3(planeSizeX,  planeSizeY, 0.0f);  // top-right
+
+    // Create vertex buffers for each plane
+    _backPlaneLeftVertexBuffer = VertexBuffer::Builder()
         .vertexCount(4)
         .bufferCount(1)
         .attribute(VertexAttribute::POSITION, 0,
                    VertexBuffer::AttributeType::FLOAT3, 0, sizeof(float3))
         .build(*_engine);
 
-    _backPlaneVertexBuffer->setBufferAt(*_engine, 0,
-        VertexBuffer::BufferDescriptor(_backPlaneVertices, 4 * sizeof(float3), nullptr));
+    _backPlaneLeftVertexBuffer->setBufferAt(*_engine, 0,
+        VertexBuffer::BufferDescriptor(_backPlaneLeftVertices, 4 * sizeof(float3), nullptr));
 
-    // Use static indices (constant lifetime)
+    _backPlaneRightVertexBuffer = VertexBuffer::Builder()
+        .vertexCount(4)
+        .bufferCount(1)
+        .attribute(VertexAttribute::POSITION, 0,
+                   VertexBuffer::AttributeType::FLOAT3, 0, sizeof(float3))
+        .build(*_engine);
+
+    _backPlaneRightVertexBuffer->setBufferAt(*_engine, 0,
+        VertexBuffer::BufferDescriptor(_backPlaneRightVertices, 4 * sizeof(float3), nullptr));
+
+    // Shared index buffer (same topology for both planes)
     static const uint16_t planeIndices[6] = {0, 1, 2, 2, 1, 3};
 
     _backPlaneIndexBuffer = IndexBuffer::Builder()
@@ -194,22 +224,35 @@ static const size_t MAX_INDICES = 8000;
     _backPlaneIndexBuffer->setBuffer(*_engine,
         IndexBuffer::BufferDescriptor(planeIndices, sizeof(planeIndices), nullptr));
 
-    _backPlaneEntity = EntityManager::get().create();
+    // Create entities
+    _backPlaneLeftEntity = EntityManager::get().create();
+    _backPlaneRightEntity = EntityManager::get().create();
 
     filament::Box boundingBox = {{-planeSizeX, -planeSizeY, -0.1f}, {planeSizeX, planeSizeY, 0.1f}};
 
-    // Use same occlusion material - writes depth only
+    // Build left back plane renderable
     RenderableManager::Builder(1)
         .material(0, _occlusionMaterialInstance)
         .geometry(0, RenderableManager::PrimitiveType::TRIANGLES,
-                  _backPlaneVertexBuffer, _backPlaneIndexBuffer, 0, 6)
+                  _backPlaneLeftVertexBuffer, _backPlaneIndexBuffer, 0, 6)
         .boundingBox(boundingBox)
         .culling(false)
         .receiveShadows(false)
         .castShadows(false)
         .priority(0)
-        .build(*_engine, _backPlaneEntity);
+        .build(*_engine, _backPlaneLeftEntity);
 
+    // Build right back plane renderable
+    RenderableManager::Builder(1)
+        .material(0, _occlusionMaterialInstance)
+        .geometry(0, RenderableManager::PrimitiveType::TRIANGLES,
+                  _backPlaneRightVertexBuffer, _backPlaneIndexBuffer, 0, 6)
+        .boundingBox(boundingBox)
+        .culling(false)
+        .receiveShadows(false)
+        .castShadows(false)
+        .priority(0)
+        .build(*_engine, _backPlaneRightEntity);
 }
 
 - (void)setFaceMeshOcclusion:(BOOL)enabled {
@@ -224,10 +267,16 @@ static const size_t MAX_INDICES = 8000;
 }
 
 - (void)setBackPlaneOcclusion:(BOOL)enabled {
-    // If back plane is being disabled, remove from scene
-    if (_backPlaneEnabled && !enabled && _backPlaneVisible) {
-        _scene->remove(_backPlaneEntity);
-        _backPlaneVisible = NO;
+    // If back planes are being disabled, remove from scene
+    if (_backPlaneEnabled && !enabled) {
+        if (_backPlaneLeftVisible) {
+            _scene->remove(_backPlaneLeftEntity);
+            _backPlaneLeftVisible = NO;
+        }
+        if (_backPlaneRightVisible) {
+            _scene->remove(_backPlaneRightEntity);
+            _backPlaneRightVisible = NO;
+        }
     }
 
     _backPlaneEnabled = enabled;
@@ -301,8 +350,7 @@ static const size_t MAX_INDICES = 8000;
 
     transformManager.setTransform(faceInstance, filamentTransform);
 
-    // Position back plane behind the face to clip glasses temples
-    TransformManager::Instance backPlaneInstance = transformManager.getInstance(_backPlaneEntity);
+    // Calculate back plane transform (behind the face)
     mat4f backPlaneTransform = filamentTransform;
     // Offset along local Z axis (minZ is behind the face in ARKit coords)
     float3 localOffset(0.0f, 0.0f, minZ + 0.03f);
@@ -316,7 +364,25 @@ static const size_t MAX_INDICES = 8000;
     backPlaneTransform[3][1] += worldOffset.y;
     backPlaneTransform[3][2] += worldOffset.z;
 
-    transformManager.setTransform(backPlaneInstance, backPlaneTransform);
+    // Position both back planes with the same transform
+    TransformManager::Instance backPlaneLeftInstance = transformManager.getInstance(_backPlaneLeftEntity);
+    TransformManager::Instance backPlaneRightInstance = transformManager.getInstance(_backPlaneRightEntity);
+    transformManager.setTransform(backPlaneLeftInstance, backPlaneTransform);
+    transformManager.setTransform(backPlaneRightInstance, backPlaneTransform);
+
+    // Extract yaw (Y-axis rotation) from face transform to determine head rotation
+    // Yaw = atan2(m[2][0], m[0][0]) for a rotation matrix
+    // Positive yaw = head turning left (user's perspective), negative = turning right
+    float yaw = atan2f(filamentTransform[2][0], filamentTransform[0][0]);
+
+    // Threshold for when to hide a back plane (about 15 degrees)
+    const float yawThreshold = 0.12f;  // ~7 degrees in radians
+
+    // Determine which back planes should be visible based on head rotation
+    // When turning right (negative yaw): left temple visible, hide left back plane
+    // When turning left (positive yaw): right temple visible, hide right back plane
+    BOOL showLeftBackPlane = _backPlaneEnabled && (yaw < yawThreshold);
+    BOOL showRightBackPlane = _backPlaneEnabled && (yaw > -yawThreshold);
 
     // Add face mesh to scene if enabled and not already visible
     if (_faceMeshEnabled && !_isVisible) {
@@ -324,10 +390,22 @@ static const size_t MAX_INDICES = 8000;
         _isVisible = YES;
     }
 
-    // Add back plane to scene if enabled and not already visible
-    if (_backPlaneEnabled && !_backPlaneVisible) {
-        _scene->addEntity(_backPlaneEntity);
-        _backPlaneVisible = YES;
+    // Update left back plane visibility
+    if (showLeftBackPlane && !_backPlaneLeftVisible) {
+        _scene->addEntity(_backPlaneLeftEntity);
+        _backPlaneLeftVisible = YES;
+    } else if (!showLeftBackPlane && _backPlaneLeftVisible) {
+        _scene->remove(_backPlaneLeftEntity);
+        _backPlaneLeftVisible = NO;
+    }
+
+    // Update right back plane visibility
+    if (showRightBackPlane && !_backPlaneRightVisible) {
+        _scene->addEntity(_backPlaneRightEntity);
+        _backPlaneRightVisible = YES;
+    } else if (!showRightBackPlane && _backPlaneRightVisible) {
+        _scene->remove(_backPlaneRightEntity);
+        _backPlaneRightVisible = NO;
     }
 }
 
@@ -340,9 +418,14 @@ static const size_t MAX_INDICES = 8000;
         _isVisible = NO;
     }
 
-    if (_backPlaneVisible) {
-        _scene->remove(_backPlaneEntity);
-        _backPlaneVisible = NO;
+    if (_backPlaneLeftVisible) {
+        _scene->remove(_backPlaneLeftEntity);
+        _backPlaneLeftVisible = NO;
+    }
+
+    if (_backPlaneRightVisible) {
+        _scene->remove(_backPlaneRightEntity);
+        _backPlaneRightVisible = NO;
     }
 }
 
@@ -352,12 +435,16 @@ static const size_t MAX_INDICES = 8000;
     if (_isVisible) {
         _scene->remove(_faceMeshEntity);
     }
-    if (_backPlaneVisible) {
-        _scene->remove(_backPlaneEntity);
+    if (_backPlaneLeftVisible) {
+        _scene->remove(_backPlaneLeftEntity);
+    }
+    if (_backPlaneRightVisible) {
+        _scene->remove(_backPlaneRightEntity);
     }
 
     EntityManager::get().destroy(_faceMeshEntity);
-    EntityManager::get().destroy(_backPlaneEntity);
+    EntityManager::get().destroy(_backPlaneLeftEntity);
+    EntityManager::get().destroy(_backPlaneRightEntity);
 
     if (_vertexBuffer) {
         _engine->destroy(_vertexBuffer);
@@ -365,8 +452,11 @@ static const size_t MAX_INDICES = 8000;
     if (_indexBuffer) {
         _engine->destroy(_indexBuffer);
     }
-    if (_backPlaneVertexBuffer) {
-        _engine->destroy(_backPlaneVertexBuffer);
+    if (_backPlaneLeftVertexBuffer) {
+        _engine->destroy(_backPlaneLeftVertexBuffer);
+    }
+    if (_backPlaneRightVertexBuffer) {
+        _engine->destroy(_backPlaneRightVertexBuffer);
     }
     if (_backPlaneIndexBuffer) {
         _engine->destroy(_backPlaneIndexBuffer);
