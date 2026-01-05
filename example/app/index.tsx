@@ -83,11 +83,6 @@ const App = () => {
 
   const currentModel = MODELS[currentModelIndex];
 
-  const occlusion = {
-    faceMesh: faceMeshOcclusionEnabled,
-    backPlane: backPlaneOcclusionEnabled,
-  };
-
   if (!hasPermission) {
     return (
       <View style={styles.container}>
@@ -108,7 +103,8 @@ const App = () => {
         style={styles.vtoView}
         modelUrl={currentModel}
         isActive={true}
-        occlusion={occlusion}
+        faceMeshOcclusion={faceMeshOcclusionEnabled}
+        backPlaneOcclusion={backPlaneOcclusionEnabled}
         onModelLoaded={callback(handleModelLoaded)}
       />
       {isLoading && (

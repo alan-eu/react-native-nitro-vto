@@ -10,8 +10,6 @@
 // Forward declarations of C++ defined types
 // Forward declaration of `HybridNitroVtoViewSpec` to properly resolve imports.
 namespace margelo::nitro::nitrovto { class HybridNitroVtoViewSpec; }
-// Forward declaration of `OcclusionSettings` to properly resolve imports.
-namespace margelo::nitro::nitrovto { struct OcclusionSettings; }
 
 // Forward declarations of Swift defined types
 // Forward declaration of `HybridNitroVtoViewSpec_cxx` to properly resolve imports.
@@ -19,7 +17,6 @@ namespace NitroVto { class HybridNitroVtoViewSpec_cxx; }
 
 // Include C++ defined types
 #include "HybridNitroVtoViewSpec.hpp"
-#include "OcclusionSettings.hpp"
 #include <NitroModules/Result.hpp>
 #include <exception>
 #include <functional>
@@ -70,18 +67,18 @@ namespace margelo::nitro::nitrovto::bridge::swift {
     return *optional;
   }
   
-  // pragma MARK: std::optional<OcclusionSettings>
+  // pragma MARK: std::optional<bool>
   /**
-   * Specialized version of `std::optional<OcclusionSettings>`.
+   * Specialized version of `std::optional<bool>`.
    */
-  using std__optional_OcclusionSettings_ = std::optional<OcclusionSettings>;
-  inline std::optional<OcclusionSettings> create_std__optional_OcclusionSettings_(const OcclusionSettings& value) noexcept {
-    return std::optional<OcclusionSettings>(value);
+  using std__optional_bool_ = std::optional<bool>;
+  inline std::optional<bool> create_std__optional_bool_(const bool& value) noexcept {
+    return std::optional<bool>(value);
   }
-  inline bool has_value_std__optional_OcclusionSettings_(const std::optional<OcclusionSettings>& optional) noexcept {
+  inline bool has_value_std__optional_bool_(const std::optional<bool>& optional) noexcept {
     return optional.has_value();
   }
-  inline OcclusionSettings get_std__optional_OcclusionSettings_(const std::optional<OcclusionSettings>& optional) noexcept {
+  inline bool get_std__optional_bool_(const std::optional<bool>& optional) noexcept {
     return *optional;
   }
   

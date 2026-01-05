@@ -39,10 +39,16 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.onModelLoaded = value
         }
 
-    override var occlusion: OcclusionSettings? = null
+    override var faceMeshOcclusion: Boolean? = null
         set(value) {
             field = value
-            nitroVtoView.setOcclusion(value)
+            nitroVtoView.setFaceMeshOcclusion(value)
+        }
+
+    override var backPlaneOcclusion: Boolean? = null
+        set(value) {
+            field = value
+            nitroVtoView.setBackPlaneOcclusion(value)
         }
 
     // Methods implementation

@@ -55,14 +55,24 @@ namespace margelo::nitro::nitrovto::views {
         throw std::runtime_error(std::string("NitroVtoView.onModelLoaded: ") + exc.what());
       }
     }()),
-    occlusion([&]() -> CachedProp<std::optional<OcclusionSettings>> {
+    faceMeshOcclusion([&]() -> CachedProp<std::optional<bool>> {
       try {
-        const react::RawValue* rawValue = rawProps.at("occlusion", nullptr, nullptr);
-        if (rawValue == nullptr) return sourceProps.occlusion;
+        const react::RawValue* rawValue = rawProps.at("faceMeshOcclusion", nullptr, nullptr);
+        if (rawValue == nullptr) return sourceProps.faceMeshOcclusion;
         const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
-        return CachedProp<std::optional<OcclusionSettings>>::fromRawValue(*runtime, value, sourceProps.occlusion);
+        return CachedProp<std::optional<bool>>::fromRawValue(*runtime, value, sourceProps.faceMeshOcclusion);
       } catch (const std::exception& exc) {
-        throw std::runtime_error(std::string("NitroVtoView.occlusion: ") + exc.what());
+        throw std::runtime_error(std::string("NitroVtoView.faceMeshOcclusion: ") + exc.what());
+      }
+    }()),
+    backPlaneOcclusion([&]() -> CachedProp<std::optional<bool>> {
+      try {
+        const react::RawValue* rawValue = rawProps.at("backPlaneOcclusion", nullptr, nullptr);
+        if (rawValue == nullptr) return sourceProps.backPlaneOcclusion;
+        const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
+        return CachedProp<std::optional<bool>>::fromRawValue(*runtime, value, sourceProps.backPlaneOcclusion);
+      } catch (const std::exception& exc) {
+        throw std::runtime_error(std::string("NitroVtoView.backPlaneOcclusion: ") + exc.what());
       }
     }()),
     hybridRef([&]() -> CachedProp<std::optional<std::function<void(const std::shared_ptr<HybridNitroVtoViewSpec>& /* ref */)>>> {
@@ -81,7 +91,8 @@ namespace margelo::nitro::nitrovto::views {
     modelUrl(other.modelUrl),
     isActive(other.isActive),
     onModelLoaded(other.onModelLoaded),
-    occlusion(other.occlusion),
+    faceMeshOcclusion(other.faceMeshOcclusion),
+    backPlaneOcclusion(other.backPlaneOcclusion),
     hybridRef(other.hybridRef) { }
 
   bool HybridNitroVtoViewProps::filterObjectKeys(const std::string& propName) {
@@ -89,7 +100,8 @@ namespace margelo::nitro::nitrovto::views {
       case hashString("modelUrl"): return true;
       case hashString("isActive"): return true;
       case hashString("onModelLoaded"): return true;
-      case hashString("occlusion"): return true;
+      case hashString("faceMeshOcclusion"): return true;
+      case hashString("backPlaneOcclusion"): return true;
       case hashString("hybridRef"): return true;
       default: return false;
     }

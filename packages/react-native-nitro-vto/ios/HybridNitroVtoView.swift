@@ -42,9 +42,15 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
         }
     }
 
-    public var occlusion: OcclusionSettings? = nil {
+    public var faceMeshOcclusion: Bool? = nil {
         didSet {
-            nitroVtoView.setOcclusion(occlusion)
+            nitroVtoView.setFaceMeshOcclusion(faceMeshOcclusion)
+        }
+    }
+
+    public var backPlaneOcclusion: Bool? = nil {
+        didSet {
+            nitroVtoView.setBackPlaneOcclusion(backPlaneOcclusion)
         }
     }
 

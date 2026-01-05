@@ -186,9 +186,15 @@ static NSString *const TAG = @"VTORenderer";
     [_glassesRenderer hide];
 }
 
-- (void)setOcclusionWithFaceMesh:(BOOL)faceMesh backPlane:(BOOL)backPlane {
+- (void)setFaceMeshOcclusion:(BOOL)enabled {
     if (_initialized) {
-        [_faceOcclusionRenderer setOcclusionWithFaceMesh:faceMesh backPlane:backPlane];
+        [_faceOcclusionRenderer setFaceMeshOcclusion:enabled];
+    }
+}
+
+- (void)setBackPlaneOcclusion:(BOOL)enabled {
+    if (_initialized) {
+        [_faceOcclusionRenderer setBackPlaneOcclusion:enabled];
     }
 }
 

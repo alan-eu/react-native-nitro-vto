@@ -212,23 +212,26 @@ static const size_t MAX_INDICES = 8000;
 
 }
 
-- (void)setOcclusionWithFaceMesh:(BOOL)faceMesh backPlane:(BOOL)backPlane {
+- (void)setFaceMeshOcclusion:(BOOL)enabled {
     // If face mesh is being disabled, remove from scene
-    if (_faceMeshEnabled && !faceMesh && _isVisible) {
+    if (_faceMeshEnabled && !enabled && _isVisible) {
         _scene->remove(_faceMeshEntity);
         _isVisible = NO;
     }
 
+    _faceMeshEnabled = enabled;
+    NSLog(@"%@: Face mesh occlusion updated: %d", TAG, enabled);
+}
+
+- (void)setBackPlaneOcclusion:(BOOL)enabled {
     // If back plane is being disabled, remove from scene
-    if (_backPlaneEnabled && !backPlane && _backPlaneVisible) {
+    if (_backPlaneEnabled && !enabled && _backPlaneVisible) {
         _scene->remove(_backPlaneEntity);
         _backPlaneVisible = NO;
     }
 
-    _faceMeshEnabled = faceMesh;
-    _backPlaneEnabled = backPlane;
-
-    NSLog(@"%@: Occlusion settings updated: faceMesh=%d, backPlane=%d", TAG, faceMesh, backPlane);
+    _backPlaneEnabled = enabled;
+    NSLog(@"%@: Back plane occlusion updated: %d", TAG, enabled);
 }
 
 - (void)updateWithFace:(ARFaceAnchor *)face {

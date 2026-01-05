@@ -53,7 +53,8 @@ function App() {
         style={{ flex: 1 }}
         modelUrl="https://example.com/glasses.glb"
         isActive={true}
-        occlusion={{ faceMesh: true, backPlane: true }}
+        faceMeshOcclusion={true}
+        backPlaneOcclusion={true}
         onModelLoaded={callback((url) => console.log("Model loaded:", url))}
       />
     </View>
@@ -67,20 +68,14 @@ function App() {
 
 ### Props
 
-| Prop            | Type                         | Description                                                                                    |
-| --------------- | ---------------------------- | ---------------------------------------------------------------------------------------------- |
-| `modelUrl`      | `string`                     | URL to the GLB model file. Models should be authored in meters at real-world size.            |
-| `isActive`      | `boolean`                    | Whether the AR session is active                                                               |
-| `occlusion`     | `OcclusionSettings`          | Optional. Controls face occlusion behavior. See below.                                         |
-| `onModelLoaded` | `(modelUrl: string) => void` | Callback when model loading completes (wrap with `callback()`)                                 |
-| `style`         | `ViewStyle`                  | Standard React Native view styles                                                              |
-
-#### OcclusionSettings
-
-| Property    | Type      | Default | Description                                                                 |
-| ----------- | --------- | ------- | --------------------------------------------------------------------------- |
-| `faceMesh`  | `boolean` | `true`  | Enable face mesh occlusion (glasses appear behind face edges)               |
-| `backPlane` | `boolean` | `true`  | Enable back plane occlusion (clips glasses temples extending behind head)   |
+| Prop                 | Type                         | Default | Description                                                                      |
+| -------------------- | ---------------------------- | ------- | -------------------------------------------------------------------------------- |
+| `modelUrl`           | `string`                     | -       | URL to the GLB model file. Models should be authored in meters at real-world size. |
+| `isActive`           | `boolean`                    | -       | Whether the AR session is active                                                 |
+| `faceMeshOcclusion`  | `boolean`                    | `true`  | Enable face mesh occlusion (glasses appear behind face edges)                    |
+| `backPlaneOcclusion` | `boolean`                    | `true`  | Enable back plane occlusion (clips glasses temples extending behind head)        |
+| `onModelLoaded`      | `(modelUrl: string) => void` | -       | Callback when model loading completes (wrap with `callback()`)                   |
+| `style`              | `ViewStyle`                  | -       | Standard React Native view styles                                                |
 
 ### Methods
 

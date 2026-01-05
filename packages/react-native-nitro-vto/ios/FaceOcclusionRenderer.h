@@ -19,8 +19,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setupWithEngine:(filament::Engine *)engine
                   scene:(filament::Scene *)scene;
 
-/// Set occlusion settings (faceMesh and backPlane booleans)
-- (void)setOcclusionWithFaceMesh:(BOOL)faceMesh backPlane:(BOOL)backPlane;
+/// Set face mesh occlusion enabled
+- (void)setFaceMeshOcclusion:(BOOL)enabled;
+
+/// Set back plane occlusion enabled
+- (void)setBackPlaneOcclusion:(BOOL)enabled;
 
 /// Update face mesh geometry from ARKit face anchor
 - (void)updateWithFace:(ARFaceAnchor *)face;

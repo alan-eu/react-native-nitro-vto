@@ -48,8 +48,12 @@ void JHybridNitroVtoViewStateUpdater::updateViewProps(jni::alias_ref<jni::JClass
     view->setOnModelLoaded(props.onModelLoaded.value);
     // TODO: Set isDirty = false
   }
-  if (props.occlusion.isDirty) {
-    view->setOcclusion(props.occlusion.value);
+  if (props.faceMeshOcclusion.isDirty) {
+    view->setFaceMeshOcclusion(props.faceMeshOcclusion.value);
+    // TODO: Set isDirty = false
+  }
+  if (props.backPlaneOcclusion.isDirty) {
+    view->setBackPlaneOcclusion(props.backPlaneOcclusion.value);
     // TODO: Set isDirty = false
   }
 
