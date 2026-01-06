@@ -54,6 +54,12 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
         }
     }
 
+    public var forwardOffset: Double? = nil {
+        didSet {
+            nitroVtoView.setForwardOffset(forwardOffset)
+        }
+    }
+
     // MARK: - Methods implementation
 
     public func switchModel(modelUrl: String) throws {

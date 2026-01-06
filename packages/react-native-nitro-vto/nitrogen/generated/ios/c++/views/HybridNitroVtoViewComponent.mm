@@ -96,6 +96,11 @@ using namespace margelo::nitro::nitrovto::views;
     swiftPart.setBackPlaneOcclusion(newViewProps.backPlaneOcclusion.value);
     newViewProps.backPlaneOcclusion.isDirty = false;
   }
+  // forwardOffset: optional
+  if (newViewProps.forwardOffset.isDirty) {
+    swiftPart.setForwardOffset(newViewProps.forwardOffset.value);
+    newViewProps.forwardOffset.isDirty = false;
+  }
 
   swiftPart.afterUpdate();
 

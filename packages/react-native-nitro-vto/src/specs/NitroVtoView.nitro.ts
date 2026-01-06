@@ -40,6 +40,13 @@ export interface NitroVtoViewProps extends HybridViewProps {
    * Default: true
    */
   backPlaneOcclusion?: boolean;
+
+  /**
+   * Forward offset for glasses positioning in meters.
+   * Moves the glasses forward (positive) or backward (negative) relative to the face.
+   * Default: 0.005 (5mm forward)
+   */
+  forwardOffset?: number;
 }
 
 /**

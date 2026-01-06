@@ -105,6 +105,7 @@ const App = () => {
         isActive={true}
         faceMeshOcclusion={faceMeshOcclusionEnabled}
         backPlaneOcclusion={backPlaneOcclusionEnabled}
+        forwardOffset={0.0035}
         onModelLoaded={callback(handleModelLoaded)}
       />
       {isLoading && (

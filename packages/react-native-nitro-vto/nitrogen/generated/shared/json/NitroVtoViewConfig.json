@@ -9,6 +9,7 @@
     "onModelLoaded": true,
     "faceMeshOcclusion": true,
     "backPlaneOcclusion": true,
+    "forwardOffset": true,
     "hybridRef": true
   }
 }

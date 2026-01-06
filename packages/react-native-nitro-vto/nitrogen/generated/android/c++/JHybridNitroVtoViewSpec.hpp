@@ -60,6 +60,8 @@ namespace margelo::nitro::nitrovto {
     void setFaceMeshOcclusion(std::optional<bool> faceMeshOcclusion) override;
     std::optional<bool> getBackPlaneOcclusion() override;
     void setBackPlaneOcclusion(std::optional<bool> backPlaneOcclusion) override;
+    std::optional<double> getForwardOffset() override;
+    void setForwardOffset(std::optional<double> forwardOffset) override;
 
   public:
     // Methods

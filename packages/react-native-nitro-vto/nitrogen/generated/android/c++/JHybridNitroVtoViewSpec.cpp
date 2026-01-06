@@ -97,6 +97,15 @@ namespace margelo::nitro::nitrovto {
     static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JBoolean> /* backPlaneOcclusion */)>("setBackPlaneOcclusion");
     method(_javaPart, backPlaneOcclusion.has_value() ? jni::JBoolean::valueOf(backPlaneOcclusion.value()) : nullptr);
   }
+  std::optional<double> JHybridNitroVtoViewSpec::getForwardOffset() {
+    static const auto method = javaClassStatic()->getMethod<jni::local_ref<jni::JDouble>()>("getForwardOffset");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional(__result->value()) : std::nullopt;
+  }
+  void JHybridNitroVtoViewSpec::setForwardOffset(std::optional<double> forwardOffset) {
+    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JDouble> /* forwardOffset */)>("setForwardOffset");
+    method(_javaPart, forwardOffset.has_value() ? jni::JDouble::valueOf(forwardOffset.value()) : nullptr);
+  }
 
   // Methods
   void JHybridNitroVtoViewSpec::switchModel(const std::string& modelUrl) {

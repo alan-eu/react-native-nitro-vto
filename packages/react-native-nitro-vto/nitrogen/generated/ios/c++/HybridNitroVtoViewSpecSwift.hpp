@@ -92,6 +92,13 @@ namespace margelo::nitro::nitrovto {
     inline void setBackPlaneOcclusion(std::optional<bool> backPlaneOcclusion) noexcept override {
       _swiftPart.setBackPlaneOcclusion(backPlaneOcclusion);
     }
+    inline std::optional<double> getForwardOffset() noexcept override {
+      auto __result = _swiftPart.getForwardOffset();
+      return __result;
+    }
+    inline void setForwardOffset(std::optional<double> forwardOffset) noexcept override {
+      _swiftPart.setForwardOffset(forwardOffset);
+    }
 
   public:
     // Methods

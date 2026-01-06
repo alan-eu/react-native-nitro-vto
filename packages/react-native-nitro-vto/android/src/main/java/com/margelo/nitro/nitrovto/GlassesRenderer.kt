@@ -55,6 +55,9 @@ class GlassesRenderer(private val context: Context) {
     private val positionFilter = KalmanFilter3D(processNoise = 0.1f, measurementNoise = 0.05f)
     private val rotationFilter = KalmanFilterQuaternion(processNoise = 0.1f, measurementNoise = 0.05f)
 
+    // Forward offset for glasses positioning (in meters)
+    private var forwardOffset = 0.005f  // Default: 5mm forward
+
     /**
      * Setup the glasses renderer with Filament engine and scene.
      * @param engine Filament engine instance
@@ -150,8 +153,7 @@ class GlassesRenderer(private val context: Context) {
             val rotationMatrix = MatrixUtils.quaternionToMatrix(smoothedRotation)
             System.arraycopy(rotationMatrix, 0, tempMatrix16, 0, 16)
 
-            // Offset glasses slightly forward (along face's Z axis) to avoid face occlusion clipping
-            val forwardOffset = 0.0015f  // 1.5mm forward
+            // Offset glasses along face's Z axis (forward/backward)
             val forwardX = rotationMatrix[8]   // Z axis X component (column 2, row 0)
             val forwardY = rotationMatrix[9]   // Z axis Y component (column 2, row 1)
             val forwardZ = rotationMatrix[10]  // Z axis Z component (column 2, row 2)
@@ -195,6 +197,13 @@ class GlassesRenderer(private val context: Context) {
     private fun resetFilters() {
         positionFilter.reset()
         rotationFilter.reset()
+    }
+
+    /**
+     * Set forward offset for glasses positioning (in meters).
+     */
+    fun setForwardOffset(offset: Float) {
+        forwardOffset = offset
     }
 
     /**

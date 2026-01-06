@@ -215,6 +215,23 @@ open class HybridNitroVtoViewSpec_cxx {
       }()
     }
   }
+  
+  public final var forwardOffset: bridge.std__optional_double_ {
+    @inline(__always)
+    get {
+      return { () -> bridge.std__optional_double_ in
+        if let __unwrappedValue = self.__implementation.forwardOffset {
+          return bridge.create_std__optional_double_(__unwrappedValue)
+        } else {
+          return .init()
+        }
+      }()
+    }
+    @inline(__always)
+    set {
+      self.__implementation.forwardOffset = newValue.value
+    }
+  }
 
   // Methods
   @inline(__always)

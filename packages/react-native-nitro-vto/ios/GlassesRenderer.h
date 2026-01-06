@@ -31,6 +31,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Switch to a different glasses model
 - (void)switchModelWithUrl:(NSString *)modelUrl;
 
+/// Set forward offset for glasses positioning (in meters)
+- (void)setForwardOffset:(float)offset;
+
 /// Cleanup and destroy resources
 - (void)destroy;
 

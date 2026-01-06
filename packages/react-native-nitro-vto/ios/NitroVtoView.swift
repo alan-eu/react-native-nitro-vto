@@ -113,6 +113,11 @@ class NitroVtoView: UIView {
         vtoRenderer?.setBackPlaneOcclusion(backPlane)
     }
 
+    func setForwardOffset(_ offset: Double?) {
+        let forwardOffset = Float(offset ?? 0.005)
+        vtoRenderer?.setForwardOffset(forwardOffset)
+    }
+
     // MARK: - Initialization
 
     private func initialize() {

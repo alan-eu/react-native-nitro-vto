@@ -55,6 +55,7 @@ function App() {
         isActive={true}
         faceMeshOcclusion={true}
         backPlaneOcclusion={true}
+        forwardOffset={0.005}
         onModelLoaded={callback((url) => console.log("Model loaded:", url))}
       />
     </View>
@@ -74,6 +75,7 @@ function App() {
 | `isActive`           | `boolean`                    | -       | Whether the AR session is active                                                 |
 | `faceMeshOcclusion`  | `boolean`                    | `true`  | Enable face mesh occlusion (glasses appear behind face edges)                    |
 | `backPlaneOcclusion` | `boolean`                    | `true`  | Enable back plane occlusion (clips glasses temples extending behind head)        |
+| `forwardOffset`      | `number`                     | `0.005` | Forward offset for glasses positioning in meters (positive = forward, negative = backward) |
 | `onModelLoaded`      | `(modelUrl: string) => void` | -       | Callback when model loading completes (wrap with `callback()`)                   |
 | `style`              | `ViewStyle`                  | -       | Standard React Native view styles                                                |
 
