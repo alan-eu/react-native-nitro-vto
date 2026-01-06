@@ -10,6 +10,7 @@
     "faceMeshOcclusion": true,
     "backPlaneOcclusion": true,
     "forwardOffset": true,
+    "debug": true,
     "hybridRef": true
   }
 }

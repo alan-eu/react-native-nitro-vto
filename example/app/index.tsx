@@ -24,6 +24,7 @@ const App = () => {
     useState(true);
   const [backPlaneOcclusionEnabled, setBackPlaneOcclusionEnabled] =
     useState(true);
+  const [debugEnabled, setDebugEnabled] = useState(false);
 
   const requestCameraPermission = useCallback(async () => {
     if (Platform.OS === "android") {
@@ -81,6 +82,10 @@ const App = () => {
     setBackPlaneOcclusionEnabled((prev) => !prev);
   }, []);
 
+  const handleDebug = useCallback(() => {
+    setDebugEnabled((prev) => !prev);
+  }, []);
+
   const currentModel = MODELS[currentModelIndex];
 
   if (!hasPermission) {
@@ -106,6 +111,7 @@ const App = () => {
         faceMeshOcclusion={faceMeshOcclusionEnabled}
         backPlaneOcclusion={backPlaneOcclusionEnabled}
         forwardOffset={0.0035}
+        debug={debugEnabled}
         onModelLoaded={callback(handleModelLoaded)}
       />
       {isLoading && (
@@ -151,6 +157,18 @@ const App = () => {
             {backPlaneOcclusionEnabled ? "Enabled" : "Disabled"}
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            debugEnabled ? styles.buttonEnabled : styles.buttonDisabled,
+          ]}
+          onPress={handleDebug}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            Debug: {debugEnabled ? "Enabled" : "Disabled"}
+          </Text>
+        </TouchableOpacity>
         <Text style={styles.text}>Nitro VTO Version: {nitroVtoVersion}</Text>
       </View>
     </View>
@@ -176,7 +194,7 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: "#007AFF",
     paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingVertical: 8,
     borderRadius: 8,
   },
   buttonLoading: {
@@ -190,7 +208,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
   text: {

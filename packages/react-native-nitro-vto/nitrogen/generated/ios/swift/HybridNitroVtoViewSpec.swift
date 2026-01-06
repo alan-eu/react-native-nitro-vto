@@ -17,6 +17,7 @@ public protocol HybridNitroVtoViewSpec_protocol: HybridObject, HybridView {
   var faceMeshOcclusion: Bool? { get set }
   var backPlaneOcclusion: Bool? { get set }
   var forwardOffset: Double? { get set }
+  var debug: Bool? { get set }
 
   // Methods
   func switchModel(modelUrl: String) throws -> Void

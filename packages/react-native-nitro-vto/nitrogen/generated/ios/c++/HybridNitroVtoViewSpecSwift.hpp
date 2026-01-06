@@ -99,6 +99,13 @@ namespace margelo::nitro::nitrovto {
     inline void setForwardOffset(std::optional<double> forwardOffset) noexcept override {
       _swiftPart.setForwardOffset(forwardOffset);
     }
+    inline std::optional<bool> getDebug() noexcept override {
+      auto __result = _swiftPart.getDebug();
+      return __result;
+    }
+    inline void setDebug(std::optional<bool> debug) noexcept override {
+      _swiftPart.setDebug(debug);
+    }
 
   public:
     // Methods

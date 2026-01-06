@@ -49,6 +49,7 @@ namespace margelo::nitro::nitrovto::views {
     CachedProp<std::optional<bool>> faceMeshOcclusion;
     CachedProp<std::optional<bool>> backPlaneOcclusion;
     CachedProp<std::optional<double>> forwardOffset;
+    CachedProp<std::optional<bool>> debug;
     CachedProp<std::optional<std::function<void(const std::shared_ptr<HybridNitroVtoViewSpec>& /* ref */)>>> hybridRef;
 
   private:

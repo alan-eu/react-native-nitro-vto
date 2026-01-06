@@ -1,0 +1,22 @@
+material {
+    name : debug_face_material,
+    shadingModel : unlit,
+    blending : transparent,
+    depthWrite : true,
+    depthCulling : false,
+    doubleSided : true,
+    colorWrite : true,
+    parameters : [
+        {
+            type : float4,
+            name : debugColor
+        }
+    ]
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        material.baseColor = materialParams.debugColor;
+    }
+}

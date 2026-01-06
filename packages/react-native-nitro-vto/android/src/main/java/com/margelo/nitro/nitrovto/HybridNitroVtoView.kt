@@ -57,6 +57,12 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.setForwardOffset(value)
         }
 
+    override var debug: Boolean? = null
+        set(value) {
+            field = value
+            nitroVtoView.setDebug(value)
+        }
+
     // Methods implementation
     override fun switchModel(modelUrl: String) {
         nitroVtoView.switchModel(modelUrl)

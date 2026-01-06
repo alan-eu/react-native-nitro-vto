@@ -101,6 +101,11 @@ using namespace margelo::nitro::nitrovto::views;
     swiftPart.setForwardOffset(newViewProps.forwardOffset.value);
     newViewProps.forwardOffset.isDirty = false;
   }
+  // debug: optional
+  if (newViewProps.debug.isDirty) {
+    swiftPart.setDebug(newViewProps.debug.value);
+    newViewProps.debug.isDirty = false;
+  }
 
   swiftPart.afterUpdate();
 

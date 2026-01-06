@@ -60,6 +60,10 @@ void JHybridNitroVtoViewStateUpdater::updateViewProps(jni::alias_ref<jni::JClass
     view->setForwardOffset(props.forwardOffset.value);
     // TODO: Set isDirty = false
   }
+  if (props.debug.isDirty) {
+    view->setDebug(props.debug.value);
+    // TODO: Set isDirty = false
+  }
 
   // Update hybridRef if it changed
   if (props.hybridRef.isDirty) {

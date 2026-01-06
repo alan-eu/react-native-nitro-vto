@@ -106,6 +106,15 @@ namespace margelo::nitro::nitrovto {
     static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JDouble> /* forwardOffset */)>("setForwardOffset");
     method(_javaPart, forwardOffset.has_value() ? jni::JDouble::valueOf(forwardOffset.value()) : nullptr);
   }
+  std::optional<bool> JHybridNitroVtoViewSpec::getDebug() {
+    static const auto method = javaClassStatic()->getMethod<jni::local_ref<jni::JBoolean>()>("getDebug");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional(static_cast<bool>(__result->value())) : std::nullopt;
+  }
+  void JHybridNitroVtoViewSpec::setDebug(std::optional<bool> debug) {
+    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JBoolean> /* debug */)>("setDebug");
+    method(_javaPart, debug.has_value() ? jni::JBoolean::valueOf(debug.value()) : nullptr);
+  }
 
   // Methods
   void JHybridNitroVtoViewSpec::switchModel(const std::string& modelUrl) {
