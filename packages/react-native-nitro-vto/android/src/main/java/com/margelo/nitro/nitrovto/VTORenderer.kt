@@ -236,6 +236,15 @@ class VTORenderer(private val context: Context) {
         }
     }
 
+    /**
+     * Set forward offset for glasses positioning (in meters)
+     */
+    fun setForwardOffset(offset: Float) {
+        if (initialized) {
+            glassesRenderer.setForwardOffset(offset)
+        }
+    }
+
     private fun doFrame() {
         if (!initialized) return
 

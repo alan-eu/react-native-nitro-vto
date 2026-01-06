@@ -198,6 +198,12 @@ static NSString *const TAG = @"VTORenderer";
     }
 }
 
+- (void)setForwardOffset:(float)offset {
+    if (_initialized) {
+        [_glassesRenderer setForwardOffset:offset];
+    }
+}
+
 - (void)renderWithFrame:(ARFrame *)frame faces:(NSArray<ARFaceAnchor *> *)faces {
     if (!_initialized) return;
 

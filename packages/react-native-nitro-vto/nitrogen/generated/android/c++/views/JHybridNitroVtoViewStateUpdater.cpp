@@ -56,6 +56,10 @@ void JHybridNitroVtoViewStateUpdater::updateViewProps(jni::alias_ref<jni::JClass
     view->setBackPlaneOcclusion(props.backPlaneOcclusion.value);
     // TODO: Set isDirty = false
   }
+  if (props.forwardOffset.isDirty) {
+    view->setForwardOffset(props.forwardOffset.value);
+    // TODO: Set isDirty = false
+  }
 
   // Update hybridRef if it changed
   if (props.hybridRef.isDirty) {

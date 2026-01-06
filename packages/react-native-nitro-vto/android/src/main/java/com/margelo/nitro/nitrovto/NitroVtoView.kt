@@ -100,6 +100,13 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     }
 
     /**
+     * Set forward offset for glasses positioning (in meters)
+     */
+    fun setForwardOffset(offset: Double?) {
+        vtoRenderer?.setForwardOffset((offset ?: 0.005).toFloat())
+    }
+
+    /**
      * Switch to a different glasses model
      */
     fun switchModel(modelUrl: String) {

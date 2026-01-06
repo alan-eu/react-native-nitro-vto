@@ -51,6 +51,12 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.setBackPlaneOcclusion(value)
         }
 
+    override var forwardOffset: Double? = null
+        set(value) {
+            field = value
+            nitroVtoView.setForwardOffset(value)
+        }
+
     // Methods implementation
     override fun switchModel(modelUrl: String) {
         nitroVtoView.switchModel(modelUrl)

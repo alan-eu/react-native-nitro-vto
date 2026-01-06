@@ -41,6 +41,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Set back plane occlusion enabled
 - (void)setBackPlaneOcclusion:(BOOL)enabled;
 
+/// Set forward offset for glasses positioning (in meters)
+- (void)setForwardOffset:(float)offset;
+
 /// Render a frame with ARKit data
 - (void)renderWithFrame:(ARFrame *)frame faces:(NSArray<ARFaceAnchor *> *)faces;
 

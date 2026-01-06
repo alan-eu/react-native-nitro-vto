@@ -43,6 +43,9 @@ static NSString *const TAG = @"GlassesRenderer";
 @property (nonatomic, strong) KalmanFilter3D *positionFilter;
 @property (nonatomic, strong) KalmanFilterQuaternion *rotationFilter;
 
+// Forward offset for glasses positioning (in meters)
+@property (nonatomic, assign) float forwardOffset;
+
 @end
 
 @implementation GlassesRenderer
@@ -54,6 +57,7 @@ static NSString *const TAG = @"GlassesRenderer";
         _isLoading = NO;
         _positionFilter = [[KalmanFilter3D alloc] initWithProcessNoise:0.1f measurementNoise:0.05f];
         _rotationFilter = [[KalmanFilterQuaternion alloc] initWithProcessNoise:0.1f measurementNoise:0.05f];
+        _forwardOffset = 0.005f; // Default: 5mm forward
     }
     return self;
 }
@@ -165,16 +169,15 @@ static NSString *const TAG = @"GlassesRenderer";
     // Build world-space transform matrix (no scaling - models are in real-world meters)
     simd_float4x4 rotationMatrix = [MatrixUtils quaternionToMatrix:smoothedRotation];
 
-    // Offset glasses slightly forward (along face's Z axis) to avoid face occlusion clipping
-    const float forwardOffset = 0.0015f; // 1.5mm forward
+    // Offset glasses along face's Z axis (forward/backward)
     simd_float3 forward = simd_make_float3(rotationMatrix.columns[2].x,
                                             rotationMatrix.columns[2].y,
                                             rotationMatrix.columns[2].z);
 
     // Set world-space position with forward offset
-    rotationMatrix.columns[3].x = smoothedPosition.x + forward.x * forwardOffset;
-    rotationMatrix.columns[3].y = smoothedPosition.y + forward.y * forwardOffset;
-    rotationMatrix.columns[3].z = smoothedPosition.z + forward.z * forwardOffset;
+    rotationMatrix.columns[3].x = smoothedPosition.x + forward.x * _forwardOffset;
+    rotationMatrix.columns[3].y = smoothedPosition.y + forward.y * _forwardOffset;
+    rotationMatrix.columns[3].z = smoothedPosition.z + forward.z * _forwardOffset;
 
     // Convert simd matrix to filament matrix
     filament::math::mat4f filamentTransform;
@@ -234,6 +237,10 @@ static NSString *const TAG = @"GlassesRenderer";
 - (void)resetFilters {
     [_positionFilter reset];
     [_rotationFilter reset];
+}
+
+- (void)setForwardOffset:(float)offset {
+    _forwardOffset = offset;
 }
 
 - (void)switchModelWithUrl:(NSString *)modelUrl {
