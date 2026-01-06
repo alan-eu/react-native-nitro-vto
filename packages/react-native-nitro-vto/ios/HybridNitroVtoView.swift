@@ -60,6 +60,12 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
         }
     }
 
+    public var debug: Bool? = nil {
+        didSet {
+            nitroVtoView.setDebug(debug)
+        }
+    }
+
     // MARK: - Methods implementation
 
     public func switchModel(modelUrl: String) throws {

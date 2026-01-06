@@ -44,6 +44,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Set forward offset for glasses positioning (in meters)
 - (void)setForwardOffset:(float)offset;
 
+/// Set debug mode enabled
+- (void)setDebug:(BOOL)enabled;
+
 /// Render a frame with ARKit data
 - (void)renderWithFrame:(ARFrame *)frame faces:(NSArray<ARFaceAnchor *> *)faces;
 

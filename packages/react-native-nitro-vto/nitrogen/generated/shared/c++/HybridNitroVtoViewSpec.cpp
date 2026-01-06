@@ -26,6 +26,8 @@ namespace margelo::nitro::nitrovto {
       prototype.registerHybridSetter("backPlaneOcclusion", &HybridNitroVtoViewSpec::setBackPlaneOcclusion);
       prototype.registerHybridGetter("forwardOffset", &HybridNitroVtoViewSpec::getForwardOffset);
       prototype.registerHybridSetter("forwardOffset", &HybridNitroVtoViewSpec::setForwardOffset);
+      prototype.registerHybridGetter("debug", &HybridNitroVtoViewSpec::getDebug);
+      prototype.registerHybridSetter("debug", &HybridNitroVtoViewSpec::setDebug);
       prototype.registerHybridMethod("switchModel", &HybridNitroVtoViewSpec::switchModel);
       prototype.registerHybridMethod("resetSession", &HybridNitroVtoViewSpec::resetSession);
     });

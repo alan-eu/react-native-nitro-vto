@@ -15,6 +15,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FaceOcclusionRenderer : NSObject
 
+/// Whether the left back plane is currently visible (based on head yaw)
+@property (nonatomic, readonly) BOOL isLeftBackPlaneVisible;
+
+/// Whether the right back plane is currently visible (based on head yaw)
+@property (nonatomic, readonly) BOOL isRightBackPlaneVisible;
+
 /// Setup the face occlusion renderer with Filament engine and scene
 - (void)setupWithEngine:(filament::Engine *)engine
                   scene:(filament::Scene *)scene;

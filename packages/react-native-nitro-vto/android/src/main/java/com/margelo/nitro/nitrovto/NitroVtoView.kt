@@ -107,6 +107,13 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     }
 
     /**
+     * Set debug mode enabled
+     */
+    fun setDebug(enabled: Boolean?) {
+        vtoRenderer?.setDebug(enabled ?: false)
+    }
+
+    /**
      * Switch to a different glasses model
      */
     fun switchModel(modelUrl: String) {

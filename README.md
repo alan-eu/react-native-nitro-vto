@@ -76,6 +76,7 @@ function App() {
 | `faceMeshOcclusion`  | `boolean`                    | `true`  | Enable face mesh occlusion (glasses appear behind face edges)                    |
 | `backPlaneOcclusion` | `boolean`                    | `true`  | Enable back plane occlusion (clips glasses temples extending behind head)        |
 | `forwardOffset`      | `number`                     | `0.005` | Forward offset for glasses positioning in meters (positive = forward, negative = backward) |
+| `debug`              | `boolean`                    | `false` | Enable debug visualization (red=face mesh, green=left plane, blue=right plane)  |
 | `onModelLoaded`      | `(modelUrl: string) => void` | -       | Callback when model loading completes (wrap with `callback()`)                   |
 | `style`              | `ViewStyle`                  | -       | Standard React Native view styles                                                |
 
@@ -123,21 +124,26 @@ function App() {
 
 Version 1.67.1 for Android and 1.56.6 for iOS.
 
-### Compile Materials for Android
+### Compile Materials
 
-For Android, compile materials with OpenGL and Vulkan backends:
-
-```bash
-matc --api opengl --api vulkan --platform mobile -o output.filamat input.mat
-```
-
-### Compile Materials for iOS
-
-For iOS, compile materials with Metal backend:
+Create a `.env` file at the package root with paths to your matc binaries:
 
 ```bash
-matc --api metal --platform mobile -o output.filamat input.mat
+MATC_IOS_PATH=/path/to/filament_v1.56.6/bin/matc
+MATC_ANDROID_PATH=/path/to/filament_v1.67.1/bin/matc
 ```
+
+Then use the npm script to compile materials:
+
+```bash
+# Compile for iOS (Metal backend)
+npm run matc debug_material.mat ios
+
+# Compile for Android (OpenGL + Vulkan backends)
+npm run matc debug_material.mat android
+```
+
+The script automatically places the output `.filamat` file in the correct platform folder.
 
 ### Generate IBL from HDR env
 

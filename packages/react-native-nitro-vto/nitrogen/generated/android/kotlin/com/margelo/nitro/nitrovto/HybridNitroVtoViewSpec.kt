@@ -85,6 +85,12 @@ abstract class HybridNitroVtoViewSpec: HybridView() {
   @set:DoNotStrip
   @set:Keep
   abstract var forwardOffset: Double?
+  
+  @get:DoNotStrip
+  @get:Keep
+  @set:DoNotStrip
+  @set:Keep
+  abstract var debug: Boolean?
 
   // Methods
   @DoNotStrip

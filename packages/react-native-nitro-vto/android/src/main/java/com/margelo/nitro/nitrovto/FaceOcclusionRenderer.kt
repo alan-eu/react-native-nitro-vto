@@ -50,6 +50,12 @@ class FaceOcclusionRenderer(private val context: Context) {
     private var backPlaneLeftInScene = false
     private var backPlaneRightInScene = false
 
+    /** Whether the left back plane is currently visible (based on head yaw) */
+    val isLeftBackPlaneVisible: Boolean get() = backPlaneLeftInScene
+
+    /** Whether the right back plane is currently visible (based on head yaw) */
+    val isRightBackPlaneVisible: Boolean get() = backPlaneRightInScene
+
     // Reusable arrays to avoid per-frame allocations
     private val vertexData = FloatArray(VERTEX_COUNT * 3)
     private val tempMatrix16 = FloatArray(16)

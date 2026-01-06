@@ -64,6 +64,9 @@ class VTORenderer(private val context: Context) {
     // Face occlusion renderer
     private lateinit var faceOcclusionRenderer: FaceOcclusionRenderer
 
+    // Debug renderer
+    private lateinit var debugRenderer: DebugRenderer
+
     // ARCore
     var session: Session? = null
 
@@ -170,6 +173,10 @@ class VTORenderer(private val context: Context) {
         glassesRenderer.onModelLoaded = onModelLoaded
         glassesRenderer.setup(engine, scene, modelUrl)
 
+        // Setup debug renderer
+        debugRenderer = DebugRenderer(context)
+        debugRenderer.setup(engine, scene)
+
         initialized = true
     }
 
@@ -245,6 +252,15 @@ class VTORenderer(private val context: Context) {
         }
     }
 
+    /**
+     * Set debug mode enabled
+     */
+    fun setDebug(enabled: Boolean) {
+        if (initialized) {
+            debugRenderer.setEnabled(enabled)
+        }
+    }
+
     private fun doFrame() {
         if (!initialized) return
 
@@ -302,9 +318,15 @@ class VTORenderer(private val context: Context) {
                 val face = faces.first()
                 faceOcclusionRenderer.update(face)
                 glassesRenderer.updateTransform(face, frame)
+                debugRenderer.update(
+                    face,
+                    faceOcclusionRenderer.isLeftBackPlaneVisible,
+                    faceOcclusionRenderer.isRightBackPlaneVisible
+                )
             } else {
                 faceOcclusionRenderer.hide()
                 glassesRenderer.hide()
+                debugRenderer.hide()
             }
 
             // Render frame with Filament
@@ -323,6 +345,7 @@ class VTORenderer(private val context: Context) {
 
         if (!initialized) return
 
+        debugRenderer.destroy()
         glassesRenderer.destroy()
         faceOcclusionRenderer.destroy()
         cameraTextureRenderer.destroy()

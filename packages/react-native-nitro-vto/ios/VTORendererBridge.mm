@@ -14,6 +14,7 @@
 #import "EnvironmentLightingRenderer.h"
 #import "FaceOcclusionRenderer.h"
 #import "GlassesRenderer.h"
+#import "DebugRenderer.h"
 
 using namespace filament;
 
@@ -39,6 +40,7 @@ static NSString *const TAG = @"VTORenderer";
 @property (nonatomic, strong) EnvironmentLightingRenderer *environmentLightingRenderer;
 @property (nonatomic, strong) FaceOcclusionRenderer *faceOcclusionRenderer;
 @property (nonatomic, strong) GlassesRenderer *glassesRenderer;
+@property (nonatomic, strong) DebugRenderer *debugRenderer;
 
 // ARKit
 @property (nonatomic, weak) ARSession *arSession;
@@ -122,6 +124,10 @@ static NSString *const TAG = @"VTORenderer";
     };
     [_glassesRenderer setupWithEngine:_engine scene:_scene modelUrl:modelUrl];
 
+    // Setup debug renderer
+    _debugRenderer = [[DebugRenderer alloc] init];
+    [_debugRenderer setupWithEngine:_engine scene:_scene];
+
     _initialized = YES;
     NSLog(@"%@: Filament renderer initialized", TAG);
 }
@@ -204,6 +210,12 @@ static NSString *const TAG = @"VTORenderer";
     }
 }
 
+- (void)setDebug:(BOOL)enabled {
+    if (_initialized) {
+        [_debugRenderer setEnabled:enabled];
+    }
+}
+
 - (void)renderWithFrame:(ARFrame *)frame faces:(NSArray<ARFaceAnchor *> *)faces {
     if (!_initialized) return;
 
@@ -223,9 +235,13 @@ static NSString *const TAG = @"VTORenderer";
     if (faces.count > 0) {
         [_faceOcclusionRenderer updateWithFace:faces[0]];
         [_glassesRenderer updateTransformWithFace:faces[0] frame:frame];
+        [_debugRenderer updateWithFace:faces[0]
+                     showLeftBackPlane:_faceOcclusionRenderer.isLeftBackPlaneVisible
+                    showRightBackPlane:_faceOcclusionRenderer.isRightBackPlaneVisible];
     } else {
         [_faceOcclusionRenderer hide];
         [_glassesRenderer hide];
+        [_debugRenderer hide];
     }
 
     // Render frame with Filament
@@ -242,6 +258,7 @@ static NSString *const TAG = @"VTORenderer";
 - (void)destroy {
     if (!_engine) return;
 
+    [_debugRenderer destroy];
     [_glassesRenderer destroy];
     [_faceOcclusionRenderer destroy];
     [_cameraTextureRenderer destroy];

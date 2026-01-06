@@ -30,6 +30,10 @@ class NitroVtoView: UIView {
     // Configuration
     private var modelUrl: String = ""
     private var isActiveState: Bool = true
+    private var faceMeshOcclusionState: Bool = true
+    private var backPlaneOcclusionState: Bool = true
+    private var forwardOffsetState: Float = 0.005
+    private var debugState: Bool = false
 
     // Callbacks
     var onModelLoaded: ((String) -> Void)?
@@ -104,18 +108,23 @@ class NitroVtoView: UIView {
     }
 
     func setFaceMeshOcclusion(_ enabled: Bool?) {
-        let faceMesh = enabled ?? true
-        vtoRenderer?.setFaceMeshOcclusion(faceMesh)
+        faceMeshOcclusionState = enabled ?? true
+        vtoRenderer?.setFaceMeshOcclusion(faceMeshOcclusionState)
     }
 
     func setBackPlaneOcclusion(_ enabled: Bool?) {
-        let backPlane = enabled ?? true
-        vtoRenderer?.setBackPlaneOcclusion(backPlane)
+        backPlaneOcclusionState = enabled ?? true
+        vtoRenderer?.setBackPlaneOcclusion(backPlaneOcclusionState)
     }
 
     func setForwardOffset(_ offset: Double?) {
-        let forwardOffset = Float(offset ?? 0.005)
-        vtoRenderer?.setForwardOffset(forwardOffset)
+        forwardOffsetState = Float(offset ?? 0.005)
+        vtoRenderer?.setForwardOffset(forwardOffsetState)
+    }
+
+    func setDebug(_ enabled: Bool?) {
+        debugState = enabled ?? false
+        vtoRenderer?.setDebug(debugState)
     }
 
     // MARK: - Initialization
@@ -131,6 +140,12 @@ class NitroVtoView: UIView {
         vtoRenderer = VTORendererBridge(metalView: mtkView)
         vtoRenderer?.onModelLoaded = onModelLoaded
         vtoRenderer?.initialize(withModelUrl: modelUrl)
+
+        // Apply stored configuration states
+        vtoRenderer?.setFaceMeshOcclusion(faceMeshOcclusionState)
+        vtoRenderer?.setBackPlaneOcclusion(backPlaneOcclusionState)
+        vtoRenderer?.setForwardOffset(forwardOffsetState)
+        vtoRenderer?.setDebug(debugState)
 
         isInitialized = true
         print("\(NitroVtoView.TAG): NitroVtoView initialized")

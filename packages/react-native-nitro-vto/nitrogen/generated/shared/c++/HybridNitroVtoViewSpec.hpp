@@ -58,6 +58,8 @@ namespace margelo::nitro::nitrovto {
       virtual void setBackPlaneOcclusion(std::optional<bool> backPlaneOcclusion) = 0;
       virtual std::optional<double> getForwardOffset() = 0;
       virtual void setForwardOffset(std::optional<double> forwardOffset) = 0;
+      virtual std::optional<bool> getDebug() = 0;
+      virtual void setDebug(std::optional<bool> debug) = 0;
 
     public:
       // Methods

@@ -85,6 +85,16 @@ namespace margelo::nitro::nitrovto::views {
         throw std::runtime_error(std::string("NitroVtoView.forwardOffset: ") + exc.what());
       }
     }()),
+    debug([&]() -> CachedProp<std::optional<bool>> {
+      try {
+        const react::RawValue* rawValue = rawProps.at("debug", nullptr, nullptr);
+        if (rawValue == nullptr) return sourceProps.debug;
+        const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
+        return CachedProp<std::optional<bool>>::fromRawValue(*runtime, value, sourceProps.debug);
+      } catch (const std::exception& exc) {
+        throw std::runtime_error(std::string("NitroVtoView.debug: ") + exc.what());
+      }
+    }()),
     hybridRef([&]() -> CachedProp<std::optional<std::function<void(const std::shared_ptr<HybridNitroVtoViewSpec>& /* ref */)>>> {
       try {
         const react::RawValue* rawValue = rawProps.at("hybridRef", nullptr, nullptr);
@@ -104,6 +114,7 @@ namespace margelo::nitro::nitrovto::views {
     faceMeshOcclusion(other.faceMeshOcclusion),
     backPlaneOcclusion(other.backPlaneOcclusion),
     forwardOffset(other.forwardOffset),
+    debug(other.debug),
     hybridRef(other.hybridRef) { }
 
   bool HybridNitroVtoViewProps::filterObjectKeys(const std::string& propName) {
@@ -114,6 +125,7 @@ namespace margelo::nitro::nitrovto::views {
       case hashString("faceMeshOcclusion"): return true;
       case hashString("backPlaneOcclusion"): return true;
       case hashString("forwardOffset"): return true;
+      case hashString("debug"): return true;
       case hashString("hybridRef"): return true;
       default: return false;
     }

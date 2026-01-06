@@ -47,6 +47,13 @@ export interface NitroVtoViewProps extends HybridViewProps {
    * Default: 0.005 (5mm forward)
    */
   forwardOffset?: number;
+
+  /**
+   * Whether to enable debug visualization.
+   * When enabled, renders colored overlays for face mesh (red), left back plane (green), and right back plane (blue).
+   * Default: false
+   */
+  debug?: boolean;
 }
 
 /**
