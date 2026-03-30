@@ -67,7 +67,7 @@ static constexpr uint16_t kIndices[6] = { 0, 1, 2, 2, 1, 3 };
     _viewportSize = CGSizeMake(1, 1);  // Default, will be updated
 
     // Load camera background material
-    NSData *materialData = [LoaderUtils loadAssetNamed:@"materials/camera_background_ios.filamat"];
+    NSData *materialData = [LoaderUtils loadAssetNamed:@"materials/camera_background.filamat"];
     if (!materialData) {
         NSLog(@"%@: Failed to load camera material", TAG);
         return;
