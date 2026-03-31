@@ -35,6 +35,9 @@ example/android/
 example/.expo/
 expo-env.d.ts
 
+# Specs
+specs/
+
 # Misc
 *.log
 .env
