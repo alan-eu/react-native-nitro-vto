@@ -38,8 +38,8 @@ class EnvironmentLightingRenderer(private val context: Context) {
     fun setup(
         engine: Engine,
         scene: Scene,
-        iblPath: String = "envs/studio_small_02_ibl.ktx",
-        skyboxPath: String = "envs/studio_small_02_skybox.ktx"
+        iblPath: String = "envs/brown_photostudio_01_2k_ibl.ktx",
+        skyboxPath: String = "envs/brown_photostudio_01_2k_skybox.ktx"
     ) {
         this.engine = engine
 

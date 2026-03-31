@@ -32,14 +32,13 @@ static const float INTENSITY_FACTOR = 60000.0f;
     _engine = engine;
 
     // Load IBL (indirect light) from ktx file
-    NSData *iblData = [LoaderUtils loadAssetNamed:@"envs/studio_small_02_ibl.ktx"];
+    NSData *iblData = [LoaderUtils loadAssetNamed:@"envs/brown_photostudio_01_2k_ibl.ktx"];
     if (iblData) {
         // Create Ktx1Bundle from raw bytes
         auto iblBundle = new image::Ktx1Bundle(
             (const uint8_t *)iblData.bytes,
             (uint32_t)iblData.length
         );
-        
         // Create texture from bundle (takes ownership and destroys bundle after upload)
         _iblTexture = ktxreader::Ktx1Reader::createTexture(
             engine,
@@ -63,14 +62,13 @@ static const float INTENSITY_FACTOR = 60000.0f;
     }
 
     // Load skybox from ktx file
-    NSData *skyboxData = [LoaderUtils loadAssetNamed:@"envs/studio_small_02_skybox.ktx"];
+    NSData *skyboxData = [LoaderUtils loadAssetNamed:@"envs/brown_photostudio_01_2k_skybox.ktx"];
     if (skyboxData) {
         // Create Ktx1Bundle from raw bytes
         auto skyboxBundle = new image::Ktx1Bundle(
             (const uint8_t *)skyboxData.bytes,
             (uint32_t)skyboxData.length
         );
-        
         // Create texture from bundle (takes ownership and destroys bundle after upload)
         _skyboxTexture = ktxreader::Ktx1Reader::createTexture(
             engine,
@@ -100,7 +98,7 @@ static const float INTENSITY_FACTOR = 60000.0f;
 
     // ARKit ambientIntensity is in lumens, typically ranges 0-2000
     // Normalize to 0-1 range for our intensity calculation
-    float normalizedIntensity = fminf((float)lightEstimate.ambientIntensity / 1000.0f, 1.0f);
+    float normalizedIntensity = fminf((float)lightEstimate.ambientIntensity / 2000.0f, 1.0f);
     _indirectLight->setIntensity(BASE_INTENSITY + normalizedIntensity * INTENSITY_FACTOR);
 }
 
