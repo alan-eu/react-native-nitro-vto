@@ -120,37 +120,35 @@ function App() {
 
 ## Technical Details
 
-### Filament `matc` and `cmgen` tools
+### Filament Tools
 
-Version 1.67.1 for Android and 1.56.6 for iOS.
+Both platforms use Filament 1.69.3. Download from [Filament GitHub releases](https://github.com/google/filament/releases).
+
+Create a `.env` file at the package root (see `.env.example`):
+
+```bash
+MATC_IOS_PATH=/path/to/filament/bin/matc
+MATC_ANDROID_PATH=/path/to/filament/bin/matc
+CMGEN_IOS_PATH=/path/to/filament/bin/cmgen
+CMGEN_ANDROID_PATH=/path/to/filament/bin/cmgen
+```
 
 ### Compile Materials
 
-Create a `.env` file at the package root with paths to your matc binaries:
+Compiles all `.mat` files in the platform's material folder to `.filamat`:
 
 ```bash
-MATC_IOS_PATH=/path/to/filament_v1.56.6/bin/matc
-MATC_ANDROID_PATH=/path/to/filament_v1.67.1/bin/matc
+npm run matc ios
+npm run matc android
 ```
 
-Then use the npm script to compile materials:
+### Generate IBL from HDR
+
+Processes all `.hdr` files in the platform's envs folder, generating `_ibl.ktx`, `_skybox.ktx`, and `_sh.txt`:
 
 ```bash
-# Compile for iOS (Metal backend)
-npm run matc debug_material.mat ios
-
-# Compile for Android (OpenGL + Vulkan backends)
-npm run matc debug_material.mat android
-```
-
-The script automatically places the output `.filamat` file in the correct platform folder.
-
-### Generate IBL from HDR env
-
-Download the Filament tools and generate the IBL from the HDR env:
-
-```bash
-cmgen --format=ktx --size=256 --deploy=./output/path/ ./input/path/your_env.hdr
+npm run cmgen ios
+npm run cmgen android
 ```
 
 ### Head Rotation Axes

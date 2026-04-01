@@ -42,3 +42,4 @@ specs/
 *.log
 .env
 android/.settings/org.eclipse.buildship.core.prefs
+specs

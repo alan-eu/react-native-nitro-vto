@@ -7,6 +7,7 @@
 #include <filament/Skybox.h>
 #include <filament/Texture.h>
 #include <ktxreader/Ktx1Reader.h>
+#include <math/vec3.h>
 
 using namespace filament;
 
@@ -32,7 +33,7 @@ static const float INTENSITY_FACTOR = 60000.0f;
     _engine = engine;
 
     // Load IBL (indirect light) from ktx file
-    NSData *iblData = [LoaderUtils loadAssetNamed:@"envs/brown_photostudio_01_2k_ibl.ktx"];
+    NSData *iblData = [LoaderUtils loadAssetNamed:@"envs/studio_small_02_2k_ibl.ktx"];
     if (iblData) {
         // Create Ktx1Bundle from raw bytes
         auto iblBundle = new image::Ktx1Bundle(
@@ -47,11 +48,37 @@ static const float INTENSITY_FACTOR = 60000.0f;
         );
 
         if (_iblTexture) {
-            _indirectLight = IndirectLight::Builder()
+            auto builder = IndirectLight::Builder()
                 .reflections(_iblTexture)
-                .intensity(BASE_INTENSITY)
-                .build(*engine);
+                .intensity(BASE_INTENSITY);
 
+            // Load spherical harmonics for irradiance (diffuse IBL)
+            NSData *shData = [LoaderUtils loadAssetNamed:@"envs/studio_small_02_2k_sh.txt"];
+            if (shData) {
+                NSString *shString = [[NSString alloc] initWithData:shData encoding:NSUTF8StringEncoding];
+                filament::math::float3 sh[9];
+                int idx = 0;
+                for (NSString *line in [shString componentsSeparatedByString:@"\n"]) {
+                    if (idx >= 9) break;
+                    NSScanner *scanner = [NSScanner scannerWithString:line];
+                    [scanner scanString:@"(" intoString:nil];
+                    double r, g, b;
+                    if ([scanner scanDouble:&r] &&
+                        [scanner scanString:@"," intoString:nil] &&
+                        [scanner scanDouble:&g] &&
+                        [scanner scanString:@"," intoString:nil] &&
+                        [scanner scanDouble:&b]) {
+                        sh[idx] = filament::math::float3(r, g, b);
+                        idx++;
+                    }
+                }
+                if (idx == 9) {
+                    builder.irradiance(3, sh);
+                    NSLog(@"%@: Loaded SH irradiance (3 bands)", TAG);
+                }
+            }
+
+            _indirectLight = builder.build(*engine);
             scene->setIndirectLight(_indirectLight);
             NSLog(@"%@: Loaded IBL", TAG);
         } else {
@@ -62,7 +89,7 @@ static const float INTENSITY_FACTOR = 60000.0f;
     }
 
     // Load skybox from ktx file
-    NSData *skyboxData = [LoaderUtils loadAssetNamed:@"envs/brown_photostudio_01_2k_skybox.ktx"];
+    NSData *skyboxData = [LoaderUtils loadAssetNamed:@"envs/studio_small_02_2k_skybox.ktx"];
     if (skyboxData) {
         // Create Ktx1Bundle from raw bytes
         auto skyboxBundle = new image::Ktx1Bundle(

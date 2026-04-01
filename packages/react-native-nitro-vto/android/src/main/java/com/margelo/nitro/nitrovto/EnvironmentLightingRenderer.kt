@@ -1,6 +1,7 @@
 package com.margelo.nitro.nitrovto
 
 import android.content.Context
+import android.util.Log
 import com.google.android.filament.Engine
 import com.google.android.filament.IndirectLight
 import com.google.android.filament.Scene
@@ -38,16 +39,28 @@ class EnvironmentLightingRenderer(private val context: Context) {
     fun setup(
         engine: Engine,
         scene: Scene,
-        iblPath: String = "envs/brown_photostudio_01_2k_ibl.ktx",
-        skyboxPath: String = "envs/brown_photostudio_01_2k_skybox.ktx"
+        iblPath: String = "envs/studio_small_02_2k_ibl.ktx",
+        skyboxPath: String = "envs/studio_small_02_2k_skybox.ktx",
+        shPath: String = "envs/studio_small_02_2k_sh.txt"
     ) {
         this.engine = engine
 
-        // Load IBL (indirect light) from ktx file
+        // Load IBL texture (reflections only — matches iOS approach)
         val iblBuffer = LoaderUtils.loadAsset(context, iblPath)
-        val iblBundle = KTX1Loader.createIndirectLight(engine, iblBuffer)
-        indirectLight = iblBundle.indirectLight
-        indirectLight?.intensity = BASE_INTENSITY
+        val iblTexture = KTX1Loader.createTexture(engine, iblBuffer)
+
+        val builder = IndirectLight.Builder()
+            .reflections(iblTexture)
+            .intensity(BASE_INTENSITY)
+
+        // Load spherical harmonics for irradiance (diffuse IBL) from sh.txt
+        val sh = loadSphericalHarmonics(shPath)
+        if (sh != null) {
+            builder.irradiance(3, sh)
+            Log.d(TAG, "Loaded SH irradiance (3 bands)")
+        }
+
+        indirectLight = builder.build(engine)
         scene.indirectLight = indirectLight
 
         // Load skybox from ktx file
@@ -55,6 +68,34 @@ class EnvironmentLightingRenderer(private val context: Context) {
         val skyboxBundle = KTX1Loader.createSkybox(engine, skyBuffer)
         skybox = skyboxBundle.skybox
         scene.skybox = skybox
+    }
+
+    private fun loadSphericalHarmonics(shPath: String): FloatArray? {
+        return try {
+            val text = context.assets.open(shPath).bufferedReader().readText()
+            val coeffs = FloatArray(27) // 9 coefficients * 3 components (RGB)
+            var idx = 0
+            for (line in text.lines()) {
+                if (idx >= 9) break
+                val trimmed = line.trim()
+                if (trimmed.isEmpty() || !trimmed.startsWith("(")) continue
+                val values = trimmed
+                    .substringAfter("(")
+                    .substringBefore(")")
+                    .split(",")
+                    .map { it.trim().toFloat() }
+                if (values.size == 3) {
+                    coeffs[idx * 3] = values[0]
+                    coeffs[idx * 3 + 1] = values[1]
+                    coeffs[idx * 3 + 2] = values[2]
+                    idx++
+                }
+            }
+            if (idx == 9) coeffs else null
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to load SH file: ${e.message}")
+            null
+        }
     }
 
     /**
