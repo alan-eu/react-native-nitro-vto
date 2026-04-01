@@ -31,8 +31,7 @@
       "Bash(cat:*)",
       "Bash(pod spec cat:*)",
       "Bash(pod search:*)",
-      "Bash(pod spec:*)",
-      "Bash(/Users/xavier.seignard/Documents/filament/bin/matc:*)"
+      "Bash(pod spec:*)"
     ]
   }
 }

@@ -1,64 +1,36 @@
 import { execSync } from "child_process";
-import { existsSync } from "fs";
+import { existsSync, readdirSync } from "fs";
 import { resolve, basename } from "path";
 import dotenv from "dotenv";
 
-// Load .env file from package root
 dotenv.config({ path: resolve(__dirname, "../.env"), quiet: true });
 
 const IOS_MATERIAL_FOLDER = "ios/assets/materials";
 const ANDROID_MATERIAL_FOLDER = "android/src/main/assets/materials";
 
 const USAGE = `
-Usage: npx tsx scripts/matc.ts <mat-file> <platform>
+Usage: npm run matc <platform>
+
+Compiles all .mat files in the platform's material folder to .filamat.
 
 Arguments:
-  mat-file   Path to the .mat file to compile
   platform   Target platform: "ios" or "android"
 
 Examples:
-  npx tsx scripts/matc.ts debug_material.mat ios
-  npx tsx scripts/matc.ts debug_material.mat android
+  npm run matc ios
+  npm run matc android
 `;
 
 const main = () => {
-  const args = process.argv.slice(2);
+  const platform = process.argv[2];
 
-  if (args.length !== 2) {
+  if (!platform || (platform !== "ios" && platform !== "android")) {
     console.error(USAGE);
     process.exit(1);
   }
 
-  const [matFile, platform] = args;
-
-  if (!matFile) {
-    console.error("Error: mat-file is required");
-    console.error(USAGE);
-    process.exit(1);
-  }
-
-  if (platform !== "ios" && platform !== "android") {
-    console.error(
-      `Error: Invalid platform "${platform}". Must be "ios" or "android".`
-    );
-    console.error(USAGE);
-    process.exit(1);
-  }
-
-  const matFilePath = resolve(
-    platform === "ios" ? IOS_MATERIAL_FOLDER : ANDROID_MATERIAL_FOLDER,
-    matFile
-  );
-
-  if (!existsSync(matFilePath)) {
-    console.error(`Error: Material file not found: ${matFilePath}`);
-    process.exit(1);
-  }
-
-  if (!matFilePath.endsWith(".mat")) {
-    console.error(`Error: File must have .mat extension: ${matFilePath}`);
-    process.exit(1);
-  }
+  const materialFolder =
+    platform === "ios" ? IOS_MATERIAL_FOLDER : ANDROID_MATERIAL_FOLDER;
 
   const matcPathKey =
     platform === "ios" ? "MATC_IOS_PATH" : "MATC_ANDROID_PATH";
@@ -74,27 +46,50 @@ const main = () => {
     process.exit(1);
   }
 
-  // Output file: same name but .filamat extension
-  const outputFile = matFilePath.replace(/\.mat$/, ".filamat");
+  const matFiles = readdirSync(materialFolder).filter((f) =>
+    f.endsWith(".mat")
+  );
 
-  // Build command based on platform
-  let command: string;
-  if (platform === "ios") {
-    // iOS: Metal backend only
-    command = `"${matcPath}" --api metal --platform mobile -o "${outputFile}" "${matFilePath}"`;
-  } else {
-    // Android: OpenGL and Vulkan backends
-    command = `"${matcPath}" --api opengl --api vulkan --platform mobile -o "${outputFile}" "${matFilePath}"`;
+  if (matFiles.length === 0) {
+    console.error(`No .mat files found in ${materialFolder}`);
+    process.exit(1);
   }
 
-  console.log(`Compiling ${basename(matFilePath)} for ${platform}...`);
-  console.log(`Command: ${command}`);
+  console.log(
+    `Compiling ${matFiles.length} material(s) for ${platform}...\n`
+  );
 
-  try {
-    execSync(command, { stdio: "inherit" });
-    console.log(`Output: ${outputFile}`);
-  } catch (error) {
-    console.error("Error: matc compilation failed");
+  let failures = 0;
+
+  for (const matFile of matFiles) {
+    const matFilePath = resolve(materialFolder, matFile);
+    const outputFile = matFilePath.replace(/\.mat$/, ".filamat");
+
+    let command: string;
+    if (platform === "ios") {
+      command = `"${matcPath}" --api metal --platform mobile -o "${outputFile}" "${matFilePath}"`;
+    } else {
+      command = `"${matcPath}" --api opengl --api vulkan --platform mobile -o "${outputFile}" "${matFilePath}"`;
+    }
+
+    console.log(`  ${basename(matFile)} → ${basename(outputFile)}`);
+
+    try {
+      execSync(command, { stdio: "pipe" });
+    } catch (error) {
+      console.error(`  ✗ Failed to compile ${matFile}`);
+      if (error instanceof Error && "stderr" in error) {
+        console.error(String((error as any).stderr));
+      }
+      failures++;
+    }
+  }
+
+  console.log(
+    `\nDone: ${matFiles.length - failures}/${matFiles.length} compiled successfully.`
+  );
+
+  if (failures > 0) {
     process.exit(1);
   }
 };
