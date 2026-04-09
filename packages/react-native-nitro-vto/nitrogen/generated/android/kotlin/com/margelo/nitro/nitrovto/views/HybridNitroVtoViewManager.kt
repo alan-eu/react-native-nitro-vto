@@ -33,7 +33,8 @@ open class HybridNitroVtoViewManager: SimpleViewManager<View>() {
 
   override fun onDropViewInstance(view: View) {
     super.onDropViewInstance(view)
-    views.remove(view)
+    val hybridView = views.remove(view)
+    hybridView?.destroy()
   }
 
   override fun updateState(view: View, props: ReactStylesDiffMap, stateWrapper: StateWrapper): Any? {

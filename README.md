@@ -122,9 +122,29 @@ function App() {
 
 ### Filament Tools
 
-Both platforms use Filament 1.69.3. Download from [Filament GitHub releases](https://github.com/google/filament/releases).
+Runtime Filament SDK artifacts are pinned in `filament.lock.json` and fetched automatically:
+
+```bash
+npm run filament:fetch
+```
+
+Platform-specific commands are also available:
+
+```bash
+npm run filament:fetch:android
+npm run filament:fetch:ios
+```
+
+For material/environment authoring tools (`matc`, `cmgen`), download Filament from [Filament GitHub releases](https://github.com/google/filament/releases).
 
 Create a `.env` file at the package root (see `.env.example`):
+
+```bash
+MATC_PATH=/path/to/filament/bin/matc
+CMGEN_PATH=/path/to/filament/bin/cmgen
+```
+
+Optional platform-specific overrides are still supported:
 
 ```bash
 MATC_IOS_PATH=/path/to/filament/bin/matc
@@ -135,20 +155,18 @@ CMGEN_ANDROID_PATH=/path/to/filament/bin/cmgen
 
 ### Compile Materials
 
-Compiles all `.mat` files in the platform's material folder to `.filamat`:
+Compiles all `.mat` files from `assets/materials` into platform runtime folders (`ios/assets/materials`, `android/src/main/assets/materials`):
 
 ```bash
-npm run matc ios
-npm run matc android
+npm run matc
 ```
 
 ### Generate IBL from HDR
 
-Processes all `.hdr` files in the platform's envs folder, generating `_ibl.ktx`, `_skybox.ktx`, and `_sh.txt`:
+Processes all `.hdr` files from `assets/envs`, generating `_ibl.ktx`, `_skybox.ktx`, and `_sh.txt` into both platform runtime folders (`ios/assets/envs`, `android/src/main/assets/envs`):
 
 ```bash
-npm run cmgen ios
-npm run cmgen android
+npm run cmgen
 ```
 
 ### Head Rotation Axes

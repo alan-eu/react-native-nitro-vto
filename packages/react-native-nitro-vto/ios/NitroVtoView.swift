@@ -7,7 +7,7 @@ import MetalKit
  *
  * This view handles:
  * - ARKit session management for face tracking
- * - Filament rendering via VTORendererBridge
+ * - Filament rendering via ArKitVtoAdapter
  * - Face tracking and glasses overlay
  *
  * Note: Camera permissions must be handled by the consuming React Native app
@@ -24,8 +24,8 @@ class NitroVtoView: UIView {
     private var metalView: MTKView?
     private var metalDevice: MTLDevice?
 
-    // Filament renderer (Objective-C++ bridge)
-    private var vtoRenderer: VTORendererBridge?
+    // Filament renderer adapter
+    private var arKitVtoAdapter: ArKitVtoAdapter?
 
     // Configuration
     private var modelUrl: String = ""
@@ -78,7 +78,7 @@ class NitroVtoView: UIView {
         if modelUrl != url {
             modelUrl = url
             if isInitialized {
-                vtoRenderer?.switchModel(withUrl: modelUrl)
+                arKitVtoAdapter?.switchModel(withUrl: modelUrl)
             }
         }
     }
@@ -96,11 +96,11 @@ class NitroVtoView: UIView {
 
     func switchModel(modelUrl: String) {
         self.modelUrl = modelUrl
-        vtoRenderer?.switchModel(withUrl: modelUrl)
+        arKitVtoAdapter?.switchModel(withUrl: modelUrl)
     }
 
     func resetSession() {
-        vtoRenderer?.resetSession()
+        arKitVtoAdapter?.resetSession()
         if let session = arSession {
             let configuration = createARConfiguration()
             session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
@@ -109,22 +109,22 @@ class NitroVtoView: UIView {
 
     func setFaceMeshOcclusion(_ enabled: Bool?) {
         faceMeshOcclusionState = enabled ?? true
-        vtoRenderer?.setFaceMeshOcclusion(faceMeshOcclusionState)
+        arKitVtoAdapter?.setFaceMeshOcclusion(faceMeshOcclusionState)
     }
 
     func setBackPlaneOcclusion(_ enabled: Bool?) {
         backPlaneOcclusionState = enabled ?? true
-        vtoRenderer?.setBackPlaneOcclusion(backPlaneOcclusionState)
+        arKitVtoAdapter?.setBackPlaneOcclusion(backPlaneOcclusionState)
     }
 
     func setForwardOffset(_ offset: Double?) {
         forwardOffsetState = Float(offset ?? 0.005)
-        vtoRenderer?.setForwardOffset(forwardOffsetState)
+        arKitVtoAdapter?.setForwardOffset(forwardOffsetState)
     }
 
     func setDebug(_ enabled: Bool?) {
         debugState = enabled ?? false
-        vtoRenderer?.setDebug(debugState)
+        arKitVtoAdapter?.setDebug(debugState)
     }
 
     // MARK: - Initialization
@@ -137,15 +137,15 @@ class NitroVtoView: UIView {
         }
 
         // Create and initialize renderer
-        vtoRenderer = VTORendererBridge(metalView: mtkView)
-        vtoRenderer?.onModelLoaded = onModelLoaded
-        vtoRenderer?.initialize(withModelUrl: modelUrl)
+        arKitVtoAdapter = ArKitVtoAdapter(metalView: mtkView)
+        arKitVtoAdapter?.onModelLoaded = onModelLoaded
+        arKitVtoAdapter?.initialize(withModelUrl: modelUrl)
 
         // Apply stored configuration states
-        vtoRenderer?.setFaceMeshOcclusion(faceMeshOcclusionState)
-        vtoRenderer?.setBackPlaneOcclusion(backPlaneOcclusionState)
-        vtoRenderer?.setForwardOffset(forwardOffsetState)
-        vtoRenderer?.setDebug(debugState)
+        arKitVtoAdapter?.setFaceMeshOcclusion(faceMeshOcclusionState)
+        arKitVtoAdapter?.setBackPlaneOcclusion(backPlaneOcclusionState)
+        arKitVtoAdapter?.setForwardOffset(forwardOffsetState)
+        arKitVtoAdapter?.setDebug(debugState)
 
         isInitialized = true
         print("\(NitroVtoView.TAG): NitroVtoView initialized")
@@ -170,12 +170,12 @@ class NitroVtoView: UIView {
         startDisplayLink()
 
         // Resume renderer
-        vtoRenderer?.resume()
+        arKitVtoAdapter?.resume()
     }
 
     func pause() {
         stopDisplayLink()
-        vtoRenderer?.pause()
+        arKitVtoAdapter?.pause()
         arSession?.pause()
         isResumed = false
     }
@@ -184,8 +184,8 @@ class NitroVtoView: UIView {
         stopDisplayLink()
         arSession?.pause()
         arSession = nil
-        vtoRenderer?.destroy()
-        vtoRenderer = nil
+        arKitVtoAdapter?.destroy()
+        arKitVtoAdapter = nil
         isInitialized = false
     }
 
@@ -212,7 +212,7 @@ class NitroVtoView: UIView {
             .filter { $0.isTracked }
 
         // Update renderer with current frame
-        vtoRenderer?.render(with: frame, faces: faces)
+        arKitVtoAdapter?.render(with: frame, faces: faces)
     }
 
     // MARK: - ARKit Setup
@@ -221,7 +221,6 @@ class NitroVtoView: UIView {
         if let session = arSession {
             let configuration = createARConfiguration()
             session.run(configuration)
-            vtoRenderer?.setARSession(session)
             return
         }
 
@@ -235,9 +234,6 @@ class NitroVtoView: UIView {
 
         let configuration = createARConfiguration()
         session.run(configuration)
-
-        // Connect session to renderer
-        vtoRenderer?.setARSession(session)
 
         print("\(NitroVtoView.TAG): ARKit session created successfully")
     }
@@ -270,7 +266,7 @@ class NitroVtoView: UIView {
             let scale = mtkView.contentScaleFactor
             let widthPixels = Int32(bounds.width * scale)
             let heightPixels = Int32(bounds.height * scale)
-            vtoRenderer?.setViewportSizeWithWidth(widthPixels, height: heightPixels)
+            arKitVtoAdapter?.setViewportSizeWithWidth(widthPixels, height: heightPixels)
         }
     }
 }

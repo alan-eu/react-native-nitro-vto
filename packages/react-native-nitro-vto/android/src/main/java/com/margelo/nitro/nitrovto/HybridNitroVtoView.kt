@@ -85,26 +85,8 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
         }
     }
 
-    /**
-     * Called when the view is attached to the window
-     */
-    fun onAttachedToWindow() {
-        if (isActive) {
-            nitroVtoView.resume()
-        }
-    }
-
-    /**
-     * Called when the view is detached from the window
-     */
-    fun onDetachedFromWindow() {
-        nitroVtoView.pause()
-    }
-
-    /**
-     * Cleanup resources when the view is destroyed
-     */
-    fun destroy() {
+    internal fun destroy() {
         nitroVtoView.destroy()
     }
+
 }

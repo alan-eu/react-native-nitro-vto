@@ -10,15 +10,7 @@
 #endif
 #endif
 
-// Objective-C++ bridges for VTO rendering
-#import "VTORendererBridge.h"
-#import "CameraTextureRenderer.h"
-#import "EnvironmentLightingRenderer.h"
-#import "GlassesRenderer.h"
-#import "KalmanFilter.h"
-#import "LoaderUtils.h"
-#import "MatrixUtils.h"
+#import "VtoCoreBridge.h"
 
 FOUNDATION_EXPORT double NitroVtoVersionNumber;
 FOUNDATION_EXPORT const unsigned char NitroVtoVersionString[];
-

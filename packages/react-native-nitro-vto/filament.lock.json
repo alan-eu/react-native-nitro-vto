@@ -1,0 +1,13 @@
+{
+  "version": "1.69.3",
+  "artifacts": {
+    "android": {
+      "url": "https://github.com/google/filament/releases/download/v1.69.3/filament-v1.69.3-android-native.tgz",
+      "sha256": "4c9a51275e89787c9a19c08338754fcb0175191cdeffe869661d7b313bc94133"
+    },
+    "ios": {
+      "url": "https://github.com/google/filament/releases/download/v1.69.3/filament-v1.69.3-ios.tgz",
+      "sha256": "1e8d0442db2e4c8d2930b4b9512da478f9ef228b218a18d6d53ab5dfa81d148a"
+    }
+  }
+}

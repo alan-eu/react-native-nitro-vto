@@ -164,4 +164,9 @@ tasks.register('prepareHeaders', Copy) {
   includeEmptyDirs = false
 }
 
+tasks.register('fetchFilamentNativeSdk', Exec) {
+  commandLine 'node', '../scripts/fetch-filament-native.ts', 'android'
+}
+
 preBuild.dependsOn(prepareHeaders)
+preBuild.dependsOn(fetchFilamentNativeSdk)

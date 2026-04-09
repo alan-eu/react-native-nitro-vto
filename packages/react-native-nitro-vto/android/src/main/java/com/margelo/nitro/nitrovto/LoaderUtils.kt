@@ -7,12 +7,10 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.security.MessageDigest
 
 /**
- * Utility functions for loading assets and remote files.
+ * Utility functions for remote model loading.
  */
 object LoaderUtils {
 
@@ -21,26 +19,11 @@ object LoaderUtils {
     private const val CACHE_DIR = "glb_cache"
 
     /**
-     * Load an asset file into a direct ByteBuffer.
-     * Used for materials and IBL files.
-     */
-    fun loadAsset(context: Context, filename: String): ByteBuffer {
-        context.assets.open(filename).use { input ->
-            val bytes = input.readBytes()
-            val buffer = ByteBuffer.allocateDirect(bytes.size)
-                .order(ByteOrder.nativeOrder())
-                .put(bytes)
-            buffer.rewind()
-            return buffer
-        }
-    }
-
-    /**
-     * Load a GLB file from a remote URL into a direct ByteBuffer.
+     * Load a GLB file from a remote URL.
      * Uses a file cache to avoid re-downloading.
      * This method performs network I/O and should be called from a background thread.
      */
-    fun loadFromUrl(context: Context, urlString: String): ByteBuffer {
+    fun loadModelFromUrl(context: Context, urlString: String): ByteArray {
         Log.d(TAG, "Loading GLB from URL: $urlString")
 
         // Check cache first
@@ -56,7 +39,7 @@ object LoaderUtils {
         // Save to cache
         saveToCache(cacheFile, bytes)
 
-        return bytesToBuffer(bytes)
+        return bytes
     }
 
     private fun getCacheFile(context: Context, urlString: String): File {
@@ -74,10 +57,10 @@ object LoaderUtils {
         return hashBytes.joinToString("") { "%02x".format(it) }
     }
 
-    private fun loadFromFile(file: File): ByteBuffer {
+    private fun loadFromFile(file: File): ByteArray {
         val bytes = file.readBytes()
         Log.d(TAG, "Loaded ${bytes.size} bytes from cache")
-        return bytesToBuffer(bytes)
+        return bytes
     }
 
     private fun saveToCache(file: File, bytes: ByteArray) {
@@ -87,14 +70,6 @@ object LoaderUtils {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save to cache: ${e.message}")
         }
-    }
-
-    private fun bytesToBuffer(bytes: ByteArray): ByteBuffer {
-        val byteBuffer = ByteBuffer.allocateDirect(bytes.size)
-            .order(ByteOrder.nativeOrder())
-            .put(bytes)
-        byteBuffer.rewind()
-        return byteBuffer
     }
 
     private fun downloadFromUrl(urlString: String): ByteArray {

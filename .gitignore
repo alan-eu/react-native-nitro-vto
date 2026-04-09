@@ -43,3 +43,8 @@ specs/
 .env
 android/.settings/org.eclipse.buildship.core.prefs
 specs
+testBed
+
+# Local Filament SDK cache
+packages/react-native-nitro-vto/.cache/
+packages/react-native-nitro-vto/third_party/filament/sdk/

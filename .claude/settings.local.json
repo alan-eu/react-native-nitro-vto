@@ -31,7 +31,15 @@
       "Bash(cat:*)",
       "Bash(pod spec cat:*)",
       "Bash(pod search:*)",
-      "Bash(pod spec:*)"
+      "Bash(pod spec:*)",
+      "WebFetch(domain:google.github.io)",
+      "Bash(adb exec-out:*)",
+      "Bash(cd /Users/xavier.seignard/repos/react-native-nitro-vto/example *)",
+      "Bash(cd /Users/xavier.seignard/repos/react-native-nitro-vto/example&&*)",
+      "Bash(npm run matc *)",
+      "Bash(npm run cmgen *)",
+      "Bash(sleep *)",
+      "Bash(md5:*)"
     ]
   }
 }

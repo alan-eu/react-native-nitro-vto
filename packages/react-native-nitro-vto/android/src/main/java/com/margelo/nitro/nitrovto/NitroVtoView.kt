@@ -2,6 +2,7 @@ package com.margelo.nitro.nitrovto
 
 import android.content.Context
 import android.util.Log
+import android.view.Choreographer
 import android.view.SurfaceView
 import android.widget.FrameLayout
 import com.google.ar.core.ArCoreApk
@@ -19,7 +20,7 @@ import java.util.EnumSet
  *
  * This view handles:
  * - ARCore session management
- * - Filament rendering via VTORenderer
+ * - Filament rendering via ArCoreVtoAdapter
  * - Face tracking and glasses overlay
  *
  * Note: Camera permissions must be handled by the consuming React Native app
@@ -38,11 +39,15 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     private val surfaceView: SurfaceView = SurfaceView(context)
 
     // Filament renderer
-    private var vtoRenderer: VTORenderer? = null
+    private var arCoreVtoAdapter: ArCoreVtoAdapter? = null
 
     // Configuration
     private var modelUrl: String = ""
     private var isActive: Boolean = true
+    private var faceMeshOcclusionState: Boolean = true
+    private var backPlaneOcclusionState: Boolean = true
+    private var forwardOffsetState: Float = 0.005f
+    private var debugState: Boolean = false
 
     // Callbacks
     var onModelLoaded: ((modelUrl: String) -> Unit)? = null
@@ -50,6 +55,17 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     // State
     private var isInitialized = false
     private var isResumed = false
+
+    private val choreographer = Choreographer.getInstance()
+    private val frameCallback = object : Choreographer.FrameCallback {
+        override fun doFrame(frameTimeNanos: Long) {
+            if (!isResumed || !isActive || !isInitialized) {
+                return
+            }
+            arCoreVtoAdapter?.renderOnce()
+            choreographer.postFrameCallback(this)
+        }
+    }
 
     init {
         // Add SurfaceView to fill the entire view
@@ -66,7 +82,7 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
         if (modelUrl != url) {
             modelUrl = url
             if (isInitialized) {
-                vtoRenderer?.switchModel(modelUrl)
+                arCoreVtoAdapter?.switchModel(modelUrl)
             }
         }
     }
@@ -89,28 +105,32 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
      * Set face mesh occlusion enabled
      */
     fun setFaceMeshOcclusion(enabled: Boolean?) {
-        vtoRenderer?.setFaceMeshOcclusion(enabled ?: true)
+        faceMeshOcclusionState = enabled ?: true
+        arCoreVtoAdapter?.setFaceMeshOcclusion(faceMeshOcclusionState)
     }
 
     /**
      * Set back plane occlusion enabled
      */
     fun setBackPlaneOcclusion(enabled: Boolean?) {
-        vtoRenderer?.setBackPlaneOcclusion(enabled ?: true)
+        backPlaneOcclusionState = enabled ?: true
+        arCoreVtoAdapter?.setBackPlaneOcclusion(backPlaneOcclusionState)
     }
 
     /**
      * Set forward offset for glasses positioning (in meters)
      */
     fun setForwardOffset(offset: Double?) {
-        vtoRenderer?.setForwardOffset((offset ?: 0.005).toFloat())
+        forwardOffsetState = (offset ?: 0.005).toFloat()
+        arCoreVtoAdapter?.setForwardOffset(forwardOffsetState)
     }
 
     /**
      * Set debug mode enabled
      */
     fun setDebug(enabled: Boolean?) {
-        vtoRenderer?.setDebug(enabled ?: false)
+        debugState = enabled ?: false
+        arCoreVtoAdapter?.setDebug(debugState)
     }
 
     /**
@@ -118,23 +138,14 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
      */
     fun switchModel(modelUrl: String) {
         this.modelUrl = modelUrl
-        vtoRenderer?.switchModel(modelUrl)
-    }
-
-    /**
-     * Take a snapshot of the current view
-     * @return Base64-encoded image data
-     */
-    fun takeSnapshot(): String {
-        // TODO: Implement snapshot functionality
-        return ""
+        arCoreVtoAdapter?.switchModel(modelUrl)
     }
 
     /**
      * Reset the AR session
      */
     fun resetSession() {
-        vtoRenderer?.resetSession()
+        arCoreVtoAdapter?.resetSession()
         arSession?.pause()
         arSession?.resume()
     }
@@ -146,9 +157,13 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
         if (isInitialized) return
 
         // Create and initialize renderer
-        vtoRenderer = VTORenderer(context)
-        vtoRenderer?.onModelLoaded = onModelLoaded
-        vtoRenderer?.initialize(surfaceView, modelUrl)
+        arCoreVtoAdapter = ArCoreVtoAdapter(context)
+        arCoreVtoAdapter?.onModelLoaded = onModelLoaded
+        arCoreVtoAdapter?.initialize(surfaceView, modelUrl)
+        arCoreVtoAdapter?.setFaceMeshOcclusion(faceMeshOcclusionState)
+        arCoreVtoAdapter?.setBackPlaneOcclusion(backPlaneOcclusionState)
+        arCoreVtoAdapter?.setForwardOffset(forwardOffsetState)
+        arCoreVtoAdapter?.setDebug(debugState)
 
         isInitialized = true
         Log.d(TAG, "NitroVtoView initialized")
@@ -171,14 +186,16 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
         setupArSession()
 
         // Resume renderer
-        vtoRenderer?.resume()
+        arCoreVtoAdapter?.resume()
+        startFrameLoop()
     }
 
     /**
      * Pause the AR session and rendering
      */
     fun pause() {
-        vtoRenderer?.pause()
+        stopFrameLoop()
+        arCoreVtoAdapter?.pause()
         arSession?.pause()
         isResumed = false
     }
@@ -187,10 +204,11 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
      * Destroy and clean up resources
      */
     fun destroy() {
+        stopFrameLoop()
         arSession?.close()
         arSession = null
-        vtoRenderer?.destroy()
-        vtoRenderer = null
+        arCoreVtoAdapter?.destroy()
+        arCoreVtoAdapter = null
         isInitialized = false
     }
 
@@ -201,7 +219,7 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
     private fun setupArSession() {
         if (arSession != null) {
             arSession?.resume()
-            vtoRenderer?.session = arSession
+            arCoreVtoAdapter?.session = arSession
             return
         }
 
@@ -212,8 +230,14 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
                 ArCoreApk.InstallStatus.INSTALLED -> { /* Continue */ }
             }
 
-            // Create AR session with front camera for face tracking
-            arSession = Session(context, EnumSet.of(Session.Feature.FRONT_CAMERA))
+            // Create AR session with front camera + shared camera stream support.
+            // Fallback to plain front camera if shared camera is unavailable on this device/ARCore build.
+            arSession = try {
+                Session(context, EnumSet.of(Session.Feature.FRONT_CAMERA, Session.Feature.SHARED_CAMERA))
+            } catch (error: Throwable) {
+                Log.w(TAG, "Shared camera feature unavailable, falling back to FRONT_CAMERA only: ${error.message}")
+                Session(context, EnumSet.of(Session.Feature.FRONT_CAMERA))
+            }
 
             // Configure session for face tracking
             val config = Config(arSession).apply {
@@ -233,7 +257,7 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
             arSession?.resume()
 
             // Connect session to renderer
-            vtoRenderer?.session = arSession
+            arCoreVtoAdapter?.session = arSession
 
             Log.d(TAG, "ARCore session created successfully")
 
@@ -250,6 +274,15 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to create AR session: ${e.message}")
         }
+    }
+
+    private fun startFrameLoop() {
+        choreographer.removeFrameCallback(frameCallback)
+        choreographer.postFrameCallback(frameCallback)
+    }
+
+    private fun stopFrameLoop() {
+        choreographer.removeFrameCallback(frameCallback)
     }
 
     /**

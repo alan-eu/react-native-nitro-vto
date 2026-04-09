@@ -12,8 +12,8 @@ import {
 import { callback } from "react-native-nitro-modules";
 
 const MODELS = [
+  "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/878082-original.glb",
   "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/680048.glb",
-  "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/878082.glb",
 ];
 
 const App = () => {
