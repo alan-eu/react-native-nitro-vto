@@ -32,7 +32,12 @@
       "Bash(pod spec cat:*)",
       "Bash(pod search:*)",
       "Bash(pod spec:*)",
-      "Bash(git ls-tree *)"
+      "Bash(git ls-tree *)",
+      "Bash(md5 \"/Users/xavier.seignard/repos/react-native-nitro-vto copie/app/src/main/assets/models/878082.glb\")",
+      "Bash(md5 \"/Users/xavier.seignard/repos/react-native-nitro-vto/878082.glb\")",
+      "Bash(md5 *)",
+      "Bash(python3 *)",
+      "Bash(git checkout *)"
     ]
   }
 }

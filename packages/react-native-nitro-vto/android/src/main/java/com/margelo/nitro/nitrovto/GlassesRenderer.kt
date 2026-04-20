@@ -163,6 +163,17 @@ class GlassesRenderer(private val context: Context) {
             tempMatrix16[13] = smoothedPosition[1] + forwardY * forwardOffset
             tempMatrix16[14] = smoothedPosition[2] + forwardZ * forwardOffset
 
+            // Mirror X for the front-facing camera: ARCore's projection encodes the mirror
+            // in m[0] < 0, but VTORenderer uses Filament's setProjection(fov, aspect, …) which
+            // can't express it — and setCustomProjection with ARCore's raw matrix silently
+            // breaks screen-space refraction. Instead we mirror every ARCore-tracked
+            // transform here (pre-multiply by scale(-1, 1, 1) → negate row 0 of this 4x4).
+            // Keeps the Filament view matrix determinant-positive → refraction keeps working.
+            tempMatrix16[0] = -tempMatrix16[0]
+            tempMatrix16[4] = -tempMatrix16[4]
+            tempMatrix16[8] = -tempMatrix16[8]
+            tempMatrix16[12] = -tempMatrix16[12]
+
             engine.transformManager.setTransform(instance, tempMatrix16)
         }
     }
