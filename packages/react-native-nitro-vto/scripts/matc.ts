@@ -12,7 +12,9 @@ const ANDROID_OUTPUT_FOLDER = resolve(
   "../android/src/main/assets/materials"
 );
 
-const TARGETS: { label: string; outputDir: string; apiFlags: string }[] = [
+type TargetLabel = "ios" | "android";
+
+const TARGETS: { label: TargetLabel; outputDir: string; apiFlags: string }[] = [
   { label: "ios", outputDir: IOS_OUTPUT_FOLDER, apiFlags: "--api metal" },
   {
     label: "android",
@@ -21,11 +23,21 @@ const TARGETS: { label: string; outputDir: string; apiFlags: string }[] = [
   },
 ];
 
+// A .mat is considered shared unless it carries a .ios.mat or .android.mat
+// suffix — in which case it's compiled only for the matching platform and
+// the suffix is stripped from the output filename.
+const PLATFORM_SUFFIX: Record<string, TargetLabel> = {
+  ".ios.mat": "ios",
+  ".android.mat": "android",
+};
+
 const USAGE = `
 Usage: npm run matc
 
-Compiles every .mat in packages/react-native-nitro-vto/assets/materials/
-to .filamat, once per platform, writing:
+Compiles every .mat in packages/react-native-nitro-vto/assets/materials/ to
+.filamat. Shared sources (e.g. face_occlusion.mat) are compiled for both
+platforms; platform-specific sources (e.g. camera_background.ios.mat) are
+compiled only for the matching platform. Outputs:
   - Metal → ios/assets/materials/<name>.filamat
   - OpenGL + Vulkan → android/src/main/assets/materials/<name>.filamat
 
@@ -66,15 +78,24 @@ const main = () => {
   );
 
   let failures = 0;
+  let totalBuilds = 0;
 
   for (const matFile of matFiles) {
     const sourcePath = join(SOURCE_FOLDER, matFile);
-    const outputName = matFile.replace(/\.mat$/, ".filamat");
+    const platformLock = (Object.keys(PLATFORM_SUFFIX) as Array<keyof typeof PLATFORM_SUFFIX>)
+      .find((suffix) => matFile.endsWith(suffix));
+    const strippedBase = platformLock
+      ? matFile.slice(0, -platformLock.length)
+      : matFile.replace(/\.mat$/, "");
+    const outputName = `${strippedBase}.filamat`;
     console.log(`  ${basename(matFile)}`);
 
     for (const { label, outputDir, apiFlags } of TARGETS) {
+      if (platformLock && PLATFORM_SUFFIX[platformLock] !== label) continue;
+
       const outputPath = join(outputDir, outputName);
       const command = `"${matcPath}" ${apiFlags} --platform mobile -o "${outputPath}" "${sourcePath}"`;
+      totalBuilds++;
 
       try {
         execSync(command, { stdio: "pipe" });
@@ -89,8 +110,7 @@ const main = () => {
     }
   }
 
-  const total = matFiles.length * TARGETS.length;
-  console.log(`\nDone: ${total - failures}/${total} compiled successfully.`);
+  console.log(`\nDone: ${totalBuilds - failures}/${totalBuilds} compiled successfully.`);
   if (failures > 0) process.exit(1);
 };
 

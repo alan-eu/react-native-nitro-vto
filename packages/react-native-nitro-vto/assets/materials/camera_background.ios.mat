@@ -10,7 +10,7 @@ material {
     flipUV : false,
     parameters : [
         {
-            type : samplerExternal,
+            type : sampler2d,
             name : cameraFeed
         },
         {

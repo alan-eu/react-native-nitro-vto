@@ -144,11 +144,11 @@ packages/react-native-nitro-vto/
 └── android/src/main/assets/   ← compiled artifacts only (.filamat, .ktx, .txt)
 ```
 
-`camera_background.mat` uses Filament's `samplerExternal` on both platforms, so the same material works for Metal (iOS) and OpenGL/Vulkan (Android). A `float3x3 textureTransform` uniform is applied in the vertex shader so the camera‑feed UV mapping can be driven from native code without rebuilding vertex buffers.
+Most materials are identical across platforms and live as a single `.mat`. Platform-specific materials use a `.ios.mat` / `.android.mat` suffix — the `matc` script compiles those only for the matching platform and strips the suffix from the output filename (e.g. `camera_background.ios.mat` → `ios/assets/materials/camera_background.filamat`). The only platform-specific material today is `camera_background`, because the iOS (Metal, `sampler2d` + `flipUV: false`) and Android (OpenGL/Vulkan, `samplerExternal`) sampler conventions can't be expressed in a single `.mat`.
 
 ### Compile Materials
 
-Compiles every `.mat` in `assets/materials/` for both platforms in one pass. Metal output is written to `ios/assets/materials/`, OpenGL+Vulkan output to `android/src/main/assets/materials/`:
+Compiles every `.mat` in `assets/materials/` in one pass. Shared sources compile for both platforms; `*.ios.mat` / `*.android.mat` files compile only for the matching platform. Metal output lands in `ios/assets/materials/`, OpenGL+Vulkan output in `android/src/main/assets/materials/`:
 
 ```bash
 npm run matc

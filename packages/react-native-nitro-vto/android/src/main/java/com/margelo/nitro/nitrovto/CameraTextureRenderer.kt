@@ -16,7 +16,6 @@ import com.google.android.filament.EntityManager
 import com.google.android.filament.IndexBuffer
 import com.google.android.filament.Material
 import com.google.android.filament.MaterialInstance
-import com.google.android.filament.MaterialInstance.FloatElement
 import com.google.android.filament.RenderableManager
 import com.google.android.filament.Scene
 import com.google.android.filament.Texture
@@ -50,9 +49,7 @@ class CameraTextureRenderer(private val context: Context) {
     private lateinit var cameraMaterialInstance: MaterialInstance
     @Entity private var backgroundQuadEntity: Int = 0
     private var backgroundQuadVertexBuffer: VertexBuffer? = null
-
-    // Reusable 9-float buffer for the textureTransform MAT3 uniform (column-major)
-    private val textureTransformMatrix = FloatArray(9)
+    private var uvTransformSet = false
 
     // Reference to engine and scene (set during setup)
     private lateinit var engine: Engine
@@ -108,7 +105,7 @@ class CameraTextureRenderer(private val context: Context) {
 
         // Set initial texture on material (will be updated each frame)
         cameraMaterialInstance.setParameter(
-            "cameraFeed",
+            "cameraTexture",
             cameraTextures[0]!!,
             TextureSampler(
                 TextureSampler.MinFilter.LINEAR,
@@ -141,7 +138,7 @@ class CameraTextureRenderer(private val context: Context) {
         val index = cameraTextureIds.indexOf(currentTextureId)
         if (index >= 0 && cameraTextures[index] != null) {
             cameraMaterialInstance.setParameter(
-                "cameraFeed",
+                "cameraTexture",
                 cameraTextures[index]!!,
                 TextureSampler(
                     TextureSampler.MinFilter.LINEAR,
@@ -153,32 +150,24 @@ class CameraTextureRenderer(private val context: Context) {
     }
 
     /**
-     * Update the camera_background material's `textureTransform` uniform from ARCore.
-     *
-     * The camera_background material uses identity UVs in the vertex buffer and applies
-     * this 3x3 transform in its vertex shader to map (u, v) → texture UV. We derive the
-     * matrix by asking ARCore for the texture coordinates of 3 NDC corners and fitting
-     * a 2D affine — an exact fit, since the mapping ARCore returns is affine.
-     *
-     * Corner pairings deliberately create a 180° rotation (combined horizontal + vertical
-     * flip) so the display matches the iOS side and the previous vertex-buffer-rebuild
-     * behaviour on Android:
-     *   vertex_uv (0, 0) → ARCore's texture coord for (1, 1)
-     *   vertex_uv (1, 0) → ARCore's texture coord for (0, 1)
-     *   vertex_uv (0, 1) → ARCore's texture coord for (1, 0)
+     * Update UV coordinates using ARCore's transformCoordinates2d
      */
     fun updateUvTransform(frame: Frame): Boolean {
-        try {
-            // 3 NDC corners — enough to solve a 2D affine (6 unknowns).
-            // Intentionally "flipped" so we bake the front-camera mirror + vertical flip
-            // into the resulting matrix.
-            val ndcCoords = floatArrayOf(
-                1f, 1f,  // pair 0 → vertex_uv (0, 0)
-                0f, 1f,  // pair 1 → vertex_uv (1, 0)
-                1f, 0f   // pair 2 → vertex_uv (0, 1)
-            )
-            val textureCoords = FloatArray(6)
+        if (uvTransformSet) return true
 
+        try {
+            // NDC coordinates for the 4 quad vertices
+            val ndcCoords = floatArrayOf(
+                0f, 0f,  // bottom-left
+                1f, 0f,  // bottom-right
+                0f, 1f,  // top-left
+                1f, 1f   // top-right
+            )
+
+            // Output buffer for transformed texture coordinates
+            val textureCoords = FloatArray(8)
+
+            // Transform NDC to texture coordinates using ARCore
             frame.transformCoordinates2d(
                 Coordinates2d.VIEW_NORMALIZED,
                 ndcCoords,
@@ -186,30 +175,17 @@ class CameraTextureRenderer(private val context: Context) {
                 textureCoords
             )
 
-            // Affine fit:
-            //   transform(0, 0) = (tx, ty)          = tc[0..1]
-            //   transform(1, 0) = (a + tx, c + ty)  = tc[2..3]
-            //   transform(0, 1) = (b + tx, d + ty)  = tc[4..5]
-            val tx = textureCoords[0]
-            val ty = textureCoords[1]
-            val a = textureCoords[2] - tx
-            val c = textureCoords[3] - ty
-            val b = textureCoords[4] - tx
-            val d = textureCoords[5] - ty
-
-            // Filament expects a column-major 3x3 packed as 9 floats:
-            //   col0 = (a, c, 0), col1 = (b, d, 0), col2 = (tx, ty, 1)
-            textureTransformMatrix[0] = a;  textureTransformMatrix[1] = c;  textureTransformMatrix[2] = 0f
-            textureTransformMatrix[3] = b;  textureTransformMatrix[4] = d;  textureTransformMatrix[5] = 0f
-            textureTransformMatrix[6] = tx; textureTransformMatrix[7] = ty; textureTransformMatrix[8] = 1f
-
-            cameraMaterialInstance.setParameter(
-                "textureTransform",
-                FloatElement.MAT3,
-                textureTransformMatrix,
-                0,
-                1
+            // Build new vertex data with positions and transformed UVs
+            // Flipped vertically AND horizontally (for front camera mirror effect)
+            val vertices = floatArrayOf(
+                -1f, -1f, textureCoords[6], textureCoords[7],  // bottom-left gets bottom-right UV
+                 1f, -1f, textureCoords[4], textureCoords[5],  // bottom-right gets bottom-left UV
+                -1f,  1f, textureCoords[2], textureCoords[3],  // top-left gets top-right UV
+                 1f,  1f, textureCoords[0], textureCoords[1]   // top-right gets top-left UV
             )
+
+            backgroundQuadVertexBuffer?.setBufferAt(engine, 0, MatrixUtils.createFloatBuffer(vertices))
+            uvTransformSet = true
             return true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update UV transform: ${e.message}")
@@ -218,10 +194,10 @@ class CameraTextureRenderer(private val context: Context) {
     }
 
     /**
-     * No-op: the textureTransform matrix is rebuilt every frame in updateUvTransform.
-     * Kept for API compatibility with callers that previously reset vertex-baked UVs.
+     * Reset UV transform flag (call when session is reset)
      */
     fun resetUvTransform() {
+        uvTransformSet = false
     }
 
     /**
@@ -304,14 +280,12 @@ class CameraTextureRenderer(private val context: Context) {
     }
 
     private fun createBackgroundQuad() {
-        // Fullscreen quad in device coordinates with identity UVs. The material's
-        // textureTransform uniform (set per-frame in updateUvTransform) does the real
-        // mapping to the camera-feed external texture.
+        // Position (x,y) and UV (u,v) for each vertex - UVs set later by ARCore
         val vertices = floatArrayOf(
-            -1f, -1f, 0f, 0f,  // bottom-left  → uv (0, 0)
-             1f, -1f, 1f, 0f,  // bottom-right → uv (1, 0)
-            -1f,  1f, 0f, 1f,  // top-left     → uv (0, 1)
-             1f,  1f, 1f, 1f   // top-right    → uv (1, 1)
+            -1f, -1f, 0f, 0f,
+             1f, -1f, 0f, 0f,
+            -1f,  1f, 0f, 0f,
+             1f,  1f, 0f, 0f
         )
 
         backgroundQuadVertexBuffer = VertexBuffer.Builder()
