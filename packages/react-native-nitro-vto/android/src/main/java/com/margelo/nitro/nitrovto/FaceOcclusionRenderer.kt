@@ -329,6 +329,15 @@ class FaceOcclusionRenderer(private val context: Context) {
 
         // Apply face pose transform to entity (transforms local vertices to world space)
         face.centerPose.toMatrix(tempMatrix16, 0)
+
+        // Mirror X to match the glasses transform (see GlassesRenderer.updateTransform).
+        // Required because VTORenderer uses setProjection(fov, aspect, …), which can't
+        // express ARCore's front-camera m[0] < 0 mirror.
+        tempMatrix16[0] = -tempMatrix16[0]
+        tempMatrix16[4] = -tempMatrix16[4]
+        tempMatrix16[8] = -tempMatrix16[8]
+        tempMatrix16[12] = -tempMatrix16[12]
+
         val faceInstance = engine.transformManager.getInstance(faceMeshEntity)
         engine.transformManager.setTransform(faceInstance, tempMatrix16)
 

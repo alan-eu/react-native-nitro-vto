@@ -183,19 +183,34 @@ class VTORenderer(private val context: Context) {
     private fun updateCameraProjection(frame: Frame) {
         if (width == 0 || height == 0) return
 
+        val near = 0.1
+        val far = 10.0
+
         // Get ARCore camera matrices
         frame.camera.getViewMatrix(viewMatrix, 0)
-        frame.camera.getProjectionMatrix(projMatrix, 0, 0.01f, 100f)
+        frame.camera.getProjectionMatrix(projMatrix, 0, near.toFloat(), far.toFloat())
 
         // ARCore viewMatrix transforms world -> camera space
         // Filament camera needs model matrix (camera -> world), which is inverse(viewMatrix)
         Matrix.invertM(cameraModelMatrix, 0, viewMatrix, 0)
 
-        // Convert to double arrays for Filament
-        val projMatrixDouble = DoubleArray(16) { projMatrix[it].toDouble() }
+        // Filament's screen-space refraction (used by KHR_materials_transmission) fails to
+        // populate the refraction source on the Android GL backend when the projection is
+        // set via setCustomProjection — the frame ends up sampling black. The
+        // setProjection(fov, aspect, near, far) overload (Filament builds the matrix
+        // itself) is the only one where refraction works. Derive the vertical fov from
+        // ARCore's projection matrix so the glasses still align with the tracked face;
+        // the horizontal flip ARCore bakes into m[0] (front camera mirror) is applied at
+        // the model-matrix level on each ARCore-tracked entity (see GlassesRenderer and
+        // FaceOcclusionRenderer), so the view matrix stays determinant-positive and the
+        // refraction pass keeps working.
+        val fovYRadians = 2.0 * kotlin.math.atan(1.0 / projMatrix[5])
+        val fovYDegrees = Math.toDegrees(fovYRadians)
+        val aspect = width.toDouble() / height.toDouble()
 
-        // Set custom projection and camera model matrix
-        filamentCamera.setCustomProjection(projMatrixDouble, 0.01, 100.0)
+        filamentCamera.setProjection(
+            fovYDegrees, aspect, near, far, Camera.Fov.VERTICAL
+        )
         filamentCamera.setModelMatrix(cameraModelMatrix)
     }
 
