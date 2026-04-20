@@ -35,7 +35,10 @@ Pod::Spec.new do |s|
   })
 
   s.resource_bundles = {
-    'NitroVtoAssets' => ['ios/assets/**/*']
+    # Compiled Filament artifacts only — sources (.mat, .hdr) live at
+    # packages/react-native-nitro-vto/assets/ and are consumed by scripts/matc.ts
+    # and scripts/cmgen.ts, which emit into ios/assets/.
+    'NitroVtoAssets' => ['ios/assets/**/*.{filamat,ktx,txt}']
   }
 
   load 'nitrogen/generated/ios/NitroVto+autolinking.rb'

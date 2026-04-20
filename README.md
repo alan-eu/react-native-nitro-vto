@@ -127,35 +127,40 @@ Both platforms use Filament 1.69.3. Download from [Filament GitHub releases](htt
 Create a `.env` file at the package root (see `.env.example`):
 
 ```bash
-MATC_IOS_PATH=/path/to/filament/bin/matc
-MATC_ANDROID_PATH=/path/to/filament/bin/matc
-CMGEN_IOS_PATH=/path/to/filament/bin/cmgen
-CMGEN_ANDROID_PATH=/path/to/filament/bin/cmgen
+MATC_PATH=/path/to/filament/bin/matc
+CMGEN_PATH=/path/to/filament/bin/cmgen
 ```
+
+### Asset layout
+
+Source materials (`.mat`) and environment maps (`.hdr`) live in a single shared folder:
+
+```
+packages/react-native-nitro-vto/
+├── assets/
+│   ├── materials/*.mat   ← source materials (one copy, shared across platforms)
+│   └── envs/*.hdr        ← source HDRis
+├── ios/assets/           ← compiled artifacts only (.filamat, .ktx, .txt)
+└── android/src/main/assets/   ← compiled artifacts only (.filamat, .ktx, .txt)
+```
+
+Most materials are identical across platforms and live as a single `.mat`. Platform-specific materials use a `.ios.mat` / `.android.mat` suffix — the `matc` script compiles those only for the matching platform and strips the suffix from the output filename (e.g. `camera_background.ios.mat` → `ios/assets/materials/camera_background.filamat`). The only platform-specific material today is `camera_background`, because the iOS (Metal, `sampler2d` + `flipUV: false`) and Android (OpenGL/Vulkan, `samplerExternal`) sampler conventions can't be expressed in a single `.mat`.
 
 ### Compile Materials
 
-Compiles all `.mat` files in the platform's material folder to `.filamat`:
+Compiles every `.mat` in `assets/materials/` in one pass. Shared sources compile for both platforms; `*.ios.mat` / `*.android.mat` files compile only for the matching platform. Metal output lands in `ios/assets/materials/`, OpenGL+Vulkan output in `android/src/main/assets/materials/`:
 
 ```bash
-npm run matc ios
-npm run matc android
+npm run matc
 ```
 
 ### Generate IBL from HDR
 
-Processes all `.hdr` files in the platform's envs folder, generating `_ibl.ktx`, `_skybox.ktx`, and `_sh.txt`:
+Processes every `.hdr` in `assets/envs/` once per file — `.ktx` is platform‑agnostic so the outputs (`_ibl.ktx`, `_skybox.ktx`, `_sh.txt`) are copied to both `ios/assets/envs/` and `android/src/main/assets/envs/`:
 
 ```bash
-npm run cmgen ios
-npm run cmgen android
+npm run cmgen
 ```
-
-### Head Rotation Axes
-
-- X axis (Roll): Tilt head left/right
-- Y axis (Pitch): Look up/down
-- Z axis (Yaw): Turn left/right
 
 ### Transform Pipeline
 
