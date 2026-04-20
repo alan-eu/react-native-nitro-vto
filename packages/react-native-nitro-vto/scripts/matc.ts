@@ -1,97 +1,97 @@
 import { execSync } from "child_process";
 import { existsSync, readdirSync } from "fs";
-import { resolve, basename } from "path";
+import { resolve, basename, join } from "path";
 import dotenv from "dotenv";
 
 dotenv.config({ path: resolve(__dirname, "../.env"), quiet: true });
 
-const IOS_MATERIAL_FOLDER = "ios/assets/materials";
-const ANDROID_MATERIAL_FOLDER = "android/src/main/assets/materials";
+const SOURCE_FOLDER = resolve(__dirname, "../assets/materials");
+const IOS_OUTPUT_FOLDER = resolve(__dirname, "../ios/assets/materials");
+const ANDROID_OUTPUT_FOLDER = resolve(
+  __dirname,
+  "../android/src/main/assets/materials"
+);
+
+const TARGETS: { label: string; outputDir: string; apiFlags: string }[] = [
+  { label: "ios", outputDir: IOS_OUTPUT_FOLDER, apiFlags: "--api metal" },
+  {
+    label: "android",
+    outputDir: ANDROID_OUTPUT_FOLDER,
+    apiFlags: "--api opengl --api vulkan",
+  },
+];
 
 const USAGE = `
-Usage: npm run matc <platform>
+Usage: npm run matc
 
-Compiles all .mat files in the platform's material folder to .filamat.
+Compiles every .mat in packages/react-native-nitro-vto/assets/materials/
+to .filamat, once per platform, writing:
+  - Metal → ios/assets/materials/<name>.filamat
+  - OpenGL + Vulkan → android/src/main/assets/materials/<name>.filamat
 
-Arguments:
-  platform   Target platform: "ios" or "android"
-
-Examples:
-  npm run matc ios
-  npm run matc android
+Requires MATC_PATH in .env (path to a Filament matc binary).
 `;
 
 const main = () => {
-  const platform = process.argv[2];
-
-  if (!platform || (platform !== "ios" && platform !== "android")) {
+  if (process.argv[2]) {
     console.error(USAGE);
+    console.error(`Unexpected argument "${process.argv[2]}"`);
     process.exit(1);
   }
 
-  const materialFolder =
-    platform === "ios" ? IOS_MATERIAL_FOLDER : ANDROID_MATERIAL_FOLDER;
-
-  const matcPathKey =
-    platform === "ios" ? "MATC_IOS_PATH" : "MATC_ANDROID_PATH";
-  const matcPath = process.env[matcPathKey];
-
+  const matcPath = process.env.MATC_PATH;
   if (!matcPath) {
-    console.error(`Error: ${matcPathKey} not defined in .env file`);
+    console.error(USAGE);
+    console.error("Error: MATC_PATH not defined in .env");
     process.exit(1);
   }
-
   if (!existsSync(matcPath)) {
     console.error(`Error: matc binary not found at ${matcPath}`);
     process.exit(1);
   }
 
-  const matFiles = readdirSync(materialFolder).filter((f) =>
-    f.endsWith(".mat")
-  );
+  if (!existsSync(SOURCE_FOLDER)) {
+    console.error(`Error: source folder not found: ${SOURCE_FOLDER}`);
+    process.exit(1);
+  }
 
+  const matFiles = readdirSync(SOURCE_FOLDER).filter((f) => f.endsWith(".mat"));
   if (matFiles.length === 0) {
-    console.error(`No .mat files found in ${materialFolder}`);
+    console.error(`No .mat files found in ${SOURCE_FOLDER}`);
     process.exit(1);
   }
 
   console.log(
-    `Compiling ${matFiles.length} material(s) for ${platform}...\n`
+    `Compiling ${matFiles.length} material(s) for ${TARGETS.length} target(s)...\n`
   );
 
   let failures = 0;
 
   for (const matFile of matFiles) {
-    const matFilePath = resolve(materialFolder, matFile);
-    const outputFile = matFilePath.replace(/\.mat$/, ".filamat");
+    const sourcePath = join(SOURCE_FOLDER, matFile);
+    const outputName = matFile.replace(/\.mat$/, ".filamat");
+    console.log(`  ${basename(matFile)}`);
 
-    let command: string;
-    if (platform === "ios") {
-      command = `"${matcPath}" --api metal --platform mobile -o "${outputFile}" "${matFilePath}"`;
-    } else {
-      command = `"${matcPath}" --api opengl --api vulkan --platform mobile -o "${outputFile}" "${matFilePath}"`;
-    }
+    for (const { label, outputDir, apiFlags } of TARGETS) {
+      const outputPath = join(outputDir, outputName);
+      const command = `"${matcPath}" ${apiFlags} --platform mobile -o "${outputPath}" "${sourcePath}"`;
 
-    console.log(`  ${basename(matFile)} → ${basename(outputFile)}`);
-
-    try {
-      execSync(command, { stdio: "pipe" });
-    } catch (error) {
-      console.error(`  ✗ Failed to compile ${matFile}`);
-      if (error instanceof Error && "stderr" in error) {
-        console.error(String((error as any).stderr));
+      try {
+        execSync(command, { stdio: "pipe" });
+        console.log(`    → ${label}/${outputName}`);
+      } catch (error) {
+        console.error(`    ✗ ${label} failed`);
+        if (error instanceof Error && "stderr" in error) {
+          console.error(String((error as any).stderr));
+        }
+        failures++;
       }
-      failures++;
     }
   }
 
-  console.log(
-    `\nDone: ${matFiles.length - failures}/${matFiles.length} compiled successfully.`
-  );
-
-  if (failures > 0) {
-    process.exit(1);
-  }
+  const total = matFiles.length * TARGETS.length;
+  console.log(`\nDone: ${total - failures}/${total} compiled successfully.`);
+  if (failures > 0) process.exit(1);
 };
 
 main();

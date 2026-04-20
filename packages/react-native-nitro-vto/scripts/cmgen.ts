@@ -1,113 +1,146 @@
 import { execSync } from "child_process";
-import { existsSync, readdirSync, renameSync } from "fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+} from "fs";
 import { resolve, basename, join } from "path";
+import { tmpdir } from "os";
 import dotenv from "dotenv";
 
 dotenv.config({ path: resolve(__dirname, "../.env"), quiet: true });
 
-const IOS_ENVS_FOLDER = "ios/assets/envs";
-const ANDROID_ENVS_FOLDER = "android/src/main/assets/envs";
+const SOURCE_FOLDER = resolve(__dirname, "../assets/envs");
+const IOS_OUTPUT_FOLDER = resolve(__dirname, "../ios/assets/envs");
+const ANDROID_OUTPUT_FOLDER = resolve(
+  __dirname,
+  "../android/src/main/assets/envs"
+);
+
+const TARGETS: { label: string; outputDir: string }[] = [
+  { label: "ios", outputDir: IOS_OUTPUT_FOLDER },
+  { label: "android", outputDir: ANDROID_OUTPUT_FOLDER },
+];
 
 const USAGE = `
-Usage: npm run cmgen <platform>
+Usage: npm run cmgen
 
-Processes all .hdr files in the platform's envs folder using cmgen.
-Generates IBL and skybox KTX files.
+Processes every .hdr in packages/react-native-nitro-vto/assets/envs/ with cmgen
+and copies the outputs (_ibl.ktx, _skybox.ktx, _sh.txt) to:
+  - ios/assets/envs/
+  - android/src/main/assets/envs/
 
-Arguments:
-  platform   Target platform: "ios" or "android"
+KTX outputs are platform-agnostic, so cmgen runs once per .hdr then we copy.
 
-Examples:
-  npm run cmgen ios
-  npm run cmgen android
+Requires CMGEN_PATH in .env (path to a Filament cmgen binary).
 `;
 
 const main = () => {
-  const platform = process.argv[2];
-
-  if (!platform || (platform !== "ios" && platform !== "android")) {
+  if (process.argv[2]) {
     console.error(USAGE);
+    console.error(`Unexpected argument "${process.argv[2]}"`);
     process.exit(1);
   }
 
-  const envsFolder =
-    platform === "ios" ? IOS_ENVS_FOLDER : ANDROID_ENVS_FOLDER;
-
-  const cmgenPathKey =
-    platform === "ios" ? "CMGEN_IOS_PATH" : "CMGEN_ANDROID_PATH";
-  const cmgenPath = process.env[cmgenPathKey];
-
+  const cmgenPath = process.env.CMGEN_PATH;
   if (!cmgenPath) {
-    console.error(`Error: ${cmgenPathKey} not defined in .env file`);
+    console.error(USAGE);
+    console.error("Error: CMGEN_PATH not defined in .env");
     process.exit(1);
   }
-
   if (!existsSync(cmgenPath)) {
     console.error(`Error: cmgen binary not found at ${cmgenPath}`);
     process.exit(1);
   }
 
-  const hdrFiles = readdirSync(envsFolder).filter((f) =>
-    f.endsWith(".hdr")
-  );
-
-  if (hdrFiles.length === 0) {
-    console.error(`No .hdr files found in ${envsFolder}`);
+  if (!existsSync(SOURCE_FOLDER)) {
+    console.error(`Error: source folder not found: ${SOURCE_FOLDER}`);
     process.exit(1);
   }
 
+  const hdrFiles = readdirSync(SOURCE_FOLDER).filter((f) => f.endsWith(".hdr"));
+  if (hdrFiles.length === 0) {
+    console.error(`No .hdr files found in ${SOURCE_FOLDER}`);
+    process.exit(1);
+  }
+
+  for (const { outputDir } of TARGETS) {
+    mkdirSync(outputDir, { recursive: true });
+  }
+
   console.log(
-    `Processing ${hdrFiles.length} environment(s) for ${platform}...\n`
+    `Compiling ${hdrFiles.length} environment(s) for ${TARGETS.length} target(s)...\n`
   );
 
-  // cmgen --deploy names output using the deploy folder's basename as prefix.
-  // e.g. --deploy=ios/assets/envs produces envs_ibl.ktx, envs_skybox.ktx, sh.txt
-  // We rename them to <source_name>_ibl.ktx, <source_name>_skybox.ktx, <source_name>_sh.txt
-  const deployPrefix = basename(envsFolder);
+  // cmgen's --deploy flag names outputs using the deploy folder's basename as the
+  // prefix (deploy=/tmp/foo/envs → envs_ibl.ktx, envs_skybox.ktx, sh.txt). We run
+  // into a temporary "envs" deploy folder per .hdr, rename, then copy to every
+  // platform output directory.
+  const scratchRoot = join(tmpdir(), `nitrovto-cmgen-${process.pid}`);
+  mkdirSync(scratchRoot, { recursive: true });
 
   let failures = 0;
 
-  for (const hdrFile of hdrFiles) {
-    const hdrFilePath = resolve(envsFolder, hdrFile);
-    const sourceName = hdrFile.replace(/\.hdr$/, "");
-    const command = `"${cmgenPath}" --format=ktx --size=256 --deploy="${envsFolder}" "${hdrFilePath}"`;
+  try {
+    for (const hdrFile of hdrFiles) {
+      const hdrPath = join(SOURCE_FOLDER, hdrFile);
+      const sourceName = hdrFile.replace(/\.hdr$/, "");
+      const deployDir = join(scratchRoot, "envs");
+      mkdirSync(deployDir, { recursive: true });
 
-    console.log(`  ${hdrFile}`);
+      const command = `"${cmgenPath}" --format=ktx --size=256 --deploy="${deployDir}" "${hdrPath}"`;
+      console.log(`  ${hdrFile}`);
 
-    try {
-      execSync(command, { stdio: "pipe" });
+      try {
+        execSync(command, { stdio: "pipe" });
 
-      // Rename cmgen output to use source filename as prefix
-      const renames: [string, string][] = [
-        [`${deployPrefix}_ibl.ktx`, `${sourceName}_ibl.ktx`],
-        [`${deployPrefix}_skybox.ktx`, `${sourceName}_skybox.ktx`],
-        [`sh.txt`, `${sourceName}_sh.txt`],
-      ];
+        const renames: [string, string][] = [
+          [`envs_ibl.ktx`, `${sourceName}_ibl.ktx`],
+          [`envs_skybox.ktx`, `${sourceName}_skybox.ktx`],
+          [`sh.txt`, `${sourceName}_sh.txt`],
+        ];
 
-      for (const [from, to] of renames) {
-        const fromPath = join(envsFolder, from);
-        const toPath = join(envsFolder, to);
-        if (existsSync(fromPath)) {
-          renameSync(fromPath, toPath);
-          console.log(`    ${from} → ${to}`);
+        for (const [from, to] of renames) {
+          const fromPath = join(deployDir, from);
+          const toPath = join(deployDir, to);
+          if (existsSync(fromPath)) renameSync(fromPath, toPath);
         }
+
+        const artifacts = [
+          `${sourceName}_ibl.ktx`,
+          `${sourceName}_skybox.ktx`,
+          `${sourceName}_sh.txt`,
+        ];
+
+        for (const { label, outputDir } of TARGETS) {
+          for (const artifact of artifacts) {
+            const srcPath = join(deployDir, artifact);
+            if (!existsSync(srcPath)) continue;
+            copyFileSync(srcPath, join(outputDir, artifact));
+            console.log(`    → ${label}/${artifact}`);
+          }
+        }
+      } catch (error) {
+        console.error(`    ✗ failed`);
+        if (error instanceof Error && "stderr" in error) {
+          console.error(String((error as any).stderr));
+        }
+        failures++;
+      } finally {
+        rmSync(deployDir, { recursive: true, force: true });
       }
-    } catch (error) {
-      console.error(`  ✗ Failed to process ${hdrFile}`);
-      if (error instanceof Error && "stderr" in error) {
-        console.error(String((error as any).stderr));
-      }
-      failures++;
     }
+  } finally {
+    rmSync(scratchRoot, { recursive: true, force: true });
   }
 
   console.log(
-    `\nDone: ${hdrFiles.length - failures}/${hdrFiles.length} processed successfully.`
+    `\nDone: ${hdrFiles.length - failures}/${hdrFiles.length} compiled successfully.`
   );
-
-  if (failures > 0) {
-    process.exit(1);
-  }
+  if (failures > 0) process.exit(1);
 };
 
 main();
