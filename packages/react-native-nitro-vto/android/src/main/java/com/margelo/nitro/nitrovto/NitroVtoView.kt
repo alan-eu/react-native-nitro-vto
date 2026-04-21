@@ -46,6 +46,8 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
 
     // Callbacks
     var onModelLoaded: ((modelUrl: String) -> Unit)? = null
+    var onFaceTracked: (() -> Unit)? = null
+    var onGlassesDisplayed: ((modelUrl: String) -> Unit)? = null
 
     // State
     private var isInitialized = false
@@ -148,6 +150,8 @@ class NitroVtoView(context: Context) : FrameLayout(context) {
         // Create and initialize renderer
         vtoRenderer = VTORenderer(context)
         vtoRenderer?.onModelLoaded = onModelLoaded
+        vtoRenderer?.onFaceTracked = onFaceTracked
+        vtoRenderer?.onGlassesDisplayed = onGlassesDisplayed
         vtoRenderer?.initialize(surfaceView, modelUrl)
 
         isInitialized = true

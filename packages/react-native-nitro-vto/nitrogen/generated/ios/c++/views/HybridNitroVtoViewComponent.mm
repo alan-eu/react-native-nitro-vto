@@ -86,6 +86,16 @@ using namespace margelo::nitro::nitrovto::views;
     swiftPart.setOnModelLoaded(newViewProps.onModelLoaded.value);
     newViewProps.onModelLoaded.isDirty = false;
   }
+  // onFaceTracked: optional
+  if (newViewProps.onFaceTracked.isDirty) {
+    swiftPart.setOnFaceTracked(newViewProps.onFaceTracked.value);
+    newViewProps.onFaceTracked.isDirty = false;
+  }
+  // onGlassesDisplayed: optional
+  if (newViewProps.onGlassesDisplayed.isDirty) {
+    swiftPart.setOnGlassesDisplayed(newViewProps.onGlassesDisplayed.value);
+    newViewProps.onGlassesDisplayed.isDirty = false;
+  }
   // faceMeshOcclusion: optional
   if (newViewProps.faceMeshOcclusion.isDirty) {
     swiftPart.setFaceMeshOcclusion(newViewProps.faceMeshOcclusion.value);

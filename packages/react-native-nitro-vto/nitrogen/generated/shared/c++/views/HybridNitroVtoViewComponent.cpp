@@ -55,6 +55,26 @@ namespace margelo::nitro::nitrovto::views {
         throw std::runtime_error(std::string("NitroVtoView.onModelLoaded: ") + exc.what());
       }
     }()),
+    onFaceTracked([&]() -> CachedProp<std::optional<std::function<void()>>> {
+      try {
+        const react::RawValue* rawValue = rawProps.at("onFaceTracked", nullptr, nullptr);
+        if (rawValue == nullptr) return sourceProps.onFaceTracked;
+        const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
+        return CachedProp<std::optional<std::function<void()>>>::fromRawValue(*runtime, value.asObject(*runtime).getProperty(*runtime, "f"), sourceProps.onFaceTracked);
+      } catch (const std::exception& exc) {
+        throw std::runtime_error(std::string("NitroVtoView.onFaceTracked: ") + exc.what());
+      }
+    }()),
+    onGlassesDisplayed([&]() -> CachedProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>> {
+      try {
+        const react::RawValue* rawValue = rawProps.at("onGlassesDisplayed", nullptr, nullptr);
+        if (rawValue == nullptr) return sourceProps.onGlassesDisplayed;
+        const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
+        return CachedProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>>::fromRawValue(*runtime, value.asObject(*runtime).getProperty(*runtime, "f"), sourceProps.onGlassesDisplayed);
+      } catch (const std::exception& exc) {
+        throw std::runtime_error(std::string("NitroVtoView.onGlassesDisplayed: ") + exc.what());
+      }
+    }()),
     faceMeshOcclusion([&]() -> CachedProp<std::optional<bool>> {
       try {
         const react::RawValue* rawValue = rawProps.at("faceMeshOcclusion", nullptr, nullptr);
@@ -111,6 +131,8 @@ namespace margelo::nitro::nitrovto::views {
     modelUrl(other.modelUrl),
     isActive(other.isActive),
     onModelLoaded(other.onModelLoaded),
+    onFaceTracked(other.onFaceTracked),
+    onGlassesDisplayed(other.onGlassesDisplayed),
     faceMeshOcclusion(other.faceMeshOcclusion),
     backPlaneOcclusion(other.backPlaneOcclusion),
     forwardOffset(other.forwardOffset),
@@ -122,6 +144,8 @@ namespace margelo::nitro::nitrovto::views {
       case hashString("modelUrl"): return true;
       case hashString("isActive"): return true;
       case hashString("onModelLoaded"): return true;
+      case hashString("onFaceTracked"): return true;
+      case hashString("onGlassesDisplayed"): return true;
       case hashString("faceMeshOcclusion"): return true;
       case hashString("backPlaneOcclusion"): return true;
       case hashString("forwardOffset"): return true;

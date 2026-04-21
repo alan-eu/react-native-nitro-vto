@@ -45,6 +45,10 @@ class GlassesRenderer(private val context: Context) {
 
     // Callbacks
     var onModelLoaded: ((modelUrl: String) -> Unit)? = null
+    var onGlassesDisplayed: ((modelUrl: String) -> Unit)? = null
+
+    // Fires onGlassesDisplayed once per loaded model — reset on every successful load.
+    private var hasDisplayedCurrentModel = false
 
     // Reusable arrays to avoid per-frame allocations
     private val tempVec4 = FloatArray(4)
@@ -126,6 +130,9 @@ class GlassesRenderer(private val context: Context) {
 
             scene.addEntities(asset.entities)
             Log.d(TAG, "Glasses model loaded: ${asset.entities.size} entities")
+            // Reset the "already displayed" flag so onGlassesDisplayed fires again
+            // the next time updateTransform runs for this freshly-loaded model.
+            hasDisplayedCurrentModel = false
             hide()
         } ?: run {
             Log.e(TAG, "Failed to create glasses asset")
@@ -137,6 +144,10 @@ class GlassesRenderer(private val context: Context) {
      */
     fun updateTransform(face: AugmentedFace, frame: Frame) {
         glassesAsset?.let { asset ->
+            if (!hasDisplayedCurrentModel) {
+                hasDisplayedCurrentModel = true
+                onGlassesDisplayed?.invoke(currentModelUrl)
+            }
             val instance = engine.transformManager.getInstance(asset.root)
 
             // Get nose bridge position in world space

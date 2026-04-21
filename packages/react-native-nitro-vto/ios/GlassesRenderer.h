@@ -17,6 +17,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// Callback for when model loading completes
 @property (nonatomic, copy, nullable) void (^onModelLoaded)(NSString *url);
 
+/// Callback fired the first time the newly loaded model's transform is driven
+/// by a tracked face (i.e. the first frame the glasses actually become visible).
+/// Re-armed on every successful load (initial load + switchModelWithUrl:).
+@property (nonatomic, copy, nullable) void (^onGlassesDisplayed)(NSString *url);
+
 /// Setup the glasses renderer with Filament engine and scene
 - (void)setupWithEngine:(filament::Engine *)engine
                   scene:(filament::Scene *)scene

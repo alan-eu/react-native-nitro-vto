@@ -56,6 +56,10 @@ namespace margelo::nitro::nitrovto {
     void setIsActive(bool isActive) override;
     std::optional<std::function<void(const std::string& /* modelUrl */)>> getOnModelLoaded() override;
     void setOnModelLoaded(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onModelLoaded) override;
+    std::optional<std::function<void()>> getOnFaceTracked() override;
+    void setOnFaceTracked(const std::optional<std::function<void()>>& onFaceTracked) override;
+    std::optional<std::function<void(const std::string& /* modelUrl */)>> getOnGlassesDisplayed() override;
+    void setOnGlassesDisplayed(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onGlassesDisplayed) override;
     std::optional<bool> getFaceMeshOcclusion() override;
     void setFaceMeshOcclusion(std::optional<bool> faceMeshOcclusion) override;
     std::optional<bool> getBackPlaneOcclusion() override;

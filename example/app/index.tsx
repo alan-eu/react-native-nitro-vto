@@ -1,5 +1,5 @@
 import { NitroVtoView, nitroVtoVersion } from "@alaneu/react-native-nitro-vto";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   PermissionsAndroid,
@@ -60,18 +60,41 @@ const App = () => {
     requestCameraPermission();
   }, [requestCameraPermission]);
 
+  // Perf instrumentation — all three events are timed from the same baseline
+  // (the last model change) so their durations are directly comparable.
+  // `tModelRequested` is set at mount and re-armed whenever the selected model
+  // changes.
+  const tModelRequested = useRef(performance.now());
+
+  useEffect(() => {
+    tModelRequested.current = performance.now();
+  }, [currentModelIndex]);
+
+  const msSinceModelRequested = () =>
+    Math.round(performance.now() - tModelRequested.current);
+
   const handleNextModel = useCallback(() => {
     setIsLoading(true);
     setCurrentModelIndex((prev) => (prev + 1) % MODELS.length);
   }, []);
 
   const handleModelLoaded = useCallback((url: string) => {
-    console.log("Model loaded:", url);
+    console.log(`[perf] modelLoaded ${url} in ${msSinceModelRequested()}ms`);
     // add a timeout to avoid loading overlay flickering
     const timeout = setTimeout(() => {
       setIsLoading(false);
     }, 300);
     return () => clearTimeout(timeout);
+  }, []);
+
+  const handleFaceTracked = useCallback(() => {
+    console.log(`[perf] faceTracked in ${msSinceModelRequested()}ms`);
+  }, []);
+
+  const handleGlassesDisplayed = useCallback((url: string) => {
+    console.log(
+      `[perf] glassesDisplayed ${url} in ${msSinceModelRequested()}ms`
+    );
   }, []);
 
   const handleFaceMeshOcclusion = useCallback(() => {
@@ -113,6 +136,8 @@ const App = () => {
         forwardOffset={0.0035}
         debug={debugEnabled}
         onModelLoaded={callback(handleModelLoaded)}
+        onFaceTracked={callback(handleFaceTracked)}
+        onGlassesDisplayed={callback(handleGlassesDisplayed)}
       />
       {isLoading && (
         <View style={styles.loadingOverlay}>

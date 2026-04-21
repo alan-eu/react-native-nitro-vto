@@ -14,6 +14,7 @@
 #include <optional>
 #include "JFunc_void_std__string.hpp"
 #include <NitroModules/JNICallable.hpp>
+#include "JFunc_void.hpp"
 
 namespace margelo::nitro::nitrovto {
 
@@ -78,6 +79,40 @@ namespace margelo::nitro::nitrovto {
   void JHybridNitroVtoViewSpec::setOnModelLoaded(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onModelLoaded) {
     static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<JFunc_void_std__string::javaobject> /* onModelLoaded */)>("setOnModelLoaded_cxx");
     method(_javaPart, onModelLoaded.has_value() ? JFunc_void_std__string_cxx::fromCpp(onModelLoaded.value()) : nullptr);
+  }
+  std::optional<std::function<void()>> JHybridNitroVtoViewSpec::getOnFaceTracked() {
+    static const auto method = javaClassStatic()->getMethod<jni::local_ref<JFunc_void::javaobject>()>("getOnFaceTracked_cxx");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional([&]() -> std::function<void()> {
+      if (__result->isInstanceOf(JFunc_void_cxx::javaClassStatic())) [[likely]] {
+        auto downcast = jni::static_ref_cast<JFunc_void_cxx::javaobject>(__result);
+        return downcast->cthis()->getFunction();
+      } else {
+        auto __resultRef = jni::make_global(__result);
+        return JNICallable<JFunc_void, void()>(std::move(__resultRef));
+      }
+    }()) : std::nullopt;
+  }
+  void JHybridNitroVtoViewSpec::setOnFaceTracked(const std::optional<std::function<void()>>& onFaceTracked) {
+    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<JFunc_void::javaobject> /* onFaceTracked */)>("setOnFaceTracked_cxx");
+    method(_javaPart, onFaceTracked.has_value() ? JFunc_void_cxx::fromCpp(onFaceTracked.value()) : nullptr);
+  }
+  std::optional<std::function<void(const std::string& /* modelUrl */)>> JHybridNitroVtoViewSpec::getOnGlassesDisplayed() {
+    static const auto method = javaClassStatic()->getMethod<jni::local_ref<JFunc_void_std__string::javaobject>()>("getOnGlassesDisplayed_cxx");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional([&]() -> std::function<void(const std::string& /* modelUrl */)> {
+      if (__result->isInstanceOf(JFunc_void_std__string_cxx::javaClassStatic())) [[likely]] {
+        auto downcast = jni::static_ref_cast<JFunc_void_std__string_cxx::javaobject>(__result);
+        return downcast->cthis()->getFunction();
+      } else {
+        auto __resultRef = jni::make_global(__result);
+        return JNICallable<JFunc_void_std__string, void(std::string)>(std::move(__resultRef));
+      }
+    }()) : std::nullopt;
+  }
+  void JHybridNitroVtoViewSpec::setOnGlassesDisplayed(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onGlassesDisplayed) {
+    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<JFunc_void_std__string::javaobject> /* onGlassesDisplayed */)>("setOnGlassesDisplayed_cxx");
+    method(_javaPart, onGlassesDisplayed.has_value() ? JFunc_void_std__string_cxx::fromCpp(onGlassesDisplayed.value()) : nullptr);
   }
   std::optional<bool> JHybridNitroVtoViewSpec::getFaceMeshOcclusion() {
     static const auto method = javaClassStatic()->getMethod<jni::local_ref<jni::JBoolean>()>("getFaceMeshOcclusion");
