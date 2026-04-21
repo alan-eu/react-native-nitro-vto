@@ -19,6 +19,11 @@ fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
         vec2 uv = getUV0();
-        material.baseColor = texture(materialParams_cameraTexture, uv);
+        vec4 color = texture(materialParams_cameraTexture, uv);
+        // ARCore's camera feed comes through samplerExternalOES already display-ready.
+        // It still reads visibly brighter than iOS's ARKit feed, so we scale down to match.
+        // Tweak this value if a future device calibration drifts.
+        color.rgb *= 0.90;
+        material.baseColor = color;
     }
 }
