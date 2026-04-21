@@ -43,3 +43,4 @@ specs/
 .env
 android/.settings/org.eclipse.buildship.core.prefs
 specs
+screenshots
