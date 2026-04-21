@@ -78,6 +78,20 @@ namespace margelo::nitro::nitrovto {
     inline void setOnModelLoaded(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onModelLoaded) noexcept override {
       _swiftPart.setOnModelLoaded(onModelLoaded);
     }
+    inline std::optional<std::function<void()>> getOnFaceTracked() noexcept override {
+      auto __result = _swiftPart.getOnFaceTracked();
+      return __result;
+    }
+    inline void setOnFaceTracked(const std::optional<std::function<void()>>& onFaceTracked) noexcept override {
+      _swiftPart.setOnFaceTracked(onFaceTracked);
+    }
+    inline std::optional<std::function<void(const std::string& /* modelUrl */)>> getOnGlassesDisplayed() noexcept override {
+      auto __result = _swiftPart.getOnGlassesDisplayed();
+      return __result;
+    }
+    inline void setOnGlassesDisplayed(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onGlassesDisplayed) noexcept override {
+      _swiftPart.setOnGlassesDisplayed(onGlassesDisplayed);
+    }
     inline std::optional<bool> getFaceMeshOcclusion() noexcept override {
       auto __result = _swiftPart.getFaceMeshOcclusion();
       return __result;

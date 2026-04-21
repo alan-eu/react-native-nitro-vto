@@ -28,6 +28,21 @@ export interface NitroVtoViewProps extends HybridViewProps {
   onModelLoaded?: (modelUrl: string) => void;
 
   /**
+   * Called the first time face tracking enters the TRACKING state in the
+   * current AR session. Does NOT fire again on face-lost-then-regained.
+   * Re-fires after `resetSession()` or when the view is re-mounted.
+   */
+  onFaceTracked?: () => void;
+
+  /**
+   * Called the first time the glasses model is rendered on the tracked face
+   * — i.e. the first frame whose transform is driven by a valid face pose
+   * after the model was loaded. Re-fires for each subsequent `switchModel`.
+   * @param modelUrl - The URL of the glasses model that became visible.
+   */
+  onGlassesDisplayed?: (modelUrl: string) => void;
+
+  /**
    * Whether to enable face mesh occlusion.
    * When enabled, the face mesh writes to depth buffer to occlude glasses behind the face.
    * Default: true

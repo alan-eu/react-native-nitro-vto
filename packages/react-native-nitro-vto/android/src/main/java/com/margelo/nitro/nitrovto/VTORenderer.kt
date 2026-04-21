@@ -99,6 +99,11 @@ class VTORenderer(private val context: Context) {
 
     // Callbacks
     var onModelLoaded: ((modelUrl: String) -> Unit)? = null
+    var onFaceTracked: (() -> Unit)? = null
+    var onGlassesDisplayed: ((modelUrl: String) -> Unit)? = null
+
+    // Perf-callback state
+    private var hasFiredFaceTracked = false
 
     /**
      * Initialize Filament and attach to surface view
@@ -171,6 +176,7 @@ class VTORenderer(private val context: Context) {
         // Setup glasses renderer
         glassesRenderer = GlassesRenderer(context)
         glassesRenderer.onModelLoaded = onModelLoaded
+        glassesRenderer.onGlassesDisplayed = onGlassesDisplayed
         glassesRenderer.setup(engine, scene, modelUrl)
 
         // Setup debug renderer
@@ -235,6 +241,7 @@ class VTORenderer(private val context: Context) {
      */
     fun resetSession() {
         cameraTextureNameSet = false
+        hasFiredFaceTracked = false
         cameraTextureRenderer.resetUvTransform()
         faceOcclusionRenderer.hide()
         glassesRenderer.hide()
@@ -330,6 +337,10 @@ class VTORenderer(private val context: Context) {
 
             // Update face occlusion and glasses transform if face detected
             if (faces.isNotEmpty()) {
+                if (!hasFiredFaceTracked) {
+                    hasFiredFaceTracked = true
+                    onFaceTracked?.invoke()
+                }
                 val face = faces.first()
                 faceOcclusionRenderer.update(face)
                 glassesRenderer.updateTransform(face, frame)

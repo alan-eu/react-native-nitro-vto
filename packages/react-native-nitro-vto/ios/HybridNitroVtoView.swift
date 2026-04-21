@@ -42,6 +42,18 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
         }
     }
 
+    public var onFaceTracked: (() -> Void)? = nil {
+        didSet {
+            nitroVtoView.onFaceTracked = onFaceTracked
+        }
+    }
+
+    public var onGlassesDisplayed: ((String) -> Void)? = nil {
+        didSet {
+            nitroVtoView.onGlassesDisplayed = onGlassesDisplayed
+        }
+    }
+
     public var faceMeshOcclusion: Bool? = nil {
         didSet {
             nitroVtoView.setFaceMeshOcclusion(faceMeshOcclusion)

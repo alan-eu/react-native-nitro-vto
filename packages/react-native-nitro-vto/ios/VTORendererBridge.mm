@@ -49,6 +49,8 @@ static NSString *const TAG = @"VTORenderer";
 @property (nonatomic, assign) BOOL initialized;
 @property (nonatomic, assign) int width;
 @property (nonatomic, assign) int height;
+// Perf-callback state
+@property (nonatomic, assign) BOOL hasFiredFaceTracked;
 
 // Model configuration
 @property (nonatomic, copy) NSString *modelUrl;
@@ -122,6 +124,11 @@ static NSString *const TAG = @"VTORenderer";
             weakSelf.onModelLoaded(url);
         }
     };
+    _glassesRenderer.onGlassesDisplayed = ^(NSString *url) {
+        if (weakSelf.onGlassesDisplayed) {
+            weakSelf.onGlassesDisplayed(url);
+        }
+    };
     [_glassesRenderer setupWithEngine:_engine scene:_scene modelUrl:modelUrl];
 
     // Setup debug renderer
@@ -190,6 +197,7 @@ static NSString *const TAG = @"VTORenderer";
 
 - (void)resetSession {
     [_glassesRenderer hide];
+    _hasFiredFaceTracked = NO;
 }
 
 - (void)setFaceMeshOcclusion:(BOOL)enabled {
@@ -233,6 +241,10 @@ static NSString *const TAG = @"VTORenderer";
 
     // Update face occlusion and glasses transform if face detected
     if (faces.count > 0) {
+        if (!_hasFiredFaceTracked) {
+            _hasFiredFaceTracked = YES;
+            if (self.onFaceTracked) self.onFaceTracked();
+        }
         [_faceOcclusionRenderer updateWithFace:faces[0]];
         [_glassesRenderer updateTransformWithFace:faces[0] frame:frame];
         [_debugRenderer updateWithFace:faces[0]

@@ -46,6 +46,9 @@ static NSString *const TAG = @"GlassesRenderer";
 // Forward offset for glasses positioning (in meters)
 @property (nonatomic, assign) float forwardOffset;
 
+// Fires onGlassesDisplayed once per loaded model — reset on every successful load.
+@property (nonatomic, assign) BOOL hasDisplayedCurrentModel;
+
 @end
 
 @implementation GlassesRenderer
@@ -144,6 +147,9 @@ static NSString *const TAG = @"GlassesRenderer";
         }
 
         NSLog(@"%@: Glasses model loaded: %zu entities", TAG, entityCount);
+        // Re-arm onGlassesDisplayed for this freshly-loaded model. Next successful
+        // updateTransformWithFace will fire the callback.
+        _hasDisplayedCurrentModel = NO;
         [self hide];
     } else {
         NSLog(@"%@: Failed to create glasses asset", TAG);
@@ -152,6 +158,13 @@ static NSString *const TAG = @"GlassesRenderer";
 
 - (void)updateTransformWithFace:(ARFaceAnchor *)face frame:(ARFrame *)frame {
     if (!_glassesAsset || !_engine) return;
+
+    if (!_hasDisplayedCurrentModel) {
+        _hasDisplayedCurrentModel = YES;
+        if (self.onGlassesDisplayed) {
+            self.onGlassesDisplayed(_currentModelUrl);
+        }
+    }
 
     TransformManager &transformManager = _engine->getTransformManager();
     TransformManager::Instance instance = transformManager.getInstance(_glassesAsset->getRoot());

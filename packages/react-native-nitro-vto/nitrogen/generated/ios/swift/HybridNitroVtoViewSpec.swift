@@ -14,6 +14,8 @@ public protocol HybridNitroVtoViewSpec_protocol: HybridObject, HybridView {
   var modelUrl: String { get set }
   var isActive: Bool { get set }
   var onModelLoaded: ((_ modelUrl: String) -> Void)? { get set }
+  var onFaceTracked: (() -> Void)? { get set }
+  var onGlassesDisplayed: ((_ modelUrl: String) -> Void)? { get set }
   var faceMeshOcclusion: Bool? { get set }
   var backPlaneOcclusion: Bool? { get set }
   var forwardOffset: Double? { get set }

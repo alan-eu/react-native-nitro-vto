@@ -37,6 +37,8 @@ class NitroVtoView: UIView {
 
     // Callbacks
     var onModelLoaded: ((String) -> Void)?
+    var onFaceTracked: (() -> Void)?
+    var onGlassesDisplayed: ((String) -> Void)?
 
     // State
     private var isInitialized = false
@@ -139,6 +141,8 @@ class NitroVtoView: UIView {
         // Create and initialize renderer
         vtoRenderer = VTORendererBridge(metalView: mtkView)
         vtoRenderer?.onModelLoaded = onModelLoaded
+        vtoRenderer?.onFaceTracked = onFaceTracked
+        vtoRenderer?.onGlassesDisplayed = onGlassesDisplayed
         vtoRenderer?.initialize(withModelUrl: modelUrl)
 
         // Apply stored configuration states

@@ -20,6 +20,10 @@ namespace margelo::nitro::nitrovto {
       prototype.registerHybridSetter("isActive", &HybridNitroVtoViewSpec::setIsActive);
       prototype.registerHybridGetter("onModelLoaded", &HybridNitroVtoViewSpec::getOnModelLoaded);
       prototype.registerHybridSetter("onModelLoaded", &HybridNitroVtoViewSpec::setOnModelLoaded);
+      prototype.registerHybridGetter("onFaceTracked", &HybridNitroVtoViewSpec::getOnFaceTracked);
+      prototype.registerHybridSetter("onFaceTracked", &HybridNitroVtoViewSpec::setOnFaceTracked);
+      prototype.registerHybridGetter("onGlassesDisplayed", &HybridNitroVtoViewSpec::getOnGlassesDisplayed);
+      prototype.registerHybridSetter("onGlassesDisplayed", &HybridNitroVtoViewSpec::setOnGlassesDisplayed);
       prototype.registerHybridGetter("faceMeshOcclusion", &HybridNitroVtoViewSpec::getFaceMeshOcclusion);
       prototype.registerHybridSetter("faceMeshOcclusion", &HybridNitroVtoViewSpec::setFaceMeshOcclusion);
       prototype.registerHybridGetter("backPlaneOcclusion", &HybridNitroVtoViewSpec::getBackPlaneOcclusion);

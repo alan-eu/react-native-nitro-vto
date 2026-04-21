@@ -39,6 +39,18 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.onModelLoaded = value
         }
 
+    override var onFaceTracked: (() -> Unit)? = null
+        set(value) {
+            field = value
+            nitroVtoView.onFaceTracked = value
+        }
+
+    override var onGlassesDisplayed: ((modelUrl: String) -> Unit)? = null
+        set(value) {
+            field = value
+            nitroVtoView.onGlassesDisplayed = value
+        }
+
     override var faceMeshOcclusion: Boolean? = null
         set(value) {
             field = value

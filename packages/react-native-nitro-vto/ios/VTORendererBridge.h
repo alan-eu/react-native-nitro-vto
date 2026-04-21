@@ -14,6 +14,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// Callback for when model loading completes
 @property (nonatomic, copy, nullable) void (^onModelLoaded)(NSString *url);
 
+/// Callback invoked once per session the first time ARKit reports a tracked face.
+@property (nonatomic, copy, nullable) void (^onFaceTracked)(void);
+
+/// Callback invoked once per loaded model the first time that model's transform
+/// is driven by a valid face pose (i.e. first frame the glasses become visible).
+@property (nonatomic, copy, nullable) void (^onGlassesDisplayed)(NSString *url);
+
 /// Initialize with Metal view
 - (instancetype)initWithMetalView:(MTKView *)metalView;
 
