@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.10.0...v0.10.1) (2026-04-22)
+
+### 🐛 Bug Fixes
+
+* **android:** pause on detach instead of destroy to avoid Filament panic on nav-back ([#42](https://github.com/alan-eu/react-native-nitro-vto/issues/42)) ([5d66c88](https://github.com/alan-eu/react-native-nitro-vto/commit/5d66c8820446cee742da6f565b0b98bb7cc69893))
+
 ## [0.10.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.9.1...v0.10.0) (2026-04-22)
 
 ### ✨ Features
