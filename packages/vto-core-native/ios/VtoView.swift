@@ -224,6 +224,16 @@ public class VtoView: UIView {
         arSession = nil
         vtoRenderer?.destroy()
         vtoRenderer = nil
+
+        // Release Metal resources held by the MTKView so iOS can reclaim them
+        // without jetsam pressure. Without this, the view keeps ~3 drawable
+        // textures (triple buffering) + its command queue + device references
+        // resident until the VtoView itself is deallocated — which can take
+        // additional runloop passes if any framework is still holding it.
+        metalView?.releaseDrawables()
+        metalView?.removeFromSuperview()
+        metalView = nil
+
         isInitialized = false
     }
 

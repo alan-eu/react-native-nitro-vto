@@ -294,6 +294,14 @@ static NSString *const TAG = @"VTORenderer";
         _engine->destroy(_renderer);
     }
 
+    // Flush and wait for any pending GPU command buffers to complete before
+    // destroying the engine. Without this, in-flight Metal command buffers
+    // still hold strong refs to textures/buffers we just released, and iOS
+    // can't reclaim the memory — observed as a flood of `Received memory
+    // warning` and eventual jetsam kill a few seconds after leaving the VTO
+    // screen.
+    _engine->flushAndWait();
+
     _engine->destroy(&_engine);
     _engine = nullptr;
     _initialized = NO;
