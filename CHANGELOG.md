@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.2](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.10.1...v0.10.2) (2026-04-22)
+
+### 🐛 Bug Fixes
+
+* **android:** destroy camera_feed material instance + buffers to prevent Filament teardown panic ([#43](https://github.com/alan-eu/react-native-nitro-vto/issues/43)) ([fc81560](https://github.com/alan-eu/react-native-nitro-vto/commit/fc81560572f2b3aab4006e2e25dfc0cd0cefc37f))
+
 ## [0.10.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.10.0...v0.10.1) (2026-04-22)
 
 ### 🐛 Bug Fixes
