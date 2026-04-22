@@ -9,11 +9,12 @@ import NitroModules
  */
 class HybridNitroVtoView: HybridNitroVtoViewSpec {
 
-    // The underlying native view
-    private let nitroVtoView: NitroVtoView
+    // The underlying native view (shared core — class `VtoView` lives in
+    // core/ios/VtoView.swift and is bundled into this package on install).
+    private let nitroVtoView: VtoView
 
     public required override init() {
-        self.nitroVtoView = NitroVtoView()
+        self.nitroVtoView = VtoView()
         super.init()
     }
 

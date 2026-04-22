@@ -1,0 +1,121 @@
+# Changelog
+
+All notable changes to this project will be documented in this file. See [Conventional Commits](https://www.conventionalcommits.org/) for commit guidelines.
+
+## [0.9.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.9.0...v0.9.1) (2026-01-06)
+
+## [0.9.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.8.0...v0.9.0) (2026-01-06)
+
+### Features
+
+* **iOS, android:** debug util ([#30](https://github.com/alan-eu/react-native-nitro-vto/issues/30)) ([cd19763](https://github.com/alan-eu/react-native-nitro-vto/commit/cd19763c6123cc3707c5f563d30657c77c5b5dcf))
+* **iOS, android:** forward offset for glasses from react-native ([#29](https://github.com/alan-eu/react-native-nitro-vto/issues/29)) ([dec5120](https://github.com/alan-eu/react-native-nitro-vto/commit/dec512024e19ece41d89f85091b6df10d47dc2de))
+* **iOS, android:** split backplane in left/right planes to be able to display temples ([#28](https://github.com/alan-eu/react-native-nitro-vto/issues/28)) ([8de1145](https://github.com/alan-eu/react-native-nitro-vto/commit/8de11454abcbb54c0e6e99d79dfc4a0f3c066505))
+
+## [0.8.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.7.1...v0.8.0) (2026-01-05)
+
+### Features
+
+* expo app config plugin and move example to expo ([#26](https://github.com/alan-eu/react-native-nitro-vto/issues/26)) ([915e0b4](https://github.com/alan-eu/react-native-nitro-vto/commit/915e0b4468a16b7ee1b83ce60af089d555deb4a0))
+* flatten occlusion props ([#27](https://github.com/alan-eu/react-native-nitro-vto/issues/27)) ([b577773](https://github.com/alan-eu/react-native-nitro-vto/commit/b5777738f645b159b0f6201bf2213df413b98c66))
+
+### Bug Fixes
+
+* **android:** move kt classes on the right folder ([#25](https://github.com/alan-eu/react-native-nitro-vto/issues/25)) ([385bcaf](https://github.com/alan-eu/react-native-nitro-vto/commit/385bcaffab383230688a42ad8268b91653e73783))
+
+## [0.7.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.7.0...v0.7.1) (2026-01-04)
+
+## [0.7.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.6.0...v0.7.0) (2026-01-04)
+
+### Features
+
+* **iOS, android:** glasses occlusion by face mesh ([#24](https://github.com/alan-eu/react-native-nitro-vto/issues/24)) ([11b03ff](https://github.com/alan-eu/react-native-nitro-vto/commit/11b03ff7b0316173a96dcf6e9c8f1162cdb7029c))
+
+## [0.6.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.5.6...v0.6.0) (2026-01-02)
+
+### Features
+
+* **iOS, android:** remove modelWidthMeters prop - models are now expected in real-world meters ([#20](https://github.com/alan-eu/react-native-nitro-vto/issues/20)) ([50cb760](https://github.com/alan-eu/react-native-nitro-vto/commit/50cb7608550ef9c153fa34bde047e0888e50e78f))
+* **iOS, android:** remove uneeded setViewportSize calls ([#21](https://github.com/alan-eu/react-native-nitro-vto/issues/21)) ([ba777a5](https://github.com/alan-eu/react-native-nitro-vto/commit/ba777a56567cc10ed911c9bba1e2d9cfb9ea354c))
+* **iOS, android:** use world-space positioning with ARKit/ARCore camera matrices ([#19](https://github.com/alan-eu/react-native-nitro-vto/issues/19)) ([b038675](https://github.com/alan-eu/react-native-nitro-vto/commit/b0386758290e36fc07bbf790efbbf46284189e4c))
+
+### Bug Fixes
+
+* **android:** move implementation to the right folder ([#22](https://github.com/alan-eu/react-native-nitro-vto/issues/22)) ([675e92c](https://github.com/alan-eu/react-native-nitro-vto/commit/675e92c8d8ab441dc7cfda2de999bb067e6bce8e))
+* **android:** move implementation to the right folder ([#23](https://github.com/alan-eu/react-native-nitro-vto/issues/23)) ([efe631b](https://github.com/alan-eu/react-native-nitro-vto/commit/efe631b132bcbf57ec55abe22b3da7d1c331e007))
+
+## [0.5.6](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.5.5...v0.5.6) (2025-12-27)
+
+### Bug Fixes
+
+* **android:** Use multiple textures for camera stream to avoid green flickering ([#18](https://github.com/alan-eu/react-native-nitro-vto/issues/18)) ([f61ff08](https://github.com/alan-eu/react-native-nitro-vto/commit/f61ff08f1839def001bfc19ac91fdc0080e67b91))
+
+## [0.5.4](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.5.3...v0.5.4) (2025-12-19)
+
+### Bug Fixes
+
+* Filament version mismatch for assets on iOS ([#17](https://github.com/alan-eu/react-native-nitro-vto/issues/17)) ([c99f292](https://github.com/alan-eu/react-native-nitro-vto/commit/c99f2925264bf708f2fca7486ed886118f5cff54))
+
+## [0.5.3](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.5.2...v0.5.3) (2025-12-19)
+
+### Bug Fixes
+
+* add missing assets to package files ([#16](https://github.com/alan-eu/react-native-nitro-vto/issues/16)) ([d6fdabf](https://github.com/alan-eu/react-native-nitro-vto/commit/d6fdabf788a94c08cb6af1cba865ef17fcb6a19b))
+
+## [0.5.2](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.5.1...v0.5.2) (2025-12-19)
+
+## [0.5.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.5.0...v0.5.1) (2025-12-19)
+
+### Bug Fixes
+
+* podspec ([#14](https://github.com/alan-eu/react-native-nitro-vto/issues/14)) ([7c5668e](https://github.com/alan-eu/react-native-nitro-vto/commit/7c5668e800492ffce7956beb97060ee6c0d69252))
+
+## [0.5.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.4.0...v0.5.0) (2025-12-18)
+
+### Features
+
+* drop mirror flip on Android to match iOS ([#12](https://github.com/alan-eu/react-native-nitro-vto/issues/12)) ([132fae4](https://github.com/alan-eu/react-native-nitro-vto/commit/132fae4be0384cc76f82ba6a63162aa9248e4510))
+* ios implem ([#11](https://github.com/alan-eu/react-native-nitro-vto/issues/11)) ([f4f29e6](https://github.com/alan-eu/react-native-nitro-vto/commit/f4f29e63fe1a199ef8c0b37a63884befa86a52fd))
+
+## [0.4.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.3.0...v0.4.0) (2025-12-17)
+
+### Features
+
+* onModelLoaded callback ([#8](https://github.com/alan-eu/react-native-nitro-vto/issues/8)) ([f0b9caa](https://github.com/alan-eu/react-native-nitro-vto/commit/f0b9caacacefade3087fcad021196c6ea816cc4f))
+
+## [0.3.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.2.6...v0.3.0) (2025-12-17)
+
+### Features
+
+* load remote models ([#7](https://github.com/alan-eu/react-native-nitro-vto/issues/7)) ([647f93a](https://github.com/alan-eu/react-native-nitro-vto/commit/647f93aa470d8715ad8f063d6f825c66085dd0fc))
+
+## [0.2.6](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.2.5...v0.2.6) (2025-12-17)
+
+## [0.2.5](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.2.4...v0.2.5) (2025-12-17)
+
+## [0.2.4](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.2.3...v0.2.4) (2025-12-17)
+
+## [0.2.3](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.2.2...v0.2.3) (2025-12-17)
+
+## [0.2.2](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.2.1...v0.2.2) (2025-12-17)
+
+## [0.2.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.2.0...v0.2.1) (2025-12-17)
+
+## [0.2.0](https://github.com/alan-eu/react-native-nitro-vto/compare/f31bf7b7b6ed45c3c54bd97aed20fc81ecd6d849...v0.2.0) (2025-12-17)
+
+### Features
+
+* cleaned updateTransform ([8f71714](https://github.com/alan-eu/react-native-nitro-vto/commit/8f717144ab6ec2a7f34a864dc8374cc18f66de95))
+* indirect light based on ARCore pixel intensity and increased far for filament camera ([c54f95b](https://github.com/alan-eu/react-native-nitro-vto/commit/c54f95b97841d100835adebbe346e2c0340ca10f))
+* initial commit ([f31bf7b](https://github.com/alan-eu/react-native-nitro-vto/commit/f31bf7b7b6ed45c3c54bd97aed20fc81ecd6d849))
+* Kalman filter to reduce jittering ([7fc35ae](https://github.com/alan-eu/react-native-nitro-vto/commit/7fc35aec10d66bcabe919815a1a9576d2b607c79))
+* migrate to Nitro modules with HybridView ([#1](https://github.com/alan-eu/react-native-nitro-vto/issues/1)) ([01ab586](https://github.com/alan-eu/react-native-nitro-vto/commit/01ab586e7e9c0186d01ac5aadb23f1b5ee38c034))
+* rotation ok-ish ([201cba0](https://github.com/alan-eu/react-native-nitro-vto/commit/201cba0097273fb675aa28c0da16029f60b964b6))
+* skew at roll and scale at yaw fixed ([ea7af5f](https://github.com/alan-eu/react-native-nitro-vto/commit/ea7af5ffdd242dc6de7749f5d8cc6c3d3779ca97))
+* switch glasses model ([d7998ea](https://github.com/alan-eu/react-native-nitro-vto/commit/d7998ea21eb4ddf1779755b441e716bf978c904d))
+* use nose bridge pos ([92701b6](https://github.com/alan-eu/react-native-nitro-vto/commit/92701b67c73ceb6047e3f5ff13d4a77c2f9034bb))
+* WIP ([bcd8073](https://github.com/alan-eu/react-native-nitro-vto/commit/bcd8073675d3633f360134ae25bc017f50a85e17))
+
+### Bug Fixes
+
+* corrupted lock file ([2c8a4c2](https://github.com/alan-eu/react-native-nitro-vto/commit/2c8a4c22ec3d194aaba98bcf45e9ce5f319c2517))

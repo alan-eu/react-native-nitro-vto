@@ -1,7 +1,7 @@
 {
-  "name": "@alaneu/react-native-nitro-vto",
+  "name": "@alaneu/react-native-vto",
   "version": "0.9.1",
-  "description": "React Native library for glasses virtual try-on using ARCore and Filament",
+  "description": "React Native library for glasses virtual try-on using ARCore and Filament (old architecture — does not require react-native-nitro-modules).",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
   "types": "lib/typescript/src/index.d.ts",
@@ -11,21 +11,15 @@
     "src",
     "react-native.config.js",
     "lib",
-    "nitrogen",
     "android/build.gradle",
-    "android/gradle.properties",
-    "android/fix-prefab.gradle",
-    "android/CMakeLists.txt",
     "android/src",
     "ios/**/*.h",
     "ios/**/*.m",
     "ios/**/*.mm",
-    "ios/**/*.cpp",
     "ios/**/*.swift",
     "ios/assets/**/*",
     "app.plugin.js",
     "app.plugin.d.ts",
-    "nitro.json",
     "*.podspec",
     "README.md"
   ],
@@ -33,10 +27,9 @@
     "typescript": "tsc --noEmit",
     "build": "bob build",
     "clean": "rm -rf android/build node_modules/**/android/build lib",
-    "specs": "nitrogen",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
-    "prepare": "bob build",
-    "prepack": "bob build",
+    "prepare": "(cd ../vto-core-native && npm run bundle) && bob build",
+    "prepack": "(cd ../vto-core-native && npm run bundle) && bob build",
     "prepublishOnly": "(cd ../vto-core-native && npm run bundle)",
     "release": "release-it"
   },
@@ -46,11 +39,11 @@
     "vto",
     "virtual-try-on",
     "arcore",
+    "arkit",
     "ar",
     "augmented-reality",
     "filament",
-    "3d",
-    "nitro"
+    "3d"
   ],
   "repository": {
     "type": "git",
@@ -69,17 +62,14 @@
   "devDependencies": {
     "@expo/config-plugins": "*",
     "@types/react": "19.1.0",
-    "nitrogen": "0.31.10",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-builder-bob": "0.40.17",
-    "react-native-nitro-modules": "0.31.10",
     "typescript": "5.9.3"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
-    "react-native": ">=0.78.0",
-    "react-native-nitro-modules": ">=0.23.0"
+    "react-native": ">=0.78.0"
   },
   "react-native-builder-bob": {
     "source": "src",

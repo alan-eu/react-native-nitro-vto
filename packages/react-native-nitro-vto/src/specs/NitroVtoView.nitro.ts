@@ -6,25 +6,28 @@ import type {
 
 /**
  * Props for the NitroVtoView component.
+ *
+ * NOTE: This shape is kept in lockstep with `packages/vto-core-native/src/types.ts`
+ * (the single source of truth for both the Nitro and classic wrappers).
+ * When editing the prop surface, update both files. The `scripts/bundle.ts` in
+ * core copies `types.ts` into the classic wrapper verbatim; Nitro keeps its own
+ * copy inline here because it has to be resolvable by nitrogen at build time
+ * (before workspace `postinstall` runs).
  */
 export interface NitroVtoViewProps extends HybridViewProps {
   /**
    * The URL to the glasses model file (GLB format).
    * Models should be authored in meters at real-world size.
-   * Example: "https://example.com/glasses.glb"
    */
   modelUrl: string;
 
   /**
-   * Whether the AR session is active.
-   * Set to false to pause face tracking and rendering.
+   * Whether the AR session is active. Set to `false` to pause face tracking
+   * and rendering.
    */
   isActive: boolean;
 
-  /**
-   * Callback invoked when model loading completes.
-   * @param modelUrl - The URL of the model that was loaded
-   */
+  /** Callback invoked when model loading completes. */
   onModelLoaded?: (modelUrl: string) => void;
 
   /**
@@ -43,47 +46,36 @@ export interface NitroVtoViewProps extends HybridViewProps {
   onGlassesDisplayed?: (modelUrl: string) => void;
 
   /**
-   * Whether to enable face mesh occlusion.
-   * When enabled, the face mesh writes to depth buffer to occlude glasses behind the face.
-   * Default: true
+   * Enable face mesh occlusion (glasses appear behind face edges).
+   * Default: true.
    */
   faceMeshOcclusion?: boolean;
 
   /**
-   * Whether to enable back plane occlusion.
-   * When enabled, a plane behind the face clips glasses temples that extend too far back.
-   * Default: true
+   * Enable back plane occlusion (clips glasses temples behind the head).
+   * Default: true.
    */
   backPlaneOcclusion?: boolean;
 
   /**
    * Forward offset for glasses positioning in meters.
-   * Moves the glasses forward (positive) or backward (negative) relative to the face.
-   * Default: 0.005 (5mm forward)
+   * Default: 0.005 (5mm forward).
    */
   forwardOffset?: number;
 
   /**
-   * Whether to enable debug visualization.
-   * When enabled, renders colored overlays for face mesh (red), left back plane (green), and right back plane (blue).
-   * Default: false
+   * Debug visualization: face mesh (red), back planes (green/blue).
+   * Default: false.
    */
   debug?: boolean;
 }
 
-/**
- * Methods available on the NitroVtoView component.
- */
+/** Methods available on the NitroVtoView component. */
 export interface NitroVtoViewMethods extends HybridViewMethods {
-  /**
-   * Switch to a different glasses model at runtime.
-   * @param modelUrl - URL to the new model file (GLB format)
-   */
+  /** Switch to a different glasses model at runtime. */
   switchModel(modelUrl: string): void;
 
-  /**
-   * Reset the AR session and face tracking.
-   */
+  /** Reset the AR session and face tracking. */
   resetSession(): void;
 }
 

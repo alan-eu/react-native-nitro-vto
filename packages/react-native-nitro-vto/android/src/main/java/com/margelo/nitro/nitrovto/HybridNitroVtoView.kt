@@ -2,6 +2,7 @@ package com.margelo.nitro.nitrovto
 
 import android.view.View
 import com.facebook.react.uimanager.ThemedReactContext
+import eu.alan.vto.core.VtoView
 
 /**
  * HybridNitroVtoView - NitroModules HybridView implementation for NitroVto.
@@ -11,8 +12,8 @@ import com.facebook.react.uimanager.ThemedReactContext
  */
 class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridNitroVtoViewSpec() {
 
-    // The underlying native view
-    private val nitroVtoView: NitroVtoView = NitroVtoView(reactContext)
+    // The underlying native view (shared core)
+    private val nitroVtoView: VtoView = VtoView(reactContext)
 
     /**
      * Returns the native view

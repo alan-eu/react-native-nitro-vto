@@ -24,23 +24,60 @@ local.properties
 
 # iOS
 example/ios/
+example-old-arch/ios/
 **/ios/*.xcodeproj/xcuserdata/
 **/ios/*.xcworkspace/xcuserdata/
 
 # Example app
 example/node_modules/
 example/android/
+example-old-arch/node_modules/
+example-old-arch/android/
 
 # Expo
 example/.expo/
+example-old-arch/.expo/
 expo-env.d.ts
 
-# Specs
+# Scratch / debug dirs (not published, not tracked)
 specs/
+screenshots/
 
 # Misc
 *.log
 .env
 android/.settings/org.eclipse.buildship.core.prefs
-specs
-screenshots
+
+# Bundled native sources — the single source of truth lives in
+# packages/vto-core-native. scripts/bundle.ts copies into each wrapper on
+# `npm install` / `prepublishOnly`. Don't edit the copies.
+packages/react-native-nitro-vto/android/src/main/java/eu/alan/vto/core/
+packages/react-native-nitro-vto/android/src/main/assets/
+packages/react-native-nitro-vto/ios/assets/
+packages/react-native-nitro-vto/ios/VtoView.swift
+packages/react-native-nitro-vto/ios/VTORendererBridge.*
+packages/react-native-nitro-vto/ios/GlassesRenderer.*
+packages/react-native-nitro-vto/ios/CameraTextureRenderer.*
+packages/react-native-nitro-vto/ios/FaceOcclusionRenderer.*
+packages/react-native-nitro-vto/ios/EnvironmentLightingRenderer.*
+packages/react-native-nitro-vto/ios/DebugRenderer.*
+packages/react-native-nitro-vto/ios/MatrixUtils.*
+packages/react-native-nitro-vto/ios/KalmanFilter.*
+packages/react-native-nitro-vto/ios/LoaderUtils.*
+packages/react-native-nitro-vto/src/expo.ts
+packages/react-native-nitro-vto/src/types.ts
+packages/react-native-vto/android/src/main/java/eu/alan/vto/core/
+packages/react-native-vto/android/src/main/assets/
+packages/react-native-vto/ios/assets/
+packages/react-native-vto/ios/VtoView.swift
+packages/react-native-vto/ios/VTORendererBridge.*
+packages/react-native-vto/ios/GlassesRenderer.*
+packages/react-native-vto/ios/CameraTextureRenderer.*
+packages/react-native-vto/ios/FaceOcclusionRenderer.*
+packages/react-native-vto/ios/EnvironmentLightingRenderer.*
+packages/react-native-vto/ios/DebugRenderer.*
+packages/react-native-vto/ios/MatrixUtils.*
+packages/react-native-vto/ios/KalmanFilter.*
+packages/react-native-vto/ios/LoaderUtils.*
+packages/react-native-vto/src/expo.ts
+packages/react-native-vto/src/types.ts
