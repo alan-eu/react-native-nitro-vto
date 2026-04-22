@@ -7,8 +7,8 @@
     "packages/vto-core-native",
     "packages/react-native-nitro-vto",
     "packages/react-native-vto",
-    "example",
-    "example-old-arch"
+    "examples/example-new-arch",
+    "examples/example-old-arch"
   ],
   "scripts": {
     "postinstall": "npm run bundle --workspace=@alaneu/vto-core-native",
@@ -54,8 +54,8 @@
           "packages/vto-core-native/package.json",
           "packages/react-native-nitro-vto/package.json",
           "packages/react-native-vto/package.json",
-          "example/package.json",
-          "example-old-arch/package.json"
+          "examples/example-new-arch/package.json",
+          "examples/example-old-arch/package.json"
         ]
       },
       "@release-it/conventional-changelog": {

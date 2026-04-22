@@ -10,5 +10,5 @@ packageJson.dependencies["@alaneu/react-native-nitro-vto"] = "*";
 writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + "\n");
 
 console.log(
-  `Reverted @alaneu/react-native-nitro-vto version to "*" in example/package.json`
+  `Reverted @alaneu/react-native-nitro-vto version to "*" in examples/example-new-arch/package.json`
 );

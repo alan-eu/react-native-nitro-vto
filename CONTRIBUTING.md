@@ -11,8 +11,9 @@ packages/
   vto-core-native/           private — shared native code + assets (single source of truth)
   react-native-nitro-vto/    published — new-arch (Fabric) wrapper
   react-native-vto/          published — old-arch (Paper) wrapper
-example/                     new-arch Expo demo app
-example-old-arch/            old-arch Expo demo app
+examples/
+  example-new-arch/          new-arch Expo demo app
+  example-old-arch/          old-arch Expo demo app
 ```
 
 Native sources live in `vto-core-native/`. The two wrapper packages each hold only their arch-specific bridge code (Nitro HybridView vs. RCTViewManager). The shared core is **copied** into each wrapper by `scripts/bundle.ts` — those copied paths are gitignored; do not edit them.
@@ -48,14 +49,14 @@ npm run cmgen   --workspace=@alaneu/vto-core-native   # .hdr → .ktx + _sh.txt
 New-arch (Nitro):
 
 ```bash
-cd example
+cd examples/example-new-arch
 npm run ios           # or npm run android
 ```
 
 Old-arch (classic):
 
 ```bash
-cd example-old-arch
+cd examples/example-old-arch
 npm run ios           # or npm run android
 ```
 
@@ -88,7 +89,7 @@ The two wrappers expose the **same** props / methods / callbacks. Any surface ch
 - `packages/react-native-nitro-vto/src/specs/NitroVtoView.nitro.ts` — Nitro spec (re-run `npm run specs` from the Nitro package)
 - `packages/react-native-vto/src/VtoView.tsx` — old-arch wrapper (requireNativeComponent + `useImperativeHandle`)
 - Both native view managers: `HybridNitroVtoView.{kt,swift}` and `VtoViewManager.kt` / `VtoBridgeView.swift` / `VtoViewManager.mm`
-- `example/app/index.tsx` and `example-old-arch/app/index.tsx` — exercise the new surface
+- `examples/example-new-arch/app/index.tsx` and `examples/example-old-arch/app/index.tsx` — exercise the new surface
 - Both READMEs (`packages/react-native-nitro-vto/README.md` and `packages/react-native-vto/README.md`)
 
 ### Platform conventions
