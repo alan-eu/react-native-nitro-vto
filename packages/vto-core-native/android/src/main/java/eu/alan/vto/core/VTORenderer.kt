@@ -387,5 +387,10 @@ class VTORenderer(private val context: Context) {
         engine.destroyScene(scene)
         engine.destroyRenderer(renderer)
         engine.destroy()
+
+        // Flip so any subsequent destroy() call is a true no-op (the guard
+        // above short-circuits on `!initialized`). Defense-in-depth against
+        // racy teardown paths re-entering this method.
+        initialized = false
     }
 }

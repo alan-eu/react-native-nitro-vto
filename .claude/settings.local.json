@@ -32,12 +32,14 @@
       "Bash(pod spec cat:*)",
       "Bash(pod search:*)",
       "Bash(pod spec:*)",
-      "Bash(git ls-tree *)",
-      "Bash(md5 \"/Users/xavier.seignard/repos/react-native-nitro-vto copie/app/src/main/assets/models/878082.glb\")",
-      "Bash(md5 \"/Users/xavier.seignard/repos/react-native-nitro-vto/878082.glb\")",
-      "Bash(md5 *)",
-      "Bash(python3 *)",
-      "Bash(git checkout *)"
+      "WebFetch(domain:google.github.io)",
+      "Bash(adb exec-out:*)",
+      "Bash(cd /Users/xavier.seignard/repos/react-native-nitro-vto/example*)",
+      "Bash(npm run matc:*)",
+      "Bash(npm run cmgen:*)",
+      "Bash(sleep*)",
+      "Bash(rm -rf andtroid)",
+      "Bash(npm run android)"
     ]
   }
 }
