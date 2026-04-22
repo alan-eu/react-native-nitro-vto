@@ -1,0 +1,18 @@
+{
+  "name": "@alaneu/vto-core-native",
+  "version": "0.9.1",
+  "description": "Internal shared native code (Filament + ARCore/ARKit) for the alan-eu VTO React Native libraries. Not intended to be consumed directly.",
+  "private": true,
+  "scripts": {
+    "matc": "tsx scripts/matc.ts",
+    "cmgen": "tsx scripts/cmgen.ts",
+    "bundle": "tsx scripts/bundle.ts",
+    "watch": "tsx scripts/watch.ts"
+  },
+  "devDependencies": {
+    "chokidar": "^4.0.3",
+    "dotenv": "^16.4.5",
+    "tsx": "^4.19.2",
+    "typescript": "5.9.3"
+  }
+}

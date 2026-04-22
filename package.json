@@ -4,11 +4,17 @@
   "description": "React Native library for glasses virtual try-on using ARCore and Filament",
   "private": true,
   "workspaces": [
+    "packages/vto-core-native",
     "packages/react-native-nitro-vto",
-    "example"
+    "packages/react-native-vto",
+    "example",
+    "example-old-arch"
   ],
   "scripts": {
-    "release": "npm run release --workspace=packages/react-native-nitro-vto && release-it"
+    "postinstall": "npm run bundle --workspace=@alaneu/vto-core-native",
+    "bundle": "npm run bundle --workspace=@alaneu/vto-core-native",
+    "watch:core": "npm run watch --workspace=@alaneu/vto-core-native",
+    "release": "npm run release --workspace=packages/react-native-nitro-vto && npm run release --workspace=packages/react-native-vto && release-it"
   },
   "devDependencies": {
     "@release-it/bumper": "^7.0.5",
@@ -34,7 +40,8 @@
     },
     "hooks": {
       "before:init": [
-        "npm run build --workspace=packages/react-native-nitro-vto"
+        "npm run build --workspace=packages/react-native-nitro-vto",
+        "npm run build --workspace=packages/react-native-vto"
       ],
       "after:bump": [
         "npm install"
@@ -44,11 +51,15 @@
       "@release-it/bumper": {
         "out": [
           "package.json",
+          "packages/vto-core-native/package.json",
           "packages/react-native-nitro-vto/package.json",
-          "example/package.json"
+          "packages/react-native-vto/package.json",
+          "example/package.json",
+          "example-old-arch/package.json"
         ]
       },
       "@release-it/conventional-changelog": {
+        "infile": "CHANGELOG.md",
         "preset": {
           "name": "conventionalcommits",
           "types": [
