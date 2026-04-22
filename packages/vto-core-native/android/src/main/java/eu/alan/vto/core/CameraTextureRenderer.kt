@@ -49,6 +49,7 @@ class CameraTextureRenderer(private val context: Context) {
     private lateinit var cameraMaterialInstance: MaterialInstance
     @Entity private var backgroundQuadEntity: Int = 0
     private var backgroundQuadVertexBuffer: VertexBuffer? = null
+    private var backgroundQuadIndexBuffer: IndexBuffer? = null
     private var uvTransformSet = false
 
     // Reference to engine and scene (set during setup)
@@ -204,8 +205,21 @@ class CameraTextureRenderer(private val context: Context) {
      * Destroy all resources
      */
     fun destroy() {
+        // Order matters: renderable (entity) -> geometry buffers -> material
+        // instance -> material. Filament asserts if a material is destroyed
+        // while instances are still alive ("destroying material 'camera_feed'
+        // but 1 instances still alive"), which crashed com.alanmobile.
+
         scene.removeEntity(backgroundQuadEntity)
         EntityManager.get().destroy(backgroundQuadEntity)
+
+        backgroundQuadVertexBuffer?.let { engine.destroyVertexBuffer(it) }
+        backgroundQuadVertexBuffer = null
+        backgroundQuadIndexBuffer?.let { engine.destroyIndexBuffer(it) }
+        backgroundQuadIndexBuffer = null
+
+        engine.destroyMaterialInstance(cameraMaterialInstance)
+        engine.destroyMaterial(cameraMaterial)
 
         // Destroy all camera textures
         for (texture in cameraTextures) {
@@ -297,11 +311,13 @@ class CameraTextureRenderer(private val context: Context) {
         backgroundQuadVertexBuffer!!.setBufferAt(engine, 0, MatrixUtils.createFloatBuffer(vertices))
 
         val indices = shortArrayOf(0, 1, 2, 2, 1, 3)
-        val indexBuffer = IndexBuffer.Builder()
+        // Field (not local) so destroy() can free it — otherwise this IndexBuffer
+        // leaks and engine.destroy() asserts.
+        backgroundQuadIndexBuffer = IndexBuffer.Builder()
             .indexCount(6)
             .bufferType(IndexBuffer.Builder.IndexType.USHORT)
             .build(engine)
-        indexBuffer.setBuffer(engine, MatrixUtils.createShortBuffer(indices))
+        backgroundQuadIndexBuffer!!.setBuffer(engine, MatrixUtils.createShortBuffer(indices))
 
         // Create entity
         backgroundQuadEntity = EntityManager.get().create()
@@ -311,7 +327,7 @@ class CameraTextureRenderer(private val context: Context) {
 
         RenderableManager.Builder(1)
             .material(0, cameraMaterialInstance)
-            .geometry(0, RenderableManager.PrimitiveType.TRIANGLES, backgroundQuadVertexBuffer!!, indexBuffer)
+            .geometry(0, RenderableManager.PrimitiveType.TRIANGLES, backgroundQuadVertexBuffer!!, backgroundQuadIndexBuffer!!)
             .boundingBox(boundingBox)
             .culling(false)
             .receiveShadows(false)
