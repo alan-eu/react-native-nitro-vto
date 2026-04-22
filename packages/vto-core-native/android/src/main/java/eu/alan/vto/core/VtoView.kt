@@ -283,6 +283,13 @@ class VtoView(context: Context) : FrameLayout(context) {
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         Log.d(TAG, "onDetachedFromWindow")
-        destroy()
+        // Only pause here — full teardown (`destroy()`) races with Filament's
+        // `UiHelper.onDetachedFromSurface` and the Android `SurfaceHolder`
+        // surfaceDestroyed callback, which can fire against an already-freed
+        // engine and trip Filament's `TPanic<PreconditionPanic>` → SIGABRT.
+        // The wrappers own the true teardown: `VtoViewManager.onDropViewInstance`
+        // (old-arch) and nitrogen's HybridView cleanup (Nitro) both call
+        // `destroy()` at unmount time.
+        pause()
     }
 }
