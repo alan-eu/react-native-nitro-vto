@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.10.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.9.1...v0.10.0) (2026-04-22)
+
+### ✨ Features
+
+* **android:** tweak camera feed lighting ([#37](https://github.com/alan-eu/react-native-nitro-vto/issues/37)) ([2850e2a](https://github.com/alan-eu/react-native-nitro-vto/commit/2850e2a8a1ebbe55601354020572a79f78655156))
+* faceTracked and glassesDisplayed callbacks ([#39](https://github.com/alan-eu/react-native-nitro-vto/issues/39)) ([2a3069b](https://github.com/alan-eu/react-native-nitro-vto/commit/2a3069bd85d0d3430679566f2f8c03b8c91cac33))
+* **iOS, android:** better HDRi and env lighthing ([#32](https://github.com/alan-eu/react-native-nitro-vto/issues/32)) ([dced686](https://github.com/alan-eu/react-native-nitro-vto/commit/dced6861f58b41cb9aecbfaf061b715d883a02f2))
+* share core package and old arch support ([#40](https://github.com/alan-eu/react-native-nitro-vto/issues/40)) ([9bf5fb6](https://github.com/alan-eu/react-native-nitro-vto/commit/9bf5fb6622923c14c6ad67b86cda1fb5d512d2b0))
+* unified assets (materials and envs) between iOS and Android ([#36](https://github.com/alan-eu/react-native-nitro-vto/issues/36)) ([826eeca](https://github.com/alan-eu/react-native-nitro-vto/commit/826eecac18c1726bf2497801a368cb10c8c95aca))
+
+### 🐛 Bug Fixes
+
+* **android:** translucent material ([#35](https://github.com/alan-eu/react-native-nitro-vto/issues/35)) ([171ca67](https://github.com/alan-eu/react-native-nitro-vto/commit/171ca6707970b645a12e28a360b5cec622b438a0))
+
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ## [0.9.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.9.0...v0.9.1) (2026-01-06)
