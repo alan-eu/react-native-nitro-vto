@@ -60,23 +60,22 @@ RCT_REMAP_VIEW_PROPERTY(onGlassesDisplayed, onGlassesDisplayedEvent, RCTDirectEv
 
 // --- Imperative commands ----------------------------------------------------
 
-RCT_EXPORT_METHOD(switchModel:(nonnull NSNumber *)reactTag
-                  url:(NSString *)url) {
+RCT_EXPORT_METHOD(hideGlasses:(nonnull NSNumber *)reactTag) {
   [self.bridge.uiManager addUIBlock:^(RCTUIManager *uiManager,
                                        NSDictionary<NSNumber *, UIView *> *viewRegistry) {
     UIView *view = viewRegistry[reactTag];
     if ([view isKindOfClass:[VtoBridgeView class]]) {
-      [(VtoBridgeView *)view rnSwitchModel:url];
+      [(VtoBridgeView *)view rnHideGlasses];
     }
   }];
 }
 
-RCT_EXPORT_METHOD(resetSession:(nonnull NSNumber *)reactTag) {
+RCT_EXPORT_METHOD(showGlasses:(nonnull NSNumber *)reactTag) {
   [self.bridge.uiManager addUIBlock:^(RCTUIManager *uiManager,
                                        NSDictionary<NSNumber *, UIView *> *viewRegistry) {
     UIView *view = viewRegistry[reactTag];
     if ([view isKindOfClass:[VtoBridgeView class]]) {
-      [(VtoBridgeView *)view rnResetSession];
+      [(VtoBridgeView *)view rnShowGlasses];
     }
   }];
 }

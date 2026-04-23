@@ -152,12 +152,12 @@ namespace margelo::nitro::nitrovto {
   }
 
   // Methods
-  void JHybridNitroVtoViewSpec::switchModel(const std::string& modelUrl) {
-    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* modelUrl */)>("switchModel");
-    method(_javaPart, jni::make_jstring(modelUrl));
+  void JHybridNitroVtoViewSpec::hideGlasses() {
+    static const auto method = javaClassStatic()->getMethod<void()>("hideGlasses");
+    method(_javaPart);
   }
-  void JHybridNitroVtoViewSpec::resetSession() {
-    static const auto method = javaClassStatic()->getMethod<void()>("resetSession");
+  void JHybridNitroVtoViewSpec::showGlasses() {
+    static const auto method = javaClassStatic()->getMethod<void()>("showGlasses");
     method(_javaPart);
   }
 

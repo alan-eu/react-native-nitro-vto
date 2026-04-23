@@ -47,24 +47,35 @@ export interface VtoCommonProps {
   onModelLoaded?: (modelUrl: string) => void;
 
   /**
-   * Fires the first time face tracking enters the TRACKING state in the current
-   * AR session. Does NOT fire again on face-lost-then-regained. Re-fires after
-   * `resetSession()` or when the view is re-mounted.
+   * Fires exactly once per AR session, the first time face tracking enters the
+   * TRACKING state. Does NOT fire again on face-lost-then-regained, and is
+   * unaffected by `hideGlasses()` / `showGlasses()`. Re-fires only when the
+   * view is re-mounted.
    */
   onFaceTracked?: () => void;
 
   /**
    * Fires the first time the glasses model is rendered on the tracked face —
    * i.e. the first frame whose transform is driven by a valid face pose after
-   * the model was loaded. Re-fires for each subsequent `switchModel`.
+   * the model was loaded. Re-fires whenever `modelUrl` changes to a different
+   * model.
    */
   onGlassesDisplayed?: (modelUrl: string) => void;
 }
 
 export interface VtoCommonMethods {
-  /** Switch to a different glasses model at runtime. */
-  switchModel(modelUrl: string): void;
+  /**
+   * Hide the glasses and face occlusion meshes. Sticky: stays hidden across
+   * frames until `showGlasses()` is called. The AR session keeps running and
+   * face tracking state is untouched.
+   *
+   * To switch models, update the `modelUrl` prop instead.
+   */
+  hideGlasses(): void;
 
-  /** Reset the AR session and face tracking. */
-  resetSession(): void;
+  /**
+   * Show the glasses and face occlusion meshes again after `hideGlasses()`.
+   * No-op if they weren't hidden.
+   */
+  showGlasses(): void;
 }

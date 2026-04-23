@@ -1,4 +1,10 @@
-import { NitroVtoView, nitroVtoVersion } from "@alaneu/react-native-nitro-vto";
+import {
+  NitroVtoView,
+  nitroVtoVersion,
+  type HybridRef,
+  type NitroVtoViewMethods,
+  type NitroVtoViewProps,
+} from "@alaneu/react-native-nitro-vto";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -16,6 +22,8 @@ const MODELS = [
   "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/680048.glb",
 ];
 
+type VtoRef = HybridRef<NitroVtoViewProps, NitroVtoViewMethods>;
+
 const App = () => {
   const [hasPermission, setHasPermission] = useState(false);
   const [currentModelIndex, setCurrentModelIndex] = useState(0);
@@ -25,6 +33,9 @@ const App = () => {
   const [backPlaneOcclusionEnabled, setBackPlaneOcclusionEnabled] =
     useState(true);
   const [debugEnabled, setDebugEnabled] = useState(false);
+  const [glassesHidden, setGlassesHidden] = useState(false);
+
+  const vtoRef = useRef<VtoRef | null>(null);
 
   const requestCameraPermission = useCallback(async () => {
     if (Platform.OS === "android") {
@@ -109,6 +120,18 @@ const App = () => {
     setDebugEnabled((prev) => !prev);
   }, []);
 
+  const handleToggleGlasses = useCallback(() => {
+    setGlassesHidden((prev) => {
+      const next = !prev;
+      if (next) {
+        vtoRef.current?.hideGlasses();
+      } else {
+        vtoRef.current?.showGlasses();
+      }
+      return next;
+    });
+  }, []);
+
   const currentModel = MODELS[currentModelIndex];
 
   if (!hasPermission) {
@@ -138,6 +161,9 @@ const App = () => {
         onModelLoaded={callback(handleModelLoaded)}
         onFaceTracked={callback(handleFaceTracked)}
         onGlassesDisplayed={callback(handleGlassesDisplayed)}
+        hybridRef={callback((ref: VtoRef) => {
+          vtoRef.current = ref;
+        })}
       />
       {isLoading && (
         <View style={styles.loadingOverlay}>
@@ -192,6 +218,18 @@ const App = () => {
         >
           <Text style={styles.buttonText}>
             Debug: {debugEnabled ? "Enabled" : "Disabled"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            glassesHidden ? styles.buttonDisabled : styles.buttonEnabled,
+          ]}
+          onPress={handleToggleGlasses}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            Glasses: {glassesHidden ? "Hidden" : "Visible"}
           </Text>
         </TouchableOpacity>
         <Text style={styles.text}>Nitro VTO Version: {nitroVtoVersion}</Text>

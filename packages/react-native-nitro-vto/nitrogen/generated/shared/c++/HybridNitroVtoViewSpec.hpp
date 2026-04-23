@@ -67,8 +67,8 @@ namespace margelo::nitro::nitrovto {
 
     public:
       // Methods
-      virtual void switchModel(const std::string& modelUrl) = 0;
-      virtual void resetSession() = 0;
+      virtual void hideGlasses() = 0;
+      virtual void showGlasses() = 0;
 
     protected:
       // Hybrid Setup

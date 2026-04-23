@@ -55,11 +55,11 @@ export const VtoView = React.forwardRef<VtoRef, VtoViewProps>((props, ref) => {
   React.useImperativeHandle(
     ref,
     () => ({
-      switchModel(modelUrl: string) {
-        dispatchCommand(nativeRef.current, "switchModel", [modelUrl]);
+      hideGlasses() {
+        dispatchCommand(nativeRef.current, "hideGlasses", []);
       },
-      resetSession() {
-        dispatchCommand(nativeRef.current, "resetSession", []);
+      showGlasses() {
+        dispatchCommand(nativeRef.current, "showGlasses", []);
       },
     }),
     [],

@@ -28,6 +28,7 @@ const App = () => {
   const [backPlaneOcclusionEnabled, setBackPlaneOcclusionEnabled] =
     useState(true);
   const [debugEnabled, setDebugEnabled] = useState(false);
+  const [glassesHidden, setGlassesHidden] = useState(false);
 
   const vtoRef = useRef<VtoRef | null>(null);
 
@@ -107,6 +108,18 @@ const App = () => {
 
   const handleDebug = useCallback(() => {
     setDebugEnabled((prev) => !prev);
+  }, []);
+
+  const handleToggleGlasses = useCallback(() => {
+    setGlassesHidden((prev) => {
+      const next = !prev;
+      if (next) {
+        vtoRef.current?.hideGlasses();
+      } else {
+        vtoRef.current?.showGlasses();
+      }
+      return next;
+    });
   }, []);
 
   const currentModel = MODELS[currentModelIndex];
@@ -193,6 +206,18 @@ const App = () => {
         >
           <Text style={styles.buttonText}>
             Debug: {debugEnabled ? "Enabled" : "Disabled"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            glassesHidden ? styles.buttonDisabled : styles.buttonEnabled,
+          ]}
+          onPress={handleToggleGlasses}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            Glasses: {glassesHidden ? "Hidden" : "Visible"}
           </Text>
         </TouchableOpacity>
         <Text style={styles.text}>VTO (old arch) Version: {vtoVersion}</Text>

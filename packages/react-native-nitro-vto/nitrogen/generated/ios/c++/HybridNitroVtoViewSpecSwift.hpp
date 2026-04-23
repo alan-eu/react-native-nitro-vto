@@ -123,14 +123,14 @@ namespace margelo::nitro::nitrovto {
 
   public:
     // Methods
-    inline void switchModel(const std::string& modelUrl) override {
-      auto __result = _swiftPart.switchModel(modelUrl);
+    inline void hideGlasses() override {
+      auto __result = _swiftPart.hideGlasses();
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
     }
-    inline void resetSession() override {
-      auto __result = _swiftPart.resetSession();
+    inline void showGlasses() override {
+      auto __result = _swiftPart.showGlasses();
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }

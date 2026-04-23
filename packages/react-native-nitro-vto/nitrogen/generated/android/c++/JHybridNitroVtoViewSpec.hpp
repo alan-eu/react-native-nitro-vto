@@ -71,8 +71,8 @@ namespace margelo::nitro::nitrovto {
 
   public:
     // Methods
-    void switchModel(const std::string& modelUrl) override;
-    void resetSession() override;
+    void hideGlasses() override;
+    void showGlasses() override;
 
   private:
     friend HybridBase;

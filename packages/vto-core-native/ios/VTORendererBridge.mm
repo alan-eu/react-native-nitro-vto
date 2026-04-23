@@ -51,6 +51,9 @@ static NSString *const TAG = @"VTORenderer";
 @property (nonatomic, assign) int height;
 // Perf-callback state
 @property (nonatomic, assign) BOOL hasFiredFaceTracked;
+// Whether the glasses + face occlusion meshes are explicitly hidden. Sticky
+// across frames — cleared only by -showGlasses.
+@property (nonatomic, assign) BOOL isHidden;
 
 // Model configuration
 @property (nonatomic, copy) NSString *modelUrl;
@@ -195,9 +198,17 @@ static NSString *const TAG = @"VTORenderer";
     [_glassesRenderer switchModelWithUrl:modelUrl];
 }
 
-- (void)resetSession {
+- (void)hideGlasses {
+    _isHidden = YES;
     [_glassesRenderer hide];
-    _hasFiredFaceTracked = NO;
+    [_faceOcclusionRenderer hide];
+}
+
+- (void)showGlasses {
+    // Clearing the flag is enough — the next frame with a tracked face will
+    // run the glasses + occlusion updates, which overwrite the hide-transform
+    // we set in -hideGlasses.
+    _isHidden = NO;
 }
 
 - (void)setFaceMeshOcclusion:(BOOL)enabled {
@@ -245,8 +256,10 @@ static NSString *const TAG = @"VTORenderer";
             _hasFiredFaceTracked = YES;
             if (self.onFaceTracked) self.onFaceTracked();
         }
-        [_faceOcclusionRenderer updateWithFace:faces[0]];
-        [_glassesRenderer updateTransformWithFace:faces[0] frame:frame];
+        if (!_isHidden) {
+            [_faceOcclusionRenderer updateWithFace:faces[0]];
+            [_glassesRenderer updateTransformWithFace:faces[0] frame:frame];
+        }
         [_debugRenderer updateWithFace:faces[0]
                      showLeftBackPlane:_faceOcclusionRenderer.isLeftBackPlaneVisible
                     showRightBackPlane:_faceOcclusionRenderer.isRightBackPlaneVisible];
