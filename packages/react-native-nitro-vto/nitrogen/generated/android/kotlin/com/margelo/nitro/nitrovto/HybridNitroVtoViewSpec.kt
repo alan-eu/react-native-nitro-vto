@@ -123,11 +123,11 @@ abstract class HybridNitroVtoViewSpec: HybridView() {
   // Methods
   @DoNotStrip
   @Keep
-  abstract fun switchModel(modelUrl: String): Unit
+  abstract fun hideGlasses(): Unit
   
   @DoNotStrip
   @Keep
-  abstract fun resetSession(): Unit
+  abstract fun showGlasses(): Unit
 
   private external fun initHybrid(): HybridData
 

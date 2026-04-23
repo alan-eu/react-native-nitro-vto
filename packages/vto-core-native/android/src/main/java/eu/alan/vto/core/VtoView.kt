@@ -116,14 +116,6 @@ class VtoView(context: Context) : FrameLayout(context) {
     }
 
     /**
-     * Switch to a different glasses model
-     */
-    fun switchModel(modelUrl: String) {
-        this.modelUrl = modelUrl
-        vtoRenderer?.switchModel(modelUrl)
-    }
-
-    /**
      * Take a snapshot of the current view
      * @return Base64-encoded image data
      */
@@ -133,12 +125,20 @@ class VtoView(context: Context) : FrameLayout(context) {
     }
 
     /**
-     * Reset the AR session
+     * Hide the glasses and face occlusion meshes. Sticky: stays hidden across
+     * frames until showGlasses() is called. The AR session keeps running and
+     * face tracking state is untouched.
      */
-    fun resetSession() {
-        vtoRenderer?.resetSession()
-        arSession?.pause()
-        arSession?.resume()
+    fun hideGlasses() {
+        vtoRenderer?.hideGlasses()
+    }
+
+    /**
+     * Show the glasses and face occlusion meshes again after hideGlasses().
+     * No-op if they weren't hidden.
+     */
+    fun showGlasses() {
+        vtoRenderer?.showGlasses()
     }
 
     /**

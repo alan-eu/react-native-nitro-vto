@@ -37,11 +37,13 @@ function App() {
 }
 ```
 
+To switch glasses, update the `modelUrl` prop — setting it to a new URL swaps the model.
+
 Methods via `ref`:
 
 ```ts
-vtoRef.current?.switchModel("https://example.com/other.glb");
-vtoRef.current?.resetSession();
+vtoRef.current?.hideGlasses();
+vtoRef.current?.showGlasses();
 ```
 
 ### Props
@@ -62,8 +64,8 @@ vtoRef.current?.resetSession();
 
 | Method | Description |
 | --- | --- |
-| `switchModel(url: string)` | Swap the glasses model at runtime |
-| `resetSession()` | Reset AR session and face tracking |
+| `hideGlasses()` | Hide the glasses + face occlusion meshes. Sticky across frames. AR session and face tracking state are untouched. |
+| `showGlasses()` | Show them again after `hideGlasses()`. No-op if they weren't hidden. |
 
 ## Differences from `@alaneu/react-native-nitro-vto`
 

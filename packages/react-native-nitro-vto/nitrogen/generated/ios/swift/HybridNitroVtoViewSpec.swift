@@ -22,8 +22,8 @@ public protocol HybridNitroVtoViewSpec_protocol: HybridObject, HybridView {
   var debug: Bool? { get set }
 
   // Methods
-  func switchModel(modelUrl: String) throws -> Void
-  func resetSession() throws -> Void
+  func hideGlasses() throws -> Void
+  func showGlasses() throws -> Void
 }
 
 public extension HybridNitroVtoViewSpec_protocol {

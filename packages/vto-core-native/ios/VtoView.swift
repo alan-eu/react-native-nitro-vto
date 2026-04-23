@@ -96,17 +96,12 @@ public class VtoView: UIView {
         }
     }
 
-    func switchModel(modelUrl: String) {
-        self.modelUrl = modelUrl
-        vtoRenderer?.switchModel(withUrl: modelUrl)
+    func hideGlasses() {
+        vtoRenderer?.hideGlasses()
     }
 
-    func resetSession() {
-        vtoRenderer?.resetSession()
-        if let session = arSession {
-            let configuration = createARConfiguration()
-            session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-        }
+    func showGlasses() {
+        vtoRenderer?.showGlasses()
     }
 
     func setFaceMeshOcclusion(_ enabled: Bool?) {

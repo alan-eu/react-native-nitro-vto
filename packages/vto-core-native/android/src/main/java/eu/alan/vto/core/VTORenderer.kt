@@ -105,6 +105,10 @@ class VTORenderer(private val context: Context) {
     // Perf-callback state
     private var hasFiredFaceTracked = false
 
+    // Whether the glasses + face occlusion meshes are explicitly hidden. Sticky
+    // across frames — cleared only by showGlasses().
+    private var isHidden = false
+
     /**
      * Initialize Filament and attach to surface view
      */
@@ -237,14 +241,24 @@ class VTORenderer(private val context: Context) {
     }
 
     /**
-     * Reset the session (clears UV transform)
+     * Hide the glasses and face occlusion meshes. Sticky: stays hidden across
+     * frames until showGlasses() is called. The AR session keeps running and
+     * face tracking state is untouched.
      */
-    fun resetSession() {
-        cameraTextureNameSet = false
-        hasFiredFaceTracked = false
-        cameraTextureRenderer.resetUvTransform()
+    fun hideGlasses() {
+        isHidden = true
         faceOcclusionRenderer.hide()
         glassesRenderer.hide()
+    }
+
+    /**
+     * Show the glasses and face occlusion meshes again after hideGlasses().
+     * No-op if they weren't hidden. Clearing the flag is enough — the next
+     * frame with a tracked face runs the updates, which overwrite the
+     * hide-transform set by hideGlasses().
+     */
+    fun showGlasses() {
+        isHidden = false
     }
 
     /**
@@ -342,8 +356,10 @@ class VTORenderer(private val context: Context) {
                     onFaceTracked?.invoke()
                 }
                 val face = faces.first()
-                faceOcclusionRenderer.update(face)
-                glassesRenderer.updateTransform(face, frame)
+                if (!isHidden) {
+                    faceOcclusionRenderer.update(face)
+                    glassesRenderer.updateTransform(face, frame)
+                }
                 debugRenderer.update(
                     face,
                     faceOcclusionRenderer.isLeftBackPlaneVisible,

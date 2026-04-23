@@ -77,12 +77,12 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
         }
 
     // Methods implementation
-    override fun switchModel(modelUrl: String) {
-        nitroVtoView.switchModel(modelUrl)
+    override fun hideGlasses() {
+        nitroVtoView.hideGlasses()
     }
 
-    override fun resetSession() {
-        nitroVtoView.resetSession()
+    override fun showGlasses() {
+        nitroVtoView.showGlasses()
     }
 
     // Lifecycle callbacks from HybridView base class

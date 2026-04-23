@@ -76,11 +76,11 @@ public class VtoBridgeView: VtoView {
         super.setDebug(enabled?.boolValue)
     }
 
-    @objc public func rnSwitchModel(_ url: NSString) {
-        super.switchModel(modelUrl: url as String)
+    @objc public func rnHideGlasses() {
+        super.hideGlasses()
     }
 
-    @objc public func rnResetSession() {
-        super.resetSession()
+    @objc public func rnShowGlasses() {
+        super.showGlasses()
     }
 }

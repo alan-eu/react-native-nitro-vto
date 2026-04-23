@@ -81,12 +81,12 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
 
     // MARK: - Methods implementation
 
-    public func switchModel(modelUrl: String) throws {
-        nitroVtoView.switchModel(modelUrl: modelUrl)
+    public func hideGlasses() throws {
+        nitroVtoView.hideGlasses()
     }
 
-    public func resetSession() throws {
-        nitroVtoView.resetSession()
+    public func showGlasses() throws {
+        nitroVtoView.showGlasses()
     }
 
     // MARK: - Lifecycle callbacks from HybridView protocol

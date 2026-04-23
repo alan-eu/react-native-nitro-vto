@@ -323,9 +323,9 @@ open class HybridNitroVtoViewSpec_cxx {
 
   // Methods
   @inline(__always)
-  public final func switchModel(modelUrl: std.string) -> bridge.Result_void_ {
+  public final func hideGlasses() -> bridge.Result_void_ {
     do {
-      try self.__implementation.switchModel(modelUrl: String(modelUrl))
+      try self.__implementation.hideGlasses()
       return bridge.create_Result_void_()
     } catch (let __error) {
       let __exceptionPtr = __error.toCpp()
@@ -334,9 +334,9 @@ open class HybridNitroVtoViewSpec_cxx {
   }
   
   @inline(__always)
-  public final func resetSession() -> bridge.Result_void_ {
+  public final func showGlasses() -> bridge.Result_void_ {
     do {
-      try self.__implementation.resetSession()
+      try self.__implementation.showGlasses()
       return bridge.create_Result_void_()
     } catch (let __error) {
       let __exceptionPtr = __error.toCpp()

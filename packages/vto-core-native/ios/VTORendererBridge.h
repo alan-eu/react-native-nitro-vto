@@ -39,8 +39,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// Switch to a different model
 - (void)switchModelWithUrl:(NSString *)modelUrl;
 
-/// Reset the AR session
-- (void)resetSession;
+/// Hide the glasses and face occlusion meshes. Sticky: stays hidden across
+/// frames until -showGlasses is called. The AR session keeps running and face
+/// tracking state is untouched.
+- (void)hideGlasses;
+
+/// Show the glasses and face occlusion meshes again after -hideGlasses.
+/// No-op if they weren't hidden.
+- (void)showGlasses;
 
 /// Set face mesh occlusion enabled
 - (void)setFaceMeshOcclusion:(BOOL)enabled;

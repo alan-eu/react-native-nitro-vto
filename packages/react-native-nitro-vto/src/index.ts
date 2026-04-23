@@ -34,9 +34,9 @@ export const nitroVtoVersion = version;
  *     console.log("Model loaded:", url)
  *   }
  *
- *   const switchGlasses = () => {
- *     vtoRef.current?.switchModel('https://example.com/glasses.glb')
- *   }
+ *   // To switch glasses, update the `modelUrl` prop from state.
+ *   // To hide the glasses (keeping the AR session running), call
+ *   // `vtoRef.current?.hideGlasses()`.
  *
  *   return (
  *     <NitroVtoView

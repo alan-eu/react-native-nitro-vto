@@ -21,8 +21,8 @@ class VtoViewManager : SimpleViewManager<VtoView>() {
 
     companion object {
         const val REACT_CLASS = "VtoView"
-        const val COMMAND_SWITCH_MODEL = "switchModel"
-        const val COMMAND_RESET_SESSION = "resetSession"
+        const val COMMAND_HIDE_GLASSES = "hideGlasses"
+        const val COMMAND_SHOW_GLASSES = "showGlasses"
         const val EVENT_MODEL_LOADED = "onModelLoaded"
         const val EVENT_FACE_TRACKED = "onFaceTracked"
         const val EVENT_GLASSES_DISPLAYED = "onGlassesDisplayed"
@@ -80,11 +80,8 @@ class VtoViewManager : SimpleViewManager<VtoView>() {
 
     override fun receiveCommand(view: VtoView, commandId: String, args: ReadableArray?) {
         when (commandId) {
-            COMMAND_SWITCH_MODEL -> {
-                val url = args?.getString(0) ?: return
-                view.switchModel(url)
-            }
-            COMMAND_RESET_SESSION -> view.resetSession()
+            COMMAND_HIDE_GLASSES -> view.hideGlasses()
+            COMMAND_SHOW_GLASSES -> view.showGlasses()
             else -> throw IllegalArgumentException(
                 "Unknown command for VtoViewManager: $commandId"
             )
