@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.11.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.10.3...v0.11.0) (2026-04-23)
+
+### ⚠ BREAKING CHANGES
+
+* replace switchModel/resetSession with modelUrl prop + sticky hideGlasses/showGlasses (#45)
+
+### ✨ Features
+
+* replace switchModel/resetSession with modelUrl prop + sticky hideGlasses/showGlasses ([#45](https://github.com/alan-eu/react-native-nitro-vto/issues/45)) ([828e1ce](https://github.com/alan-eu/react-native-nitro-vto/commit/828e1ce104961181406ba89d39e47bb8fc2cf478))
+
 ## [0.10.3](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.10.2...v0.10.3) (2026-04-22)
 
 ### 🐛 Bug Fixes

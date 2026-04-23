@@ -1,6 +1,6 @@
 {
   "name": "@alaneu/react-native-vto-example",
-  "version": "0.10.3",
+  "version": "0.11.0",
   "private": true,
   "main": "index.js",
   "scripts": {
