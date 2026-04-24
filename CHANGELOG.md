@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.2](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.1...v0.11.2) (2026-04-24)
+
+### 🐛 Bug Fixes
+
+* **ios:** strip Filament's simulator arm64 exclusion from Pods xcconfigs ([#47](https://github.com/alan-eu/react-native-nitro-vto/issues/47)) ([0341e61](https://github.com/alan-eu/react-native-nitro-vto/commit/0341e61c77338b472c0a9f07754ec67e9986e00a))
+
 ## [0.11.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.0...v0.11.1) (2026-04-24)
 
 ### 🐛 Bug Fixes
