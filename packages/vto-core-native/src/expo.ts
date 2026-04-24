@@ -24,8 +24,10 @@ const withNitroVto: ConfigPlugin = (config) => {
 
 // Filament 1.69.3's podspec sets EXCLUDED_ARCHS[sdk=iphonesimulator*]=arm64
 // on the user target, which breaks arm64 simulator builds on Apple silicon.
-// Inject a snippet into the Podfile's post_install that removes the setting
-// from every pod + aggregate target after Pod resolution.
+// Deleting target-level build settings isn't enough: CocoaPods writes the
+// setting into the generated Pods-*.xcconfig files, which serve as the host
+// app target's base configuration. We have to strip it from the xcconfig
+// files themselves and override at target level as a belt.
 const FILAMENT_ARCH_FIX_TAG = "react-native-nitro-vto-filament-arch-fix";
 
 const FILAMENT_ARCH_FIX_SNIPPET = `    installer.pods_project.targets.each do |target|
@@ -36,10 +38,15 @@ const FILAMENT_ARCH_FIX_SNIPPET = `    installer.pods_project.targets.each do |t
     installer.aggregate_targets.each do |aggregate_target|
       aggregate_target.user_project.native_targets.each do |target|
         target.build_configurations.each do |config|
-          config.build_settings.delete('EXCLUDED_ARCHS[sdk=iphonesimulator*]')
+          config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = ''
         end
       end
       aggregate_target.user_project.save
+    end
+    Dir.glob(File.join(installer.sandbox.root.to_s, 'Target Support Files', '**', '*.xcconfig')).each do |path|
+      original = File.read(path)
+      stripped = original.lines.reject { |l| l.start_with?('EXCLUDED_ARCHS[sdk=iphonesimulator*]') }.join
+      File.write(path, stripped) if original != stripped
     end`;
 
 const withFilamentArchFix: ConfigPlugin = (config) => {
