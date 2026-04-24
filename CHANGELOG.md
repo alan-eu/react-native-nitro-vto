@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.0...v0.11.1) (2026-04-24)
+
+### 🐛 Bug Fixes
+
+* **ios:** strip Filament's simulator arm64 exclusion via Expo config plugin ([#46](https://github.com/alan-eu/react-native-nitro-vto/issues/46)) ([28215b2](https://github.com/alan-eu/react-native-nitro-vto/commit/28215b249993a8230cedf653a31e7ac367a6307a))
+
 ## [0.11.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.10.3...v0.11.0) (2026-04-23)
 
 ### ⚠ BREAKING CHANGES
