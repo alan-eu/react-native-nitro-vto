@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.4](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.3...v0.11.4) (2026-04-25)
+
+### 🐛 Bug Fixes
+
+* **ios:** Update pod declaration ([#49](https://github.com/alan-eu/react-native-nitro-vto/issues/49)) ([59d91d3](https://github.com/alan-eu/react-native-nitro-vto/commit/59d91d39d5602defe3d3f87d067372a40023b594))
+
 ## [0.11.3](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.2...v0.11.3) (2026-04-25)
 
 ### 🐛 Bug Fixes
