@@ -63,7 +63,7 @@ const filamentPodspecUrl = (): string => {
 
 const withFilamentArchFix: ConfigPlugin = (config) => {
   return withPodfile(config, (config) => {
-    const snippet = `  pod 'Filament', '1.69.3', :podspec => '${filamentPodspecUrl()}'`;
+    const snippet = `  pod 'Filament', :podspec => '${filamentPodspecUrl()}'`;
 
     const result = mergeContents({
       tag: FILAMENT_ARCH_FIX_TAG,
