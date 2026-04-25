@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.3](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.2...v0.11.3) (2026-04-25)
+
+### 🐛 Bug Fixes
+
+* **ios:** Host own Filament podspec to remove arm64 exclusion ([#48](https://github.com/alan-eu/react-native-nitro-vto/issues/48)) ([8a04a3f](https://github.com/alan-eu/react-native-nitro-vto/commit/8a04a3f6348c4ea5487ba28aab91923a3ecacadf))
+
 ## [0.11.2](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.1...v0.11.2) (2026-04-24)
 
 ### 🐛 Bug Fixes
