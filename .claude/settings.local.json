@@ -41,7 +41,8 @@
       "Bash(rm -rf andtroid)",
       "Bash(npm run android)",
       "Bash(npm run *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(gh api *)"
     ]
   }
 }
