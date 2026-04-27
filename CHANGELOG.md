@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.11.5](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.4...v0.11.5) (2026-04-27)
+
 ## [0.11.4](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.3...v0.11.4) (2026-04-25)
 
 ### 🐛 Bug Fixes
