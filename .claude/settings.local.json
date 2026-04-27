@@ -42,7 +42,11 @@
       "Bash(npm run android)",
       "Bash(npm run *)",
       "Bash(npx tsc *)",
-      "Bash(gh api *)"
+      "Bash(gh api *)",
+      "Bash(gh release *)",
+      "Bash(gh search *)",
+      "Bash(gh pr *)",
+      "Bash(gh issue *)"
     ]
   }
 }
