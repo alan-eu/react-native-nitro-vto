@@ -25,14 +25,23 @@ const addARCoreMetadataToAndroidManifest = (
   if (!mainApplication) {
     return androidManifest;
   }
+
   mainApplication["meta-data"] = mainApplication["meta-data"] || [];
 
-  mainApplication["meta-data"].push({
-    $: {
-      "android:name": "com.google.ar.core",
-      "android:value": "required",
-    },
-  });
+  const existing = mainApplication["meta-data"].find(
+    (m) => m["$"]["android:name"] === "com.google.ar.core"
+  );
+  if (existing) {
+    existing["$"]["android:value"] = "optional";
+  } else {
+    mainApplication["meta-data"].push({
+      $: {
+        "android:name": "com.google.ar.core",
+        "android:value": "optional",
+      },
+    });
+  }
+
   return androidManifest;
 };
 
@@ -55,7 +64,7 @@ const addCameraARFeatureToAndroidManifestManifest = (
     androidManifest.manifest["uses-feature"].push({
       $: {
         "android:name": feature,
-        "android:required": "true",
+        "android:required": "false",
       },
     });
   }
