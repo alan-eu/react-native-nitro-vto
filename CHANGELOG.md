@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.6](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.5...v0.11.6) (2026-04-28)
+
+### 🐛 Bug Fixes
+
+* **expo config plugin:** don't make arcore mandatory ([#51](https://github.com/alan-eu/react-native-nitro-vto/issues/51)) ([ffec68f](https://github.com/alan-eu/react-native-nitro-vto/commit/ffec68f0bed540ee7fb5316ba89a58484572ab09))
+
 ## [0.11.5](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.4...v0.11.5) (2026-04-27)
 
 ## [0.11.4](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.3...v0.11.4) (2026-04-25)
