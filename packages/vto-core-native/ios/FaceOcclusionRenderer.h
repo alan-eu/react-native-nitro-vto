@@ -1,6 +1,8 @@
 #import <Foundation/Foundation.h>
 #import <ARKit/ARKit.h>
 
+@class FaceMeshTopology;
+
 namespace filament {
     class Engine;
     class Scene;
@@ -34,8 +36,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// Set back plane occlusion enabled
 - (void)setBackPlaneOcclusion:(BOOL)enabled;
 
-/// Update face mesh geometry from ARKit face anchor
-- (void)updateWithFace:(ARFaceAnchor *)face;
+/// Update face mesh geometry. The face anchor supplies the world transform;
+/// the topology supplies the (filled) vertex + index buffers — never read
+/// `face.geometry` directly from this method.
+- (void)updateWithFace:(ARFaceAnchor *)face
+              topology:(FaceMeshTopology *)topology;
 
 /// Hide the face mesh (when no face is detected)
 - (void)hide;
