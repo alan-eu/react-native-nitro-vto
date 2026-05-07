@@ -12,6 +12,7 @@
 
 #import "CameraTextureRenderer.h"
 #import "EnvironmentLightingRenderer.h"
+#import "FaceMeshTopology.h"
 #import "FaceOcclusionRenderer.h"
 #import "GlassesRenderer.h"
 #import "DebugRenderer.h"
@@ -41,6 +42,10 @@ static NSString *const TAG = @"VTORenderer";
 @property (nonatomic, strong) FaceOcclusionRenderer *faceOcclusionRenderer;
 @property (nonatomic, strong) GlassesRenderer *glassesRenderer;
 @property (nonatomic, strong) DebugRenderer *debugRenderer;
+
+// Shared face-mesh topology (filled eye/mouth holes). nil if SCN
+// allocation failed at startup — renderers should still cope.
+@property (nonatomic, strong, nullable) FaceMeshTopology *faceMeshTopology;
 
 // ARKit
 @property (nonatomic, weak) ARSession *arSession;
@@ -114,6 +119,11 @@ static NSString *const TAG = @"VTORenderer";
     // Setup camera background
     _cameraTextureRenderer = [[CameraTextureRenderer alloc] init];
     [_cameraTextureRenderer setupWithEngine:_engine scene:_scene];
+
+    // Shared face-mesh topology — closes the eye/mouth holes by detecting
+    // boundary loops in the (static) ARKit triangle list and emitting
+    // centroid-fan triangulations.
+    _faceMeshTopology = [[FaceMeshTopology alloc] init];
 
     // Setup face occlusion (renders face mesh to depth buffer for occlusion)
     _faceOcclusionRenderer = [[FaceOcclusionRenderer alloc] init];
@@ -256,12 +266,17 @@ static NSString *const TAG = @"VTORenderer";
             _hasFiredFaceTracked = YES;
             if (self.onFaceTracked) self.onFaceTracked();
         }
+        // Update the shared topology once per frame; both renderers below
+        // read from it instead of from face.geometry directly.
+        [_faceMeshTopology updateWithFace:faces[0]];
+
         if (!_isHidden) {
-            [_faceOcclusionRenderer updateWithFace:faces[0]];
+            [_faceOcclusionRenderer updateWithFace:faces[0] topology:_faceMeshTopology];
             [_glassesRenderer updateTransformWithFace:faces[0] frame:frame];
             [_glassesRenderer updateTempleArticulationWithEarHalfWidth:_faceOcclusionRenderer.earHalfWidth];
         }
         [_debugRenderer updateWithFace:faces[0]
+                              topology:_faceMeshTopology
                          showBackPlane:_faceOcclusionRenderer.isBackPlaneVisible];
     } else {
         [_faceOcclusionRenderer hide];

@@ -1,6 +1,8 @@
 #import <Foundation/Foundation.h>
 #import <ARKit/ARKit.h>
 
+@class FaceMeshTopology;
+
 namespace filament {
     class Engine;
     class Scene;
@@ -17,8 +19,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// Setup the debug renderer with Filament engine and scene
 - (void)setupWithEngine:(filament::Engine *)engine scene:(filament::Scene *)scene;
 
-/// Update debug visualization with face data and back plane visibility from occlusion renderer
+/// Update debug visualization. The face anchor supplies the world transform;
+/// the topology supplies the (filled) vertex + index buffers — never read
+/// `face.geometry` directly from this method.
 - (void)updateWithFace:(ARFaceAnchor *)face
+              topology:(FaceMeshTopology *)topology
          showBackPlane:(BOOL)showBackPlane;
 
 /// Hide debug visualization

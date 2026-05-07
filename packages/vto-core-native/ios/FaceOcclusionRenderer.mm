@@ -1,4 +1,5 @@
 #import "FaceOcclusionRenderer.h"
+#import "FaceMeshTopology.h"
 #import "LoaderUtils.h"
 #import "MatrixUtils.h"
 #import "OcclusionConstants.h"
@@ -21,8 +22,8 @@ using namespace utils;
 
 static NSString *const TAG = @"FaceOcclusionRenderer";
 
-// ARKit face mesh typically has ~1220 vertices and ~2304 triangles
-// We allocate a bit more to be safe
+// Sized for ARKit's face mesh + the closure triangles FaceMeshTopology
+// adds (3 centroid verts and ~50 triangles → ~1223 verts / ~2480 indices).
 static const size_t MAX_VERTICES = 1500;
 static const size_t MAX_INDICES = 8000;
 
@@ -245,13 +246,16 @@ static const size_t MAX_INDICES = 8000;
     NSLog(@"%@: Back plane occlusion updated: %d", TAG, enabled);
 }
 
-- (void)updateWithFace:(ARFaceAnchor *)face {
-    if (!_isSetup || !_engine) return;
+- (void)updateWithFace:(ARFaceAnchor *)face
+              topology:(FaceMeshTopology *)topology {
+    if (!_isSetup || !_engine || !topology) return;
 
-    ARFaceGeometry *geometry = face.geometry;
-    NSUInteger vertexCount = geometry.vertexCount;
-    NSUInteger triangleCount = geometry.triangleCount;
-    NSUInteger indexCount = triangleCount * 3;
+    NSUInteger vertexCount = topology.vertexCount;
+    NSUInteger indexCount  = topology.indexCount;
+    const simd_float3 *vertices = topology.vertices;
+    const int16_t *indices      = topology.indices;
+
+    if (vertexCount == 0 || indexCount == 0 || !vertices || !indices) return;
 
     if (vertexCount > MAX_VERTICES || indexCount > MAX_INDICES) {
         NSLog(@"%@: Face mesh too large: %lu vertices, %lu indices", TAG,
@@ -262,7 +266,6 @@ static const size_t MAX_INDICES = 8000;
     // Copy vertex positions (already in face local space) and track XYZ extents
     // in a single pass. X/Y extents drive the per-frame back-plane size; Z gives
     // the back-plane offset.
-    const simd_float3 *vertices = geometry.vertices;
     float meshMinX = FLT_MAX, meshMaxX = -FLT_MAX;
     float meshMinY = FLT_MAX, meshMaxY = -FLT_MAX;
     for (NSUInteger i = 0; i < vertexCount; i++) {
@@ -279,8 +282,6 @@ static const size_t MAX_INDICES = 8000;
 
     // Update index buffer only if index count changed
     if (indexCount != _currentIndexCount) {
-        // Copy indices to persistent buffer (ARKit data may be deallocated before Filament uses it)
-        const int16_t *indices = geometry.triangleIndices;
         memcpy(_indexData, indices, indexCount * sizeof(int16_t));
         _indexBuffer->setBuffer(*_engine,
             IndexBuffer::BufferDescriptor(_indexData, indexCount * sizeof(int16_t), nullptr));

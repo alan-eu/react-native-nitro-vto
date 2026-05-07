@@ -1,4 +1,5 @@
 #import "DebugRenderer.h"
+#import "FaceMeshTopology.h"
 #import "LoaderUtils.h"
 #import "OcclusionConstants.h"
 
@@ -20,7 +21,7 @@ using namespace utils;
 
 static NSString *const TAG = @"DebugRenderer";
 
-// ARKit face mesh typically has ~1220 vertices and ~2304 triangles
+// Match FaceMeshTopology's cap — see FaceOcclusionRenderer.mm comment.
 static const size_t MAX_VERTICES = 1500;
 static const size_t MAX_INDICES = 8000;
 
@@ -235,22 +236,21 @@ static const size_t MAX_INDICES = 8000;
 }
 
 - (void)updateWithFace:(ARFaceAnchor *)face
+              topology:(FaceMeshTopology *)topology
          showBackPlane:(BOOL)showBackPlane {
-    if (!_isSetup || !_engine || !_isEnabled) return;
+    if (!_isSetup || !_engine || !_isEnabled || !topology) return;
 
-    ARFaceGeometry *geometry = face.geometry;
-    NSUInteger vertexCount = geometry.vertexCount;
-    NSUInteger triangleCount = geometry.triangleCount;
-    NSUInteger indexCount = triangleCount * 3;
+    NSUInteger vertexCount = topology.vertexCount;
+    NSUInteger indexCount  = topology.indexCount;
+    const simd_float3 *vertices = topology.vertices;
+    const int16_t *indices      = topology.indices;
 
-    if (vertexCount > MAX_VERTICES || indexCount > MAX_INDICES) {
-        return;
-    }
+    if (vertexCount == 0 || indexCount == 0 || !vertices || !indices) return;
+    if (vertexCount > MAX_VERTICES || indexCount > MAX_INDICES) return;
 
     // Copy vertex positions and track XY extents in a single pass — they drive
     // the per-frame back-plane size so the debug overlay matches the real
     // occluder in FaceOcclusionRenderer.
-    const simd_float3 *vertices = geometry.vertices;
     float meshMinX = FLT_MAX, meshMaxX = -FLT_MAX;
     float meshMinY = FLT_MAX, meshMaxY = -FLT_MAX;
     for (NSUInteger i = 0; i < vertexCount; i++) {
@@ -267,7 +267,6 @@ static const size_t MAX_INDICES = 8000;
 
     // Update index buffer if changed
     if (indexCount != _currentIndexCount) {
-        const int16_t *indices = geometry.triangleIndices;
         memcpy(_indexData, indices, indexCount * sizeof(int16_t));
         _faceMeshIndexBuffer->setBuffer(*_engine,
             IndexBuffer::BufferDescriptor(_indexData, indexCount * sizeof(int16_t), nullptr));
