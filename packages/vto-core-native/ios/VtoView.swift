@@ -35,7 +35,7 @@ public class VtoView: UIView {
     private var isActiveState: Bool = true
     private var faceMeshOcclusionState: Bool = true
     private var backPlaneOcclusionState: Bool = true
-    private var forwardOffsetState: Float = 0.005
+    private var forwardOffsetState: Float = kForwardOffset
     private var debugState: Bool = false
 
     // Callbacks
@@ -115,7 +115,7 @@ public class VtoView: UIView {
     }
 
     func setForwardOffset(_ offset: Double?) {
-        forwardOffsetState = Float(offset ?? 0.005)
+        forwardOffsetState = offset.map { Float($0) } ?? kForwardOffset
         vtoRenderer?.setForwardOffset(forwardOffsetState)
     }
 

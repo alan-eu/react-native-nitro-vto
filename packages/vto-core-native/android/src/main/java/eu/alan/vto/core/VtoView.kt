@@ -105,7 +105,7 @@ class VtoView(context: Context) : FrameLayout(context) {
      * Set forward offset for glasses positioning (in meters)
      */
     fun setForwardOffset(offset: Double?) {
-        vtoRenderer?.setForwardOffset((offset ?: 0.005).toFloat())
+        vtoRenderer?.setForwardOffset(offset?.toFloat() ?: OcclusionConstants.FORWARD_OFFSET)
     }
 
     /**

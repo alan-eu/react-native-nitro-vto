@@ -15,11 +15,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FaceOcclusionRenderer : NSObject
 
-/// Whether the left back plane is currently visible (based on head yaw)
-@property (nonatomic, readonly) BOOL isLeftBackPlaneVisible;
+/// Whether the back plane is currently visible.
+@property (nonatomic, readonly) BOOL isBackPlaneVisible;
 
-/// Whether the right back plane is currently visible (based on head yaw)
-@property (nonatomic, readonly) BOOL isRightBackPlaneVisible;
+/// Half-width of the user's ears in face-local meters, derived from the face
+/// mesh's lateral extent and the same earMargin constant used to size the
+/// back planes. Updated each call to -updateWithFace:. 0 if no face has been
+/// processed yet.
+@property (nonatomic, readonly) float earHalfWidth;
 
 /// Setup the face occlusion renderer with Filament engine and scene
 - (void)setupWithEngine:(filament::Engine *)engine

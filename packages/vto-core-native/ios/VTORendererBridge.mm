@@ -259,10 +259,10 @@ static NSString *const TAG = @"VTORenderer";
         if (!_isHidden) {
             [_faceOcclusionRenderer updateWithFace:faces[0]];
             [_glassesRenderer updateTransformWithFace:faces[0] frame:frame];
+            [_glassesRenderer updateTempleArticulationWithEarHalfWidth:_faceOcclusionRenderer.earHalfWidth];
         }
         [_debugRenderer updateWithFace:faces[0]
-                     showLeftBackPlane:_faceOcclusionRenderer.isLeftBackPlaneVisible
-                    showRightBackPlane:_faceOcclusionRenderer.isRightBackPlaneVisible];
+                         showBackPlane:_faceOcclusionRenderer.isBackPlaneVisible];
     } else {
         [_faceOcclusionRenderer hide];
         [_glassesRenderer hide];

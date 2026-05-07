@@ -19,10 +19,7 @@ class EnvironmentLightingRenderer(private val context: Context) {
 
     companion object {
         private const val TAG = "EnvironmentLighting"
-        // Intensity will range from 30_000 to 90_000 based on pixel intensity
-        // With a minimum of 30_000
-        private const val BASE_INTENSITY = 30_000f
-        private const val INTENSITY_FACTOR = 60_000f
+        // IBL intensity tuning lives in LightingConstants.
     }
 
     private var indirectLight: IndirectLight? = null
@@ -51,7 +48,7 @@ class EnvironmentLightingRenderer(private val context: Context) {
 
         val builder = IndirectLight.Builder()
             .reflections(iblTexture)
-            .intensity(BASE_INTENSITY)
+            .intensity(LightingConstants.BASE_INTENSITY)
 
         // Load spherical harmonics for irradiance (diffuse IBL) from sh.txt
         val sh = loadSphericalHarmonics(shPath)
@@ -106,7 +103,7 @@ class EnvironmentLightingRenderer(private val context: Context) {
         val lightEstimate = frame.lightEstimate
         if (lightEstimate.state == LightEstimate.State.VALID) {
             val pixelIntensity = lightEstimate.pixelIntensity
-            indirectLight?.intensity = BASE_INTENSITY + pixelIntensity * INTENSITY_FACTOR
+            indirectLight?.intensity = LightingConstants.BASE_INTENSITY + pixelIntensity * LightingConstants.INTENSITY_FACTOR
         }
     }
 

@@ -2,10 +2,13 @@
 #import "LoaderUtils.h"
 #import "KalmanFilter.h"
 #import "MatrixUtils.h"
+#import "OcclusionConstants.h"
 
 #include <filament/Engine.h>
 #include <filament/Scene.h>
 #include <filament/TransformManager.h>
+#include <filament/RenderableManager.h>
+#include <filament/Box.h>
 #include <gltfio/AssetLoader.h>
 #include <gltfio/ResourceLoader.h>
 #include <gltfio/MaterialProvider.h>
@@ -13,12 +16,20 @@
 #include <gltfio/materials/uberarchive.h>
 #include <gltfio/FilamentAsset.h>
 #include <utils/EntityManager.h>
+#include <math/mat4.h>
+#include <math/vec3.h>
 
 using namespace filament;
 using namespace filament::gltfio;
 using namespace utils;
 
 static NSString *const TAG = @"GlassesRenderer";
+
+// Kalman filter tuning shared by the position + rotation filters. Higher
+// process-noise = more responsive; higher measurement-noise = smoother. Same
+// values used on Android — see GlassesRenderer.kt.
+static const float kKalmanProcessNoise     = 0.1f;
+static const float kKalmanMeasurementNoise = 0.05f;
 
 @interface GlassesRenderer ()
 
@@ -49,6 +60,19 @@ static NSString *const TAG = @"GlassesRenderer";
 // Fires onGlassesDisplayed once per loaded model — reset on every successful load.
 @property (nonatomic, assign) BOOL hasDisplayedCurrentModel;
 
+// Temple articulation state, populated when the loaded glb exposes the
+// expected hinge node names. articulationEnabled stays NO if any of the four
+// nodes is missing — articulation becomes a no-op for that asset.
+@property (nonatomic, assign) BOOL articulationEnabled;
+@property (nonatomic, assign) Entity hingeLEntity;
+@property (nonatomic, assign) Entity hingeREntity;
+@property (nonatomic, assign) filament::math::mat4f hingeLRest;
+@property (nonatomic, assign) filament::math::mat4f hingeRRest;
+@property (nonatomic, assign) float restTipXL;     // glb-cm (AABB center.x of TempleL_geometry)
+@property (nonatomic, assign) float restTipXR;     // glb-cm
+@property (nonatomic, assign) float templeLLength;  // glb-cm, hinge-to-tip distance along glb +Y
+@property (nonatomic, assign) float templeRLength;  // glb-cm
+
 @end
 
 @implementation GlassesRenderer
@@ -58,9 +82,9 @@ static NSString *const TAG = @"GlassesRenderer";
     if (self) {
         _loadQueue = dispatch_queue_create("com.nitrovto.glassesloader", DISPATCH_QUEUE_SERIAL);
         _isLoading = NO;
-        _positionFilter = [[KalmanFilter3D alloc] initWithProcessNoise:0.1f measurementNoise:0.05f];
-        _rotationFilter = [[KalmanFilterQuaternion alloc] initWithProcessNoise:0.1f measurementNoise:0.05f];
-        _forwardOffset = 0.005f; // Default: 5mm forward
+        _positionFilter = [[KalmanFilter3D alloc] initWithProcessNoise:kKalmanProcessNoise measurementNoise:kKalmanMeasurementNoise];
+        _rotationFilter = [[KalmanFilterQuaternion alloc] initWithProcessNoise:kKalmanProcessNoise measurementNoise:kKalmanMeasurementNoise];
+        _forwardOffset = kForwardOffset;
     }
     return self;
 }
@@ -150,10 +174,57 @@ static NSString *const TAG = @"GlassesRenderer";
         // Re-arm onGlassesDisplayed for this freshly-loaded model. Next successful
         // updateTransformWithFace will fire the callback.
         _hasDisplayedCurrentModel = NO;
+        [self cacheTempleArticulationState];
         [self hide];
     } else {
         NSLog(@"%@: Failed to create glasses asset", TAG);
     }
+}
+
+- (void)cacheTempleArticulationState {
+    _articulationEnabled = NO;
+    if (!_glassesAsset || !_engine) return;
+
+    Entity hingeL = _glassesAsset->getFirstEntityByName("HingeL_temple");
+    Entity hingeR = _glassesAsset->getFirstEntityByName("HingeR_temple");
+    Entity templeL = _glassesAsset->getFirstEntityByName("TempleL_geometry");
+    Entity templeR = _glassesAsset->getFirstEntityByName("TempleR_geometry");
+
+    if (hingeL.isNull() || hingeR.isNull() || templeL.isNull() || templeR.isNull()) {
+        NSLog(@"%@: Hinge/temple nodes not found — articulation disabled for this asset", TAG);
+        return;
+    }
+
+    TransformManager &tm = _engine->getTransformManager();
+    RenderableManager &rm = _engine->getRenderableManager();
+
+    _hingeLEntity = hingeL;
+    _hingeREntity = hingeR;
+    _hingeLRest = tm.getTransform(tm.getInstance(hingeL));
+    _hingeRRest = tm.getTransform(tm.getInstance(hingeR));
+    float hingeLY = _hingeLRest[3][1];
+    float hingeRY = _hingeRRest[3][1];
+
+    // Temples are authored extending along glb +Y in Z-up cm: the hinge sits
+    // at the front of the frame (smaller Y) and the geometry runs back to a
+    // larger +Y for the tip. Approximate the rest tip with the AABB:
+    //   restTipX  ≈ AABB.center.x   (X is roughly constant along the temple)
+    //   templeLen = AABB.maxY - hingeY  (distance from hinge to the +Y end)
+    filament::Box bboxL = rm.getAxisAlignedBoundingBox(rm.getInstance(templeL));
+    filament::Box bboxR = rm.getAxisAlignedBoundingBox(rm.getInstance(templeR));
+    _restTipXL = bboxL.center.x;
+    _restTipXR = bboxR.center.x;
+    _templeLLength = (bboxL.center.y + bboxL.halfExtent.y) - hingeLY;
+    _templeRLength = (bboxR.center.y + bboxR.halfExtent.y) - hingeRY;
+
+    if (_templeLLength <= 0.0f || _templeRLength <= 0.0f) {
+        NSLog(@"%@: Degenerate temple AABB — articulation disabled", TAG);
+        return;
+    }
+
+    _articulationEnabled = YES;
+    NSLog(@"%@: Temple articulation enabled (L tipX=%.2f cm, len=%.2f cm; R tipX=%.2f cm, len=%.2f cm)",
+          TAG, _restTipXL, _templeLLength, _restTipXR, _templeRLength);
 }
 
 - (void)updateTransformWithFace:(ARFaceAnchor *)face frame:(ARFrame *)frame {
@@ -256,8 +327,40 @@ static NSString *const TAG = @"GlassesRenderer";
     _forwardOffset = offset;
 }
 
+- (void)updateTempleArticulationWithEarHalfWidth:(float)earHalfWidth {
+    if (!_articulationEnabled || !_engine || !_glassesAsset) return;
+    if (earHalfWidth <= 0.0f) return;
+
+    // Scale ear half-width to the temple tip's depth (see kTempleTipScale
+    // doc in OcclusionConstants.h). Convert face-local meters → glb-cm.
+    float desiredXcm = earHalfWidth * kTempleTipScale * 100.0f;
+
+    // Temples extend along glb +Y from the hinge. Rotating around the
+    // hinge's local Z axis by θ moves the tip's parent X by approximately
+    // -L·sin(θ). Solve for θ to land the tip at ±desiredXcm.
+    float sinL = (_restTipXL - desiredXcm) / _templeLLength;
+    float sinR = (_restTipXR - (-desiredXcm)) / _templeRLength;
+    sinL = fmaxf(-1.0f, fminf(1.0f, sinL));
+    sinR = fmaxf(-1.0f, fminf(1.0f, sinR));
+    float thetaL = asinf(sinL);
+    float thetaR = asinf(sinR);
+
+    using namespace filament::math;
+    mat4f rotL = mat4f::rotation(thetaL, float3{0.0f, 0.0f, 1.0f});
+    mat4f rotR = mat4f::rotation(thetaR, float3{0.0f, 0.0f, 1.0f});
+
+    TransformManager &tm = _engine->getTransformManager();
+    tm.setTransform(tm.getInstance(_hingeLEntity), _hingeLRest * rotL);
+    tm.setTransform(tm.getInstance(_hingeREntity), _hingeRRest * rotR);
+}
+
 - (void)switchModelWithUrl:(NSString *)modelUrl {
     if (!_scene || !_assetLoader) return;
+
+    // Disable articulation immediately — the cached hinge entities belong to
+    // the asset we're about to destroy. cacheTempleArticulationState reruns
+    // when the new asset finishes loading.
+    _articulationEnabled = NO;
 
     // Remove current model from scene
     if (_glassesAsset) {

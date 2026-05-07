@@ -28,6 +28,9 @@ Pod::Spec.new do |s|
     # Pattern mirrors `NitroVto.podspec`.
     "ios/VTORendererBridge.h",
     "ios/VtoBridgeView.h",
+    # Same module-map exposure for tuning constants used from Swift.
+    "ios/OcclusionConstants.h",
+    "ios/LightingConstants.h",
   ]
 
   # Disable strict C++ module checking to avoid Filament header conflicts

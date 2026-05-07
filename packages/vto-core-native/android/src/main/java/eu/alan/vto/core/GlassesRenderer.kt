@@ -5,8 +5,11 @@ import android.opengl.Matrix
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.google.android.filament.Box
 import com.google.android.filament.Engine
+import com.google.android.filament.Entity
 import com.google.android.filament.EntityManager
+import com.google.android.filament.RenderableManager
 import com.google.android.filament.Scene
 import com.google.android.filament.gltfio.AssetLoader
 import com.google.android.filament.gltfio.FilamentAsset
@@ -25,6 +28,12 @@ class GlassesRenderer(private val context: Context) {
 
     companion object {
         private const val TAG = "GlassesRenderer"
+
+        // Kalman filter tuning shared by the position + rotation filters.
+        // Higher process-noise = more responsive; higher measurement-noise =
+        // smoother. Same values used on iOS — see GlassesRenderer.mm.
+        private const val KALMAN_PROCESS_NOISE     = 0.1f
+        private const val KALMAN_MEASUREMENT_NOISE = 0.05f
     }
 
     private lateinit var engine: Engine
@@ -56,11 +65,27 @@ class GlassesRenderer(private val context: Context) {
 
     // Kalman filters for smoothing (reduce jitter)
     // Higher processNoise = more responsive, higher measurementNoise = smoother
-    private val positionFilter = KalmanFilter3D(processNoise = 0.1f, measurementNoise = 0.05f)
-    private val rotationFilter = KalmanFilterQuaternion(processNoise = 0.1f, measurementNoise = 0.05f)
+    private val positionFilter = KalmanFilter3D(processNoise = KALMAN_PROCESS_NOISE, measurementNoise = KALMAN_MEASUREMENT_NOISE)
+    private val rotationFilter = KalmanFilterQuaternion(processNoise = KALMAN_PROCESS_NOISE, measurementNoise = KALMAN_MEASUREMENT_NOISE)
 
     // Forward offset for glasses positioning (in meters)
-    private var forwardOffset = 0.005f  // Default: 5mm forward
+    private var forwardOffset = OcclusionConstants.FORWARD_OFFSET
+
+    // Temple articulation state. articulationEnabled stays false if any of
+    // the four expected hinge/temple node names is missing from the asset —
+    // articulation becomes a no-op for that asset.
+    private var articulationEnabled = false
+    @Entity private var hingeLEntity: Int = 0
+    @Entity private var hingeREntity: Int = 0
+    private val hingeLRest = FloatArray(16)
+    private val hingeRRest = FloatArray(16)
+    private var restTipXL = 0f       // glb-cm (AABB center.x of TempleL_geometry)
+    private var restTipXR = 0f       // glb-cm
+    private var templeLLength = 0f   // glb-cm, hinge-to-tip distance along glb +Y
+    private var templeRLength = 0f   // glb-cm
+    private val articulationRotMatrix = FloatArray(16)
+    private val articulationOutMatrix = FloatArray(16)
+    private val articulationBbox = Box(0f, 0f, 0f, 0f, 0f, 0f)
 
     /**
      * Setup the glasses renderer with Filament engine and scene.
@@ -133,10 +158,61 @@ class GlassesRenderer(private val context: Context) {
             // Reset the "already displayed" flag so onGlassesDisplayed fires again
             // the next time updateTransform runs for this freshly-loaded model.
             hasDisplayedCurrentModel = false
+            cacheTempleArticulationState(asset)
             hide()
         } ?: run {
             Log.e(TAG, "Failed to create glasses asset")
         }
+    }
+
+    private fun cacheTempleArticulationState(asset: FilamentAsset) {
+        articulationEnabled = false
+
+        val hingeL = asset.getFirstEntityByName("HingeL_temple")
+        val hingeR = asset.getFirstEntityByName("HingeR_temple")
+        val templeL = asset.getFirstEntityByName("TempleL_geometry")
+        val templeR = asset.getFirstEntityByName("TempleR_geometry")
+
+        if (hingeL == 0 || hingeR == 0 || templeL == 0 || templeR == 0) {
+            Log.d(TAG, "Hinge/temple nodes not found — articulation disabled for this asset")
+            return
+        }
+
+        val tm = engine.transformManager
+        val rm = engine.renderableManager
+
+        tm.getTransform(tm.getInstance(hingeL), hingeLRest)
+        tm.getTransform(tm.getInstance(hingeR), hingeRRest)
+
+        hingeLEntity = hingeL
+        hingeREntity = hingeR
+        // Translation Y is at index 13 in column-major 4x4.
+        val hingeLY = hingeLRest[13]
+        val hingeRY = hingeRRest[13]
+
+        // Temples are authored extending along glb +Y in Z-up cm: the hinge
+        // sits at the front of the frame (smaller Y) and the geometry runs
+        // back to a larger +Y for the tip. Approximate the rest tip with
+        // the AABB:
+        //   restTipX  ≈ AABB.center.x   (X is roughly constant along the temple)
+        //   templeLen = AABB.maxY - hingeY  (distance from hinge to the +Y end)
+        rm.getAxisAlignedBoundingBox(rm.getInstance(templeL), articulationBbox)
+        restTipXL = articulationBbox.center[0]
+        templeLLength = (articulationBbox.center[1] + articulationBbox.halfExtent[1]) - hingeLY
+        rm.getAxisAlignedBoundingBox(rm.getInstance(templeR), articulationBbox)
+        restTipXR = articulationBbox.center[0]
+        templeRLength = (articulationBbox.center[1] + articulationBbox.halfExtent[1]) - hingeRY
+
+        if (templeLLength <= 0f || templeRLength <= 0f) {
+            Log.d(TAG, "Degenerate temple AABB — articulation disabled")
+            return
+        }
+
+        articulationEnabled = true
+        Log.d(
+            TAG,
+            "Temple articulation enabled (L tipX=$restTipXL cm, len=$templeLLength cm; R tipX=$restTipXR cm, len=$templeRLength cm)"
+        )
     }
 
     /**
@@ -229,10 +305,50 @@ class GlassesRenderer(private val context: Context) {
     }
 
     /**
+     * Articulate the temples (swing left/right hinge nodes) so the temple
+     * tips land at ±earHalfWidth (face-local meters). No-op if the loaded
+     * glb does not expose the expected hinge node names
+     * (HingeL_temple / HingeR_temple).
+     */
+    fun updateTempleArticulation(earHalfWidth: Float) {
+        if (!articulationEnabled || earHalfWidth <= 0f) return
+        glassesAsset ?: return
+
+        // Scale ear half-width to the temple tip's depth (see
+        // TEMPLE_TIP_SCALE doc in OcclusionConstants). Convert face-local
+        // meters → glb-cm.
+        val desiredXcm = earHalfWidth * OcclusionConstants.TEMPLE_TIP_SCALE * 100f
+
+        // Temples extend along glb +Y from the hinge. Rotating around the
+        // hinge's local Z axis by θ moves the tip's parent X by
+        // approximately -L·sin(θ). Solve for θ to land the tip at
+        // ±desiredXcm.
+        val sinL = ((restTipXL - desiredXcm) / templeLLength).coerceIn(-1f, 1f)
+        val sinR = ((restTipXR - (-desiredXcm)) / templeRLength).coerceIn(-1f, 1f)
+        val thetaLDeg = Math.toDegrees(kotlin.math.asin(sinL).toDouble()).toFloat()
+        val thetaRDeg = Math.toDegrees(kotlin.math.asin(sinR).toDouble()).toFloat()
+
+        val tm = engine.transformManager
+
+        Matrix.setRotateM(articulationRotMatrix, 0, thetaLDeg, 0f, 0f, 1f)
+        Matrix.multiplyMM(articulationOutMatrix, 0, hingeLRest, 0, articulationRotMatrix, 0)
+        tm.setTransform(tm.getInstance(hingeLEntity), articulationOutMatrix)
+
+        Matrix.setRotateM(articulationRotMatrix, 0, thetaRDeg, 0f, 0f, 1f)
+        Matrix.multiplyMM(articulationOutMatrix, 0, hingeRRest, 0, articulationRotMatrix, 0)
+        tm.setTransform(tm.getInstance(hingeREntity), articulationOutMatrix)
+    }
+
+    /**
      * Switch to a different glasses model.
      * @param modelUrl URL to the new model (GLB format)
      */
     fun switchModel(modelUrl: String) {
+        // Disable articulation immediately — the cached hinge entities belong
+        // to the asset we're about to destroy. cacheTempleArticulationState
+        // reruns when the new asset finishes loading.
+        articulationEnabled = false
+
         // Remove current model from scene
         glassesAsset?.let { asset ->
             scene.removeEntities(asset.entities)

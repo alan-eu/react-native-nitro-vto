@@ -1,6 +1,7 @@
 package eu.alan.vto.core
 
 import android.content.Context
+import android.opengl.Matrix
 import android.util.Log
 import com.google.android.filament.Box
 import com.google.android.filament.Engine
@@ -41,29 +42,34 @@ class FaceOcclusionRenderer(private val context: Context) {
     private var entityInScene = false
     private var indexBufferInitialized = false
 
-    // Back clipping planes (split left/right for better occlusion based on head rotation)
-    private var backPlaneLeftVertexBuffer: VertexBuffer? = null
-    private var backPlaneRightVertexBuffer: VertexBuffer? = null
-    private var backPlaneIndexBuffer: IndexBuffer? = null  // Shared between both planes
-    @Entity private var backPlaneLeftEntity: Int = 0
-    @Entity private var backPlaneRightEntity: Int = 0
-    private var backPlaneLeftInScene = false
-    private var backPlaneRightInScene = false
+    // Single back clipping plane spanning the full ear-line width.
+    private var backPlaneVertexBuffer: VertexBuffer? = null
+    private var backPlaneIndexBuffer: IndexBuffer? = null
+    @Entity private var backPlaneEntity: Int = 0
+    private var backPlaneInScene = false
 
-    /** Whether the left back plane is currently visible (based on head yaw) */
-    val isLeftBackPlaneVisible: Boolean get() = backPlaneLeftInScene
-
-    /** Whether the right back plane is currently visible (based on head yaw) */
-    val isRightBackPlaneVisible: Boolean get() = backPlaneRightInScene
+    /** Whether the back plane is currently visible. */
+    val isBackPlaneVisible: Boolean get() = backPlaneInScene
 
     // Reusable arrays to avoid per-frame allocations
     private val vertexData = FloatArray(VERTEX_COUNT * 3)
     private val tempMatrix16 = FloatArray(16)
     private val backPlaneMatrix16 = FloatArray(16)
+    private val faceMeshMatrix16 = FloatArray(16)
+    private val backPlaneVertexData = FloatArray(4 * 3)
 
     // Occlusion settings (both enabled by default)
     private var faceMeshEnabled = true
     private var backPlaneEnabled = true
+
+    /**
+     * Half-width of the user's ears in face-local meters, derived from the
+     * face mesh's lateral extent and the same earMargin constant used to size
+     * the back plane. Updated each call to update(). 0 if no face has been
+     * processed yet.
+     */
+    var earHalfWidth: Float = 0f
+        private set
 
     /**
      * Setup the face occlusion renderer with Filament engine and scene.
@@ -133,16 +139,10 @@ class FaceOcclusionRenderer(private val context: Context) {
      * Set back plane occlusion enabled.
      */
     fun setBackPlaneOcclusion(enabled: Boolean) {
-        // If back planes are being disabled, remove from scene
-        if (backPlaneEnabled && !enabled) {
-            if (backPlaneLeftInScene) {
-                scene.removeEntity(backPlaneLeftEntity)
-                backPlaneLeftInScene = false
-            }
-            if (backPlaneRightInScene) {
-                scene.removeEntity(backPlaneRightEntity)
-                backPlaneRightInScene = false
-            }
+        // If back plane is being disabled, remove from scene
+        if (backPlaneEnabled && !enabled && backPlaneInScene) {
+            scene.removeEntity(backPlaneEntity)
+            backPlaneInScene = false
         }
 
         backPlaneEnabled = enabled
@@ -150,33 +150,22 @@ class FaceOcclusionRenderer(private val context: Context) {
     }
 
     /**
-     * Create back clipping planes (split left/right) to occlude glasses behind the head.
+     * Create the single back clipping plane that occludes glasses behind the head.
+     * Vertices are overwritten per-frame with ±halfW / ±halfH derived from the
+     * face mesh.
      */
     private fun createBackPlane() {
-        val planeSizeX = 0.12f  // 12cm half-width for each plane
-        val planeSizeY = 0.08f  // 8cm half-height (16cm total)
-        val gap = 0.01f  // Small gap between planes at center
+        val planeSizeX = 0.12f  // initial 12cm half-width
+        val planeSizeY = 0.08f  // initial 8cm half-height
 
-        // Left back plane (user's left side, camera's right side)
-        // X range: -planeSizeX to -gap
-        val leftVertices = floatArrayOf(
+        val initialVertices = floatArrayOf(
             -planeSizeX, -planeSizeY, 0f,  // bottom-left
-            -gap,        -planeSizeY, 0f,  // bottom-right
+             planeSizeX, -planeSizeY, 0f,  // bottom-right
             -planeSizeX,  planeSizeY, 0f,  // top-left
-            -gap,         planeSizeY, 0f   // top-right
+             planeSizeX,  planeSizeY, 0f   // top-right
         )
 
-        // Right back plane (user's right side, camera's left side)
-        // X range: gap to planeSizeX
-        val rightVertices = floatArrayOf(
-            gap,        -planeSizeY, 0f,  // bottom-left
-            planeSizeX, -planeSizeY, 0f,  // bottom-right
-            gap,         planeSizeY, 0f,  // top-left
-            planeSizeX,  planeSizeY, 0f   // top-right
-        )
-
-        // Create vertex buffers for each plane
-        backPlaneLeftVertexBuffer = VertexBuffer.Builder()
+        backPlaneVertexBuffer = VertexBuffer.Builder()
             .vertexCount(4)
             .bufferCount(1)
             .attribute(
@@ -187,22 +176,8 @@ class FaceOcclusionRenderer(private val context: Context) {
                 12
             )
             .build(engine)
-        backPlaneLeftVertexBuffer!!.setBufferAt(engine, 0, MatrixUtils.createFloatBuffer(leftVertices))
+        backPlaneVertexBuffer!!.setBufferAt(engine, 0, MatrixUtils.createFloatBuffer(initialVertices))
 
-        backPlaneRightVertexBuffer = VertexBuffer.Builder()
-            .vertexCount(4)
-            .bufferCount(1)
-            .attribute(
-                VertexBuffer.VertexAttribute.POSITION,
-                0,
-                VertexBuffer.AttributeType.FLOAT3,
-                0,
-                12
-            )
-            .build(engine)
-        backPlaneRightVertexBuffer!!.setBufferAt(engine, 0, MatrixUtils.createFloatBuffer(rightVertices))
-
-        // Shared index buffer (same topology for both planes)
         val indices = shortArrayOf(0, 1, 2, 2, 1, 3)
         backPlaneIndexBuffer = IndexBuffer.Builder()
             .indexCount(6)
@@ -210,18 +185,15 @@ class FaceOcclusionRenderer(private val context: Context) {
             .build(engine)
         backPlaneIndexBuffer!!.setBuffer(engine, MatrixUtils.createShortBuffer(indices))
 
-        // Create entities
-        backPlaneLeftEntity = EntityManager.get().create()
-        backPlaneRightEntity = EntityManager.get().create()
+        backPlaneEntity = EntityManager.get().create()
 
         val boundingBox = Box(0f, 0f, 0f, planeSizeX, planeSizeY, 0.1f)
 
-        // Build left back plane renderable
         RenderableManager.Builder(1)
             .geometry(
                 0,
                 RenderableManager.PrimitiveType.TRIANGLES,
-                backPlaneLeftVertexBuffer!!,
+                backPlaneVertexBuffer!!,
                 backPlaneIndexBuffer!!,
                 0,
                 6
@@ -232,25 +204,7 @@ class FaceOcclusionRenderer(private val context: Context) {
             .receiveShadows(false)
             .castShadows(false)
             .priority(0)
-            .build(engine, backPlaneLeftEntity)
-
-        // Build right back plane renderable
-        RenderableManager.Builder(1)
-            .geometry(
-                0,
-                RenderableManager.PrimitiveType.TRIANGLES,
-                backPlaneRightVertexBuffer!!,
-                backPlaneIndexBuffer!!,
-                0,
-                6
-            )
-            .material(0, occlusionMaterialInstance)
-            .boundingBox(boundingBox)
-            .culling(false)
-            .receiveShadows(false)
-            .castShadows(false)
-            .priority(0)
-            .build(engine, backPlaneRightEntity)
+            .build(engine, backPlaneEntity)
     }
 
     /**
@@ -273,11 +227,23 @@ class FaceOcclusionRenderer(private val context: Context) {
             return
         }
 
-        // Copy vertices directly (keep in face-local coordinates)
+        // Copy vertices directly (keep in face-local coordinates) and track XY
+        // extents in the same pass — they drive the per-frame back-plane size.
+        var meshMinX = Float.MAX_VALUE
+        var meshMaxX = -Float.MAX_VALUE
+        var meshMinY = Float.MAX_VALUE
+        var meshMaxY = -Float.MAX_VALUE
         for (i in 0 until VERTEX_COUNT) {
-            vertexData[i * 3] = meshVertices.get(i * 3)
-            vertexData[i * 3 + 1] = meshVertices.get(i * 3 + 1)
-            vertexData[i * 3 + 2] = meshVertices.get(i * 3 + 2)
+            val x = meshVertices.get(i * 3)
+            val y = meshVertices.get(i * 3 + 1)
+            val z = meshVertices.get(i * 3 + 2)
+            vertexData[i * 3] = x
+            vertexData[i * 3 + 1] = y
+            vertexData[i * 3 + 2] = z
+            if (x < meshMinX) meshMinX = x
+            if (x > meshMaxX) meshMaxX = x
+            if (y < meshMinY) meshMinY = y
+            if (y > meshMaxY) meshMaxY = y
         }
 
         // Update vertex buffer
@@ -327,6 +293,26 @@ class FaceOcclusionRenderer(private val context: Context) {
             if (z < minZ) minZ = z
         }
 
+        // Resize back plane from face mesh extents. Tuning lives in
+        // OcclusionConstants.
+        val meshHalfW = kotlin.math.max(kotlin.math.abs(meshMinX), kotlin.math.abs(meshMaxX))
+        val meshHalfH = kotlin.math.max(kotlin.math.abs(meshMinY), kotlin.math.abs(meshMaxY))
+        val halfW = kotlin.math.max(meshHalfW * OcclusionConstants.EAR_MARGIN, OcclusionConstants.MIN_HALF_WIDTH)
+        val halfH = meshHalfH * OcclusionConstants.HEIGHT_MARGIN
+
+        // Publish the ear half-width for consumers that articulate around it
+        // (GlassesRenderer's temple swing). Use the same factor the back-plane
+        // sizing applies, so the temple tips track the plane.
+        earHalfWidth = meshHalfW * OcclusionConstants.EAR_MARGIN
+
+        // Single plane spanning the full ear-line width.
+        backPlaneVertexData[0]  = -halfW; backPlaneVertexData[1]  = -halfH; backPlaneVertexData[2]  = 0f
+        backPlaneVertexData[3]  =  halfW; backPlaneVertexData[4]  = -halfH; backPlaneVertexData[5]  = 0f
+        backPlaneVertexData[6]  = -halfW; backPlaneVertexData[7]  =  halfH; backPlaneVertexData[8]  = 0f
+        backPlaneVertexData[9]  =  halfW; backPlaneVertexData[10] =  halfH; backPlaneVertexData[11] = 0f
+
+        backPlaneVertexBuffer!!.setBufferAt(engine, 0, MatrixUtils.createFloatBuffer(backPlaneVertexData))
+
         // Apply face pose transform to entity (transforms local vertices to world space)
         face.centerPose.toMatrix(tempMatrix16, 0)
 
@@ -338,11 +324,17 @@ class FaceOcclusionRenderer(private val context: Context) {
         tempMatrix16[8] = -tempMatrix16[8]
         tempMatrix16[12] = -tempMatrix16[12]
 
-        val faceInstance = engine.transformManager.getInstance(faceMeshEntity)
-        engine.transformManager.setTransform(faceInstance, tempMatrix16)
+        // Shrink the face mesh in X only when writing depth. Back plane
+        // derives from tempMatrix16 below without this scale, so behind-head
+        // occlusion is unaffected.
+        Matrix.scaleM(faceMeshMatrix16, 0, tempMatrix16, 0, OcclusionConstants.FACE_MESH_X_SHRINK, 1f, 1f)
 
-        // Position back planes behind the face
-        val zOffset = minZ + 0.03f  // 3cm behind the furthest face point
+        val faceInstance = engine.transformManager.getInstance(faceMeshEntity)
+        engine.transformManager.setTransform(faceInstance, faceMeshMatrix16)
+
+        // Position the back plane behind the face. minZ is the most-negative
+        // (deepest) mesh vertex; the plane sits behind it.
+        val zOffset = minZ - OcclusionConstants.BACK_PLANE_Z_OFFSET
         // Copy face transform and add offset along local Z axis
         tempMatrix16.copyInto(backPlaneMatrix16)
         // Apply local Z offset (multiply by rotation part of matrix)
@@ -353,60 +345,26 @@ class FaceOcclusionRenderer(private val context: Context) {
         backPlaneMatrix16[13] += offsetY  // translation Y
         backPlaneMatrix16[14] += offsetZ  // translation Z
 
-        // Position both back planes with the same transform
-        val backPlaneLeftInstance = engine.transformManager.getInstance(backPlaneLeftEntity)
-        val backPlaneRightInstance = engine.transformManager.getInstance(backPlaneRightEntity)
-        engine.transformManager.setTransform(backPlaneLeftInstance, backPlaneMatrix16)
-        engine.transformManager.setTransform(backPlaneRightInstance, backPlaneMatrix16)
+        val backPlaneInstance = engine.transformManager.getInstance(backPlaneEntity)
+        engine.transformManager.setTransform(backPlaneInstance, backPlaneMatrix16)
 
-        // Extract yaw (Y-axis rotation) from face transform to determine head rotation
-        // For column-major matrix: yaw = atan2(m[8], m[0]) which is atan2(m[2][0], m[0][0])
-        // Positive yaw = head turning left (user's perspective), negative = turning right
-        val yaw = kotlin.math.atan2(tempMatrix16[8], tempMatrix16[0])
-
-        // Threshold for when to hide a back plane (~7 degrees)
-        val yawThreshold = 0.12f  // ~7 degrees in radians
-
-        // Determine which back planes should be visible based on head rotation
-        // When turning right (negative yaw): left temple visible, hide left back plane
-        // When turning left (positive yaw): right temple visible, hide right back plane
-        val showLeftBackPlane = backPlaneEnabled && (yaw < yawThreshold)
-        val showRightBackPlane = backPlaneEnabled && (yaw > -yawThreshold)
-
-        // Update left back plane visibility
-        if (showLeftBackPlane && !backPlaneLeftInScene) {
-            scene.addEntity(backPlaneLeftEntity)
-            backPlaneLeftInScene = true
-        } else if (!showLeftBackPlane && backPlaneLeftInScene) {
-            scene.removeEntity(backPlaneLeftEntity)
-            backPlaneLeftInScene = false
-        }
-
-        // Update right back plane visibility
-        if (showRightBackPlane && !backPlaneRightInScene) {
-            scene.addEntity(backPlaneRightEntity)
-            backPlaneRightInScene = true
-        } else if (!showRightBackPlane && backPlaneRightInScene) {
-            scene.removeEntity(backPlaneRightEntity)
-            backPlaneRightInScene = false
+        if (backPlaneEnabled && !backPlaneInScene) {
+            scene.addEntity(backPlaneEntity)
+            backPlaneInScene = true
         }
     }
 
     /**
-     * Hide face mesh and back planes (remove from scene).
+     * Hide face mesh and back plane (remove from scene).
      */
     fun hide() {
         if (entityInScene) {
             scene.removeEntity(faceMeshEntity)
             entityInScene = false
         }
-        if (backPlaneLeftInScene) {
-            scene.removeEntity(backPlaneLeftEntity)
-            backPlaneLeftInScene = false
-        }
-        if (backPlaneRightInScene) {
-            scene.removeEntity(backPlaneRightEntity)
-            backPlaneRightInScene = false
+        if (backPlaneInScene) {
+            scene.removeEntity(backPlaneEntity)
+            backPlaneInScene = false
         }
     }
 
@@ -417,20 +375,15 @@ class FaceOcclusionRenderer(private val context: Context) {
         if (entityInScene) {
             scene.removeEntity(faceMeshEntity)
         }
-        if (backPlaneLeftInScene) {
-            scene.removeEntity(backPlaneLeftEntity)
-        }
-        if (backPlaneRightInScene) {
-            scene.removeEntity(backPlaneRightEntity)
+        if (backPlaneInScene) {
+            scene.removeEntity(backPlaneEntity)
         }
         EntityManager.get().destroy(faceMeshEntity)
-        EntityManager.get().destroy(backPlaneLeftEntity)
-        EntityManager.get().destroy(backPlaneRightEntity)
+        EntityManager.get().destroy(backPlaneEntity)
 
         vertexBuffer?.let { engine.destroyVertexBuffer(it) }
         indexBuffer?.let { engine.destroyIndexBuffer(it) }
-        backPlaneLeftVertexBuffer?.let { engine.destroyVertexBuffer(it) }
-        backPlaneRightVertexBuffer?.let { engine.destroyVertexBuffer(it) }
+        backPlaneVertexBuffer?.let { engine.destroyVertexBuffer(it) }
         backPlaneIndexBuffer?.let { engine.destroyIndexBuffer(it) }
         engine.destroyMaterialInstance(occlusionMaterialInstance)
         engine.destroyMaterial(occlusionMaterial)

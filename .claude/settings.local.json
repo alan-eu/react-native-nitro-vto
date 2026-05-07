@@ -46,7 +46,9 @@
       "Bash(gh release *)",
       "Bash(gh search *)",
       "Bash(gh pr *)",
-      "Bash(gh issue *)"
+      "Bash(gh issue *)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 *)"
     ]
   }
 }

@@ -23,7 +23,12 @@ Pod::Spec.new do |s|
   ]
 
   s.public_header_files = [
-    "ios/VTORendererBridge.h"
+    "ios/VTORendererBridge.h",
+    # Public so the pod's module map exposes them to Swift (VtoView.swift
+    # reads kForwardOffset). Same mechanism makes VTORendererBridge
+    # Swift-visible above.
+    "ios/OcclusionConstants.h",
+    "ios/LightingConstants.h",
   ]
 
   # Disable strict C++ module checking to avoid Filament header conflicts
