@@ -1,5 +1,6 @@
 #import "EnvironmentLightingRenderer.h"
 #import "LoaderUtils.h"
+#import "LightingConstants.h"
 
 #include <filament/Engine.h>
 #include <filament/Scene.h>
@@ -13,9 +14,8 @@ using namespace filament;
 
 static NSString *const TAG = @"EnvironmentLighting";
 
-// Intensity will range from 30_000 to 90_000 based on pixel intensity
-static const float BASE_INTENSITY = 30000.0f;
-static const float INTENSITY_FACTOR = 60000.0f;
+// IBL intensity tuning lives in LightingConstants.h
+// (kBaseIntensity + kIntensityFactor sweep from kBaseIntensity to their sum).
 
 @interface EnvironmentLightingRenderer ()
 
@@ -50,7 +50,7 @@ static const float INTENSITY_FACTOR = 60000.0f;
         if (_iblTexture) {
             auto builder = IndirectLight::Builder()
                 .reflections(_iblTexture)
-                .intensity(BASE_INTENSITY);
+                .intensity(kBaseIntensity);
 
             // Load spherical harmonics for irradiance (diffuse IBL)
             NSData *shData = [LoaderUtils loadAssetNamed:@"envs/studio_small_02_2k_sh.txt"];
@@ -126,7 +126,7 @@ static const float INTENSITY_FACTOR = 60000.0f;
     // ARKit ambientIntensity is in lumens, typically ranges 0-2000
     // Normalize to 0-1 range for our intensity calculation
     float normalizedIntensity = fminf((float)lightEstimate.ambientIntensity / 2000.0f, 1.0f);
-    _indirectLight->setIntensity(BASE_INTENSITY + normalizedIntensity * INTENSITY_FACTOR);
+    _indirectLight->setIntensity(kBaseIntensity + normalizedIntensity * kIntensityFactor);
 }
 
 - (void)destroy {

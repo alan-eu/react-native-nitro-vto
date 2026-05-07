@@ -359,12 +359,9 @@ class VTORenderer(private val context: Context) {
                 if (!isHidden) {
                     faceOcclusionRenderer.update(face)
                     glassesRenderer.updateTransform(face, frame)
+                    glassesRenderer.updateTempleArticulation(faceOcclusionRenderer.earHalfWidth)
                 }
-                debugRenderer.update(
-                    face,
-                    faceOcclusionRenderer.isLeftBackPlaneVisible,
-                    faceOcclusionRenderer.isRightBackPlaneVisible
-                )
+                debugRenderer.update(face, faceOcclusionRenderer.isBackPlaneVisible)
             } else {
                 faceOcclusionRenderer.hide()
                 glassesRenderer.hide()

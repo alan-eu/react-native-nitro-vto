@@ -9,8 +9,8 @@ namespace filament {
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- * Debug renderer for visualizing face mesh and back planes.
- * Renders colored overlays: red for face mesh, green for left plane, blue for right plane.
+ * Debug renderer for visualizing face mesh and the back plane.
+ * Renders colored overlays: red for the face mesh, blue for the back plane.
  */
 @interface DebugRenderer : NSObject
 
@@ -19,8 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// Update debug visualization with face data and back plane visibility from occlusion renderer
 - (void)updateWithFace:(ARFaceAnchor *)face
-  showLeftBackPlane:(BOOL)showLeftBackPlane
- showRightBackPlane:(BOOL)showRightBackPlane;
+         showBackPlane:(BOOL)showBackPlane;
 
 /// Hide debug visualization
 - (void)hide;

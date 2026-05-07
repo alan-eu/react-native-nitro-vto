@@ -30,6 +30,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// Update glasses transform based on detected face
 - (void)updateTransformWithFace:(ARFaceAnchor *)face frame:(ARFrame *)frame;
 
+/// Articulate the temples (swing left/right hinge nodes) so the temple tips
+/// land at ±earHalfWidth (face-local meters). No-op if the loaded glb does
+/// not expose the expected hinge node names (HingeL_temple / HingeR_temple).
+- (void)updateTempleArticulationWithEarHalfWidth:(float)earHalfWidth;
+
 /// Hide glasses by moving off-screen
 - (void)hide;
 

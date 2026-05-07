@@ -1,5 +1,6 @@
 #import "DebugRenderer.h"
 #import "LoaderUtils.h"
+#import "OcclusionConstants.h"
 
 #include <filament/Engine.h>
 #include <filament/Scene.h>
@@ -32,35 +33,30 @@ static const size_t MAX_INDICES = 8000;
 @property (nonatomic, assign) Material *debugFaceMaterial;
 @property (nonatomic, assign) Material *debugPlaneMaterial;
 @property (nonatomic, assign) MaterialInstance *faceMeshMaterialInstance;
-@property (nonatomic, assign) MaterialInstance *backPlaneLeftMaterialInstance;
-@property (nonatomic, assign) MaterialInstance *backPlaneRightMaterialInstance;
+@property (nonatomic, assign) MaterialInstance *backPlaneMaterialInstance;
 
 // Face mesh
 @property (nonatomic, assign) Entity faceMeshEntity;
 @property (nonatomic, assign) VertexBuffer *faceMeshVertexBuffer;
 @property (nonatomic, assign) IndexBuffer *faceMeshIndexBuffer;
 
-// Back planes
-@property (nonatomic, assign) Entity backPlaneLeftEntity;
-@property (nonatomic, assign) Entity backPlaneRightEntity;
-@property (nonatomic, assign) VertexBuffer *backPlaneLeftVertexBuffer;
-@property (nonatomic, assign) VertexBuffer *backPlaneRightVertexBuffer;
+// Back plane (single, spans full ear-line width)
+@property (nonatomic, assign) Entity backPlaneEntity;
+@property (nonatomic, assign) VertexBuffer *backPlaneVertexBuffer;
 @property (nonatomic, assign) IndexBuffer *backPlaneIndexBuffer;
 
 // State
 @property (nonatomic, assign) BOOL isSetup;
 @property (nonatomic, assign) BOOL isEnabled;
 @property (nonatomic, assign) BOOL faceMeshVisible;
-@property (nonatomic, assign) BOOL backPlaneLeftVisible;
-@property (nonatomic, assign) BOOL backPlaneRightVisible;
+@property (nonatomic, assign) BOOL backPlaneVisible;
 @property (nonatomic, assign) size_t currentVertexCount;
 @property (nonatomic, assign) size_t currentIndexCount;
 
 // Reusable buffers
 @property (nonatomic, assign) float3 *vertexData;
 @property (nonatomic, assign) int16_t *indexData;
-@property (nonatomic, assign) float3 *backPlaneLeftVertices;
-@property (nonatomic, assign) float3 *backPlaneRightVertices;
+@property (nonatomic, assign) float3 *backPlaneVertices;
 
 @end
 
@@ -72,14 +68,12 @@ static const size_t MAX_INDICES = 8000;
         _isSetup = NO;
         _isEnabled = NO;
         _faceMeshVisible = NO;
-        _backPlaneLeftVisible = NO;
-        _backPlaneRightVisible = NO;
+        _backPlaneVisible = NO;
         _currentVertexCount = 0;
         _currentIndexCount = 0;
         _vertexData = (float3 *)malloc(MAX_VERTICES * sizeof(float3));
         _indexData = (int16_t *)malloc(MAX_INDICES * sizeof(int16_t));
-        _backPlaneLeftVertices = (float3 *)malloc(4 * sizeof(float3));
-        _backPlaneRightVertices = (float3 *)malloc(4 * sizeof(float3));
+        _backPlaneVertices = (float3 *)malloc(4 * sizeof(float3));
     }
     return self;
 }
@@ -93,13 +87,9 @@ static const size_t MAX_INDICES = 8000;
         free(_indexData);
         _indexData = nullptr;
     }
-    if (_backPlaneLeftVertices) {
-        free(_backPlaneLeftVertices);
-        _backPlaneLeftVertices = nullptr;
-    }
-    if (_backPlaneRightVertices) {
-        free(_backPlaneRightVertices);
-        _backPlaneRightVertices = nullptr;
+    if (_backPlaneVertices) {
+        free(_backPlaneVertices);
+        _backPlaneVertices = nullptr;
     }
 }
 
@@ -146,13 +136,9 @@ static const size_t MAX_INDICES = 8000;
     _faceMeshMaterialInstance = _debugFaceMaterial->createInstance();
     _faceMeshMaterialInstance->setParameter("debugColor", float4(1.0f, 0.0f, 0.0f, 0.4f));
 
-    // Green for left back plane (uses plane material)
-    _backPlaneLeftMaterialInstance = _debugPlaneMaterial->createInstance();
-    _backPlaneLeftMaterialInstance->setParameter("debugColor", float4(0.0f, 1.0f, 0.0f, 0.4f));
-
-    // Blue for right back plane (uses plane material)
-    _backPlaneRightMaterialInstance = _debugPlaneMaterial->createInstance();
-    _backPlaneRightMaterialInstance->setParameter("debugColor", float4(0.0f, 0.0f, 1.0f, 0.4f));
+    // Blue for the (single) back plane (uses plane material)
+    _backPlaneMaterialInstance = _debugPlaneMaterial->createInstance();
+    _backPlaneMaterialInstance->setParameter("debugColor", float4(0.0f, 0.0f, 1.0f, 0.4f));
 
     // Create face mesh buffers
     _faceMeshVertexBuffer = VertexBuffer::Builder()
@@ -183,52 +169,32 @@ static const size_t MAX_INDICES = 8000;
         .priority(7)
         .build(*engine, _faceMeshEntity);
 
-    // Create back planes
-    [self createBackPlanes];
+    // Create back plane
+    [self createBackPlane];
 
     _isSetup = YES;
     NSLog(@"%@: Debug renderer setup complete", TAG);
 }
 
-- (void)createBackPlanes {
+- (void)createBackPlane {
     const float planeSizeX = 0.12f;
     const float planeSizeY = 0.08f;
-    const float gap = 0.01f;
 
-    // Left back plane vertices
-    _backPlaneLeftVertices[0] = float3(-planeSizeX, -planeSizeY, 0.0f);
-    _backPlaneLeftVertices[1] = float3(-gap,        -planeSizeY, 0.0f);
-    _backPlaneLeftVertices[2] = float3(-planeSizeX,  planeSizeY, 0.0f);
-    _backPlaneLeftVertices[3] = float3(-gap,         planeSizeY, 0.0f);
+    _backPlaneVertices[0] = float3(-planeSizeX, -planeSizeY, 0.0f);
+    _backPlaneVertices[1] = float3( planeSizeX, -planeSizeY, 0.0f);
+    _backPlaneVertices[2] = float3(-planeSizeX,  planeSizeY, 0.0f);
+    _backPlaneVertices[3] = float3( planeSizeX,  planeSizeY, 0.0f);
 
-    // Right back plane vertices
-    _backPlaneRightVertices[0] = float3(gap,        -planeSizeY, 0.0f);
-    _backPlaneRightVertices[1] = float3(planeSizeX, -planeSizeY, 0.0f);
-    _backPlaneRightVertices[2] = float3(gap,         planeSizeY, 0.0f);
-    _backPlaneRightVertices[3] = float3(planeSizeX,  planeSizeY, 0.0f);
-
-    // Create vertex buffers
-    _backPlaneLeftVertexBuffer = VertexBuffer::Builder()
+    _backPlaneVertexBuffer = VertexBuffer::Builder()
         .vertexCount(4)
         .bufferCount(1)
         .attribute(VertexAttribute::POSITION, 0,
                    VertexBuffer::AttributeType::FLOAT3, 0, sizeof(float3))
         .build(*_engine);
 
-    _backPlaneLeftVertexBuffer->setBufferAt(*_engine, 0,
-        VertexBuffer::BufferDescriptor(_backPlaneLeftVertices, 4 * sizeof(float3), nullptr));
+    _backPlaneVertexBuffer->setBufferAt(*_engine, 0,
+        VertexBuffer::BufferDescriptor(_backPlaneVertices, 4 * sizeof(float3), nullptr));
 
-    _backPlaneRightVertexBuffer = VertexBuffer::Builder()
-        .vertexCount(4)
-        .bufferCount(1)
-        .attribute(VertexAttribute::POSITION, 0,
-                   VertexBuffer::AttributeType::FLOAT3, 0, sizeof(float3))
-        .build(*_engine);
-
-    _backPlaneRightVertexBuffer->setBufferAt(*_engine, 0,
-        VertexBuffer::BufferDescriptor(_backPlaneRightVertices, 4 * sizeof(float3), nullptr));
-
-    // Shared index buffer
     static const uint16_t planeIndices[6] = {0, 1, 2, 2, 1, 3};
 
     _backPlaneIndexBuffer = IndexBuffer::Builder()
@@ -239,35 +205,21 @@ static const size_t MAX_INDICES = 8000;
     _backPlaneIndexBuffer->setBuffer(*_engine,
         IndexBuffer::BufferDescriptor(planeIndices, sizeof(planeIndices), nullptr));
 
-    // Create entities
-    _backPlaneLeftEntity = EntityManager::get().create();
-    _backPlaneRightEntity = EntityManager::get().create();
+    _backPlaneEntity = EntityManager::get().create();
 
     filament::Box boundingBox = {{-planeSizeX, -planeSizeY, -0.1f}, {planeSizeX, planeSizeY, 0.1f}};
 
-    // Build left back plane renderable (priority 8, renders after face mesh, gets occluded)
+    // Priority 8 — renders after the face mesh, gets occluded by it.
     RenderableManager::Builder(1)
-        .material(0, _backPlaneLeftMaterialInstance)
+        .material(0, _backPlaneMaterialInstance)
         .geometry(0, RenderableManager::PrimitiveType::TRIANGLES,
-                  _backPlaneLeftVertexBuffer, _backPlaneIndexBuffer, 0, 6)
+                  _backPlaneVertexBuffer, _backPlaneIndexBuffer, 0, 6)
         .boundingBox(boundingBox)
         .culling(false)
         .receiveShadows(false)
         .castShadows(false)
         .priority(8)
-        .build(*_engine, _backPlaneLeftEntity);
-
-    // Build right back plane renderable (priority 8, renders after face mesh, gets occluded)
-    RenderableManager::Builder(1)
-        .material(0, _backPlaneRightMaterialInstance)
-        .geometry(0, RenderableManager::PrimitiveType::TRIANGLES,
-                  _backPlaneRightVertexBuffer, _backPlaneIndexBuffer, 0, 6)
-        .boundingBox(boundingBox)
-        .culling(false)
-        .receiveShadows(false)
-        .castShadows(false)
-        .priority(8)
-        .build(*_engine, _backPlaneRightEntity);
+        .build(*_engine, _backPlaneEntity);
 }
 
 - (void)setEnabled:(BOOL)enabled {
@@ -283,8 +235,7 @@ static const size_t MAX_INDICES = 8000;
 }
 
 - (void)updateWithFace:(ARFaceAnchor *)face
-  showLeftBackPlane:(BOOL)showLeftBackPlane
- showRightBackPlane:(BOOL)showRightBackPlane {
+         showBackPlane:(BOOL)showBackPlane {
     if (!_isSetup || !_engine || !_isEnabled) return;
 
     ARFaceGeometry *geometry = face.geometry;
@@ -296,10 +247,18 @@ static const size_t MAX_INDICES = 8000;
         return;
     }
 
-    // Copy vertex positions
+    // Copy vertex positions and track XY extents in a single pass — they drive
+    // the per-frame back-plane size so the debug overlay matches the real
+    // occluder in FaceOcclusionRenderer.
     const simd_float3 *vertices = geometry.vertices;
+    float meshMinX = FLT_MAX, meshMaxX = -FLT_MAX;
+    float meshMinY = FLT_MAX, meshMaxY = -FLT_MAX;
     for (NSUInteger i = 0; i < vertexCount; i++) {
         _vertexData[i] = float3(vertices[i].x, vertices[i].y, vertices[i].z);
+        if (vertices[i].x < meshMinX) meshMinX = vertices[i].x;
+        if (vertices[i].x > meshMaxX) meshMaxX = vertices[i].x;
+        if (vertices[i].y < meshMinY) meshMinY = vertices[i].y;
+        if (vertices[i].y > meshMaxY) meshMaxY = vertices[i].y;
     }
 
     // Update vertex buffer
@@ -334,6 +293,21 @@ static const size_t MAX_INDICES = 8000;
         }
     }
 
+    // Resize back plane from face mesh extents. Tuning lives in
+    // OcclusionConstants.h — shared with FaceOcclusionRenderer.
+    float meshHalfW = fmaxf(fabsf(meshMinX), fabsf(meshMaxX));
+    float meshHalfH = fmaxf(fabsf(meshMinY), fabsf(meshMaxY));
+    float halfW = fmaxf(meshHalfW * kEarMargin, kMinHalfWidth);
+    float halfH = meshHalfH * kHeightMargin;
+
+    _backPlaneVertices[0] = float3(-halfW, -halfH, 0.0f);
+    _backPlaneVertices[1] = float3( halfW, -halfH, 0.0f);
+    _backPlaneVertices[2] = float3(-halfW,  halfH, 0.0f);
+    _backPlaneVertices[3] = float3( halfW,  halfH, 0.0f);
+
+    _backPlaneVertexBuffer->setBufferAt(*_engine, 0,
+        VertexBuffer::BufferDescriptor(_backPlaneVertices, 4 * sizeof(float3), nullptr));
+
     // Update face mesh transform
     TransformManager &transformManager = _engine->getTransformManager();
     TransformManager::Instance faceInstance = transformManager.getInstance(_faceMeshEntity);
@@ -345,11 +319,15 @@ static const size_t MAX_INDICES = 8000;
         }
     }
 
-    transformManager.setTransform(faceInstance, filamentTransform);
+    // Match FaceOcclusionRenderer's face-mesh X-shrink so the debug overlay
+    // sits where the actual occluder sits.
+    mat4f faceMeshShrink;
+    faceMeshShrink[0][0] = kFaceMeshXShrink;
+    transformManager.setTransform(faceInstance, filamentTransform * faceMeshShrink);
 
-    // Calculate back plane transform
+    // Calculate back plane transform — must match FaceOcclusionRenderer.
     mat4f backPlaneTransform = filamentTransform;
-    float3 localOffset(0.0f, 0.0f, minZ + 0.03f);
+    float3 localOffset(0.0f, 0.0f, minZ - kBackPlaneZOffset);
     float3 worldOffset(
         filamentTransform[0][0] * localOffset.x + filamentTransform[1][0] * localOffset.y + filamentTransform[2][0] * localOffset.z,
         filamentTransform[0][1] * localOffset.x + filamentTransform[1][1] * localOffset.y + filamentTransform[2][1] * localOffset.z,
@@ -359,11 +337,9 @@ static const size_t MAX_INDICES = 8000;
     backPlaneTransform[3][1] += worldOffset.y;
     backPlaneTransform[3][2] += worldOffset.z;
 
-    // Position both back planes
-    TransformManager::Instance backPlaneLeftInstance = transformManager.getInstance(_backPlaneLeftEntity);
-    TransformManager::Instance backPlaneRightInstance = transformManager.getInstance(_backPlaneRightEntity);
-    transformManager.setTransform(backPlaneLeftInstance, backPlaneTransform);
-    transformManager.setTransform(backPlaneRightInstance, backPlaneTransform);
+    // Position the back plane.
+    TransformManager::Instance backPlaneInstance = transformManager.getInstance(_backPlaneEntity);
+    transformManager.setTransform(backPlaneInstance, backPlaneTransform);
 
     // Add face mesh to scene if not already visible
     if (!_faceMeshVisible) {
@@ -371,22 +347,13 @@ static const size_t MAX_INDICES = 8000;
         _faceMeshVisible = YES;
     }
 
-    // Update left back plane visibility based on yaw
-    if (showLeftBackPlane && !_backPlaneLeftVisible) {
-        _scene->addEntity(_backPlaneLeftEntity);
-        _backPlaneLeftVisible = YES;
-    } else if (!showLeftBackPlane && _backPlaneLeftVisible) {
-        _scene->remove(_backPlaneLeftEntity);
-        _backPlaneLeftVisible = NO;
-    }
-
-    // Update right back plane visibility based on yaw
-    if (showRightBackPlane && !_backPlaneRightVisible) {
-        _scene->addEntity(_backPlaneRightEntity);
-        _backPlaneRightVisible = YES;
-    } else if (!showRightBackPlane && _backPlaneRightVisible) {
-        _scene->remove(_backPlaneRightEntity);
-        _backPlaneRightVisible = NO;
+    // Update back plane visibility
+    if (showBackPlane && !_backPlaneVisible) {
+        _scene->addEntity(_backPlaneEntity);
+        _backPlaneVisible = YES;
+    } else if (!showBackPlane && _backPlaneVisible) {
+        _scene->remove(_backPlaneEntity);
+        _backPlaneVisible = NO;
     }
 }
 
@@ -398,14 +365,9 @@ static const size_t MAX_INDICES = 8000;
         _faceMeshVisible = NO;
     }
 
-    if (_backPlaneLeftVisible) {
-        _scene->remove(_backPlaneLeftEntity);
-        _backPlaneLeftVisible = NO;
-    }
-
-    if (_backPlaneRightVisible) {
-        _scene->remove(_backPlaneRightEntity);
-        _backPlaneRightVisible = NO;
+    if (_backPlaneVisible) {
+        _scene->remove(_backPlaneEntity);
+        _backPlaneVisible = NO;
     }
 }
 
@@ -415,8 +377,7 @@ static const size_t MAX_INDICES = 8000;
     [self hide];
 
     EntityManager::get().destroy(_faceMeshEntity);
-    EntityManager::get().destroy(_backPlaneLeftEntity);
-    EntityManager::get().destroy(_backPlaneRightEntity);
+    EntityManager::get().destroy(_backPlaneEntity);
 
     if (_faceMeshVertexBuffer) {
         _engine->destroy(_faceMeshVertexBuffer);
@@ -424,11 +385,8 @@ static const size_t MAX_INDICES = 8000;
     if (_faceMeshIndexBuffer) {
         _engine->destroy(_faceMeshIndexBuffer);
     }
-    if (_backPlaneLeftVertexBuffer) {
-        _engine->destroy(_backPlaneLeftVertexBuffer);
-    }
-    if (_backPlaneRightVertexBuffer) {
-        _engine->destroy(_backPlaneRightVertexBuffer);
+    if (_backPlaneVertexBuffer) {
+        _engine->destroy(_backPlaneVertexBuffer);
     }
     if (_backPlaneIndexBuffer) {
         _engine->destroy(_backPlaneIndexBuffer);
@@ -436,11 +394,8 @@ static const size_t MAX_INDICES = 8000;
     if (_faceMeshMaterialInstance) {
         _engine->destroy(_faceMeshMaterialInstance);
     }
-    if (_backPlaneLeftMaterialInstance) {
-        _engine->destroy(_backPlaneLeftMaterialInstance);
-    }
-    if (_backPlaneRightMaterialInstance) {
-        _engine->destroy(_backPlaneRightMaterialInstance);
+    if (_backPlaneMaterialInstance) {
+        _engine->destroy(_backPlaneMaterialInstance);
     }
     if (_debugFaceMaterial) {
         _engine->destroy(_debugFaceMaterial);
