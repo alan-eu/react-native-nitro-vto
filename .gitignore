@@ -60,6 +60,9 @@ packages/react-native-nitro-vto/ios/DebugRenderer.*
 packages/react-native-nitro-vto/ios/MatrixUtils.*
 packages/react-native-nitro-vto/ios/KalmanFilter.*
 packages/react-native-nitro-vto/ios/LoaderUtils.*
+packages/react-native-nitro-vto/ios/OcclusionConstants.*
+packages/react-native-nitro-vto/ios/LightingConstants.*
+packages/react-native-nitro-vto/ios/FaceMeshTopology.*
 packages/react-native-nitro-vto/src/expo.ts
 packages/react-native-nitro-vto/src/types.ts
 packages/react-native-vto/android/src/main/java/eu/alan/vto/core/
@@ -75,5 +78,8 @@ packages/react-native-vto/ios/DebugRenderer.*
 packages/react-native-vto/ios/MatrixUtils.*
 packages/react-native-vto/ios/KalmanFilter.*
 packages/react-native-vto/ios/LoaderUtils.*
+packages/react-native-vto/ios/OcclusionConstants.*
+packages/react-native-vto/ios/LightingConstants.*
+packages/react-native-vto/ios/FaceMeshTopology.*
 packages/react-native-vto/src/expo.ts
 packages/react-native-vto/src/types.ts
