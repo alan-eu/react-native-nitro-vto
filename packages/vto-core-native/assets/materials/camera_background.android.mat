@@ -24,6 +24,10 @@ fragment {
         // It still reads visibly brighter than iOS's ARKit feed, so we scale down to match.
         // Tweak this value if a future device calibration drifts.
         color.rgb *= 0.90;
+        // Camera feed is already display-encoded; the post-processing pass
+        // would re-tone-map it and blow out highlights. Pre-invert the
+        // ACES-to-sRGB curve so the round-trip is a no-op.
+        color.rgb = inverseTonemapSRGB(color.rgb);
         material.baseColor = color;
     }
 }

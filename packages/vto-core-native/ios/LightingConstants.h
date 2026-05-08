@@ -6,11 +6,11 @@
 // LightingConstants.kt.
 
 // Floor intensity (lux) applied even when the scene is dark.
-static const float kBaseIntensity = 30000.0f;
+static const float kBaseIntensity = 20000.0f;
 
 // Range added on top of kBaseIntensity scaled by normalized pixel
 // intensity in [0, 1]. So the final intensity sweeps from kBaseIntensity
 // to (kBaseIntensity + kIntensityFactor) as the scene brightens.
-static const float kIntensityFactor = 60000.0f;
+static const float kIntensityFactor = 40000.0f;
 
 #endif /* LightingConstants_h */

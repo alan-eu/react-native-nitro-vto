@@ -7,12 +7,14 @@ import android.view.Surface
 import android.view.SurfaceView
 import android.opengl.Matrix
 import com.google.android.filament.Camera
+import com.google.android.filament.ColorGrading
 import com.google.android.filament.Engine
 import com.google.android.filament.Entity
 import com.google.android.filament.EntityManager
 import com.google.android.filament.Renderer
 import com.google.android.filament.Scene
 import com.google.android.filament.SwapChain
+import com.google.android.filament.ToneMapper
 import com.google.android.filament.View
 import com.google.android.filament.Viewport
 import com.google.ar.core.Frame
@@ -51,6 +53,7 @@ class VTORenderer(private val context: Context) {
     private lateinit var uiHelper: UiHelper
     private lateinit var displayHelper: DisplayHelper
     private var swapChain: SwapChain? = null
+    private var colorGrading: ColorGrading? = null
 
     // Camera background renderer
     private lateinit var cameraTextureRenderer: CameraTextureRenderer
@@ -135,7 +138,18 @@ class VTORenderer(private val context: Context) {
         view.scene = scene
 
         // Configure view
-        view.isPostProcessingEnabled = false
+        view.isPostProcessingEnabled = true
+
+        // Use a Filmic tone mapper instead of the default ACES — Filmic
+        // compresses bright highlights more, taming the shine on the
+        // glasses frame coming off the IBL. NOTE: the camera material's
+        // `inverseTonemapSRGB` is the inverse of ACES, not Filmic, so the
+        // passthrough roundtrip is no longer exact; mid-tones look fine,
+        // bright highlights in the camera feed will sit slightly darker.
+        colorGrading = ColorGrading.Builder()
+            .toneMapper(ToneMapper.Filmic())
+            .build(engine)
+        view.colorGrading = colorGrading
 
         // Setup UiHelper for surface management
         uiHelper = UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK).apply {
@@ -397,6 +411,7 @@ class VTORenderer(private val context: Context) {
 
         swapChain?.let { engine.destroySwapChain(it) }
         engine.destroyView(view)
+        colorGrading?.let { engine.destroyColorGrading(it) }
         engine.destroyScene(scene)
         engine.destroyRenderer(renderer)
         engine.destroy()

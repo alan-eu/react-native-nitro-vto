@@ -30,6 +30,11 @@ fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
         vec2 uv = getUV0();
-        material.baseColor = texture(materialParams_cameraFeed, uv);
+        vec4 color = texture(materialParams_cameraFeed, uv);
+        // Camera feed is already display-encoded; the post-processing pass
+        // would re-tone-map it and blow out highlights. Pre-invert the
+        // ACES-to-sRGB curve so the round-trip is a no-op.
+        color.rgb = inverseTonemapSRGB(color.rgb);
+        material.baseColor = color;
     }
 }
