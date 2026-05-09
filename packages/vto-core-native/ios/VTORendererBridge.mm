@@ -7,6 +7,8 @@
 #include <filament/Camera.h>
 #include <filament/SwapChain.h>
 #include <filament/Viewport.h>
+#include <filament/ColorGrading.h>
+#include <filament/ToneMapper.h>
 #include <utils/EntityManager.h>
 #include <math/mat4.h>
 
@@ -35,6 +37,7 @@ static NSString *const TAG = @"VTORenderer";
 @property (nonatomic, assign) Camera *camera;
 @property (nonatomic, assign) SwapChain *swapChain;
 @property (nonatomic, assign) utils::Entity cameraEntity;
+@property (nonatomic, assign) ColorGrading *colorGrading;
 
 // Sub-renderers
 @property (nonatomic, strong) CameraTextureRenderer *cameraTextureRenderer;
@@ -105,7 +108,21 @@ static NSString *const TAG = @"VTORenderer";
     _filamentView->setScene(_scene);
 
     // Configure view
-    _filamentView->setPostProcessingEnabled(false);
+    _filamentView->setPostProcessingEnabled(true);
+
+    // Use a Filmic tone mapper instead of the default ACES — Filmic
+    // compresses bright highlights more, taming the shine on the
+    // glasses frame coming off the IBL. NOTE: the camera material's
+    // `inverseTonemapSRGB` is the inverse of ACES, not Filmic, so the
+    // passthrough roundtrip is no longer exact; mid-tones look fine,
+    // bright highlights in the camera feed will sit slightly darker.
+    {
+        FilmicToneMapper filmic;
+        _colorGrading = ColorGrading::Builder()
+            .toneMapper(&filmic)
+            .build(*_engine);
+        _filamentView->setColorGrading(_colorGrading);
+    }
 
     // Create swap chain from Metal layer
     CAMetalLayer *metalLayer = (CAMetalLayer *)_metalView.layer;
@@ -314,6 +331,9 @@ static NSString *const TAG = @"VTORenderer";
     }
     if (_filamentView) {
         _engine->destroy(_filamentView);
+    }
+    if (_colorGrading) {
+        _engine->destroy(_colorGrading);
     }
     if (_scene) {
         _engine->destroy(_scene);

@@ -7,7 +7,7 @@ package eu.alan.vto.core
  */
 internal object LightingConstants {
     /** Floor intensity (lux) applied even when the scene is dark. */
-    const val BASE_INTENSITY = 30_000f
+    const val BASE_INTENSITY = 20_000f
 
     /**
      * Range added on top of BASE_INTENSITY scaled by normalized pixel
@@ -15,5 +15,5 @@ internal object LightingConstants {
      * BASE_INTENSITY to (BASE_INTENSITY + INTENSITY_FACTOR) as the
      * scene brightens.
      */
-    const val INTENSITY_FACTOR = 60_000f
+    const val INTENSITY_FACTOR = 40_000f
 }
