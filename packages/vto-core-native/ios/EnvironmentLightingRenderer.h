@@ -9,17 +9,23 @@ namespace filament {
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- * Handles environment-based lighting (IBL) for AR rendering.
- * Loads skybox and indirect light from KTX files and updates
- * intensity based on ARKit light estimation.
+ * Handles environment-based lighting for AR rendering.
+ *
+ * - Static studio IBL (specular cubemap + baked SH) loaded once at
+ *   setup; never modulated per frame (see ADR 0011).
+ * - Per-frame directional ("sun") light driven by ARKit's
+ *   ARDirectionalLightEstimate (when face-tracking provides it):
+ *   intensity in lux, direction in face-local-ish space.
  */
 @interface EnvironmentLightingRenderer : NSObject
 
-/// Setup environment lighting with IBL from KTX files
+/// Setup environment lighting + create the directional light entity
 - (void)setupWithEngine:(filament::Engine *)engine scene:(filament::Scene *)scene;
 
-/// Update lighting intensity based on ARKit light estimation
-- (void)updateFromARKitWithLightEstimate:(ARLightEstimate *)lightEstimate;
+/// Update the directional light from an ARKit light estimate. No-op if
+/// the estimate isn't an ARDirectionalLightEstimate (older iOS or
+/// non-face-tracking sessions).
+- (void)updateDirectionalFromARKitWithLightEstimate:(ARLightEstimate *)lightEstimate;
 
 /// Cleanup and destroy resources
 - (void)destroy;
