@@ -104,6 +104,13 @@ static NSString *const TAG = @"VTORenderer";
     _cameraEntity = em.create();
     _camera = _engine->createCamera(_cameraEntity);
 
+    // Pin Filament's photographic exposure model to a known reference
+    // (sceneview's defaults: f/16, 1/125s, ISO 100). Locking the EV here
+    // means our directional-light intensity calibration in
+    // EnvironmentLightingRenderer reads the same lux values regardless
+    // of any scene-driven exposure changes.
+    _camera->setExposure(16.0f, 1.0f / 125.0f, 100.0f);
+
     _filamentView->setCamera(_camera);
     _filamentView->setScene(_scene);
 
@@ -272,9 +279,14 @@ static NSString *const TAG = @"VTORenderer";
     [_cameraTextureRenderer updateTextureWithFrame:frame];
     [_cameraTextureRenderer updateTransformWithFrame:frame];
 
-    // Update lighting from ARKit light estimation
+    // Per-frame directional ("sun") light tracks the AR light estimate.
+    // The IBL itself stays static — see ADR 0011 — so specular reflections
+    // are platform-equivalent; the directional light adds scene-tracking
+    // shading on top. In face-tracking sessions ARKit returns an
+    // ARDirectionalLightEstimate via frame.lightEstimate (the light
+    // estimate lives on the frame, not on the face anchor).
     if (frame.lightEstimate) {
-        [_environmentLightingRenderer updateFromARKitWithLightEstimate:frame.lightEstimate];
+        [_environmentLightingRenderer updateDirectionalFromARKitWithLightEstimate:frame.lightEstimate];
     }
 
     // Update face occlusion and glasses transform if face detected

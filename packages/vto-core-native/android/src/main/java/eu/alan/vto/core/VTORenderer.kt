@@ -134,6 +134,14 @@ class VTORenderer(private val context: Context) {
         // Create camera
         cameraEntity = EntityManager.get().create()
         filamentCamera = engine.createCamera(cameraEntity)
+
+        // Pin Filament's photographic exposure model to a known reference
+        // (sceneview's defaults: f/16, 1/125s, ISO 100). Locking the EV
+        // here means our directional-light intensity calibration in
+        // EnvironmentLightingRenderer reads the same lux values
+        // regardless of any scene-driven exposure changes.
+        filamentCamera.setExposure(16.0f, 1.0f / 125.0f, 100.0f)
+
         view.camera = filamentCamera
         view.scene = scene
 
@@ -351,8 +359,11 @@ class VTORenderer(private val context: Context) {
             // Update material to use the correct texture for this frame
             cameraTextureRenderer.updateCameraTexture(frame)
 
-            // Update lighting from ARCore light estimation
-            environmentLightingRenderer.updateFromARCore(frame)
+            // Per-frame directional ("sun") light tracks the AR light
+            // estimate. The IBL itself stays static — see ADR 0011 — so
+            // specular reflections are platform-equivalent; the directional
+            // light adds scene-tracking shading on top.
+            environmentLightingRenderer.updateDirectionalFromARCore(frame)
 
             // Update UV transform for proper aspect ratio
             if (width > 0 && height > 0) {
