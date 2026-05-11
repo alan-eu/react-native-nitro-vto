@@ -131,6 +131,28 @@ static NSString *const TAG = @"VTORenderer";
         _filamentView->setColorGrading(_colorGrading);
     }
 
+    // SSAO — grounds the glasses to the face (contact shadow at the
+    // temple-skin boundary, around the nose-pad). 0.3m radius is right
+    // for face-scale geometry; MEDIUM is the cheap-but-visible knee.
+    // See ADR 0012.
+    {
+        View::AmbientOcclusionOptions ssao;
+        ssao.enabled = true;
+        ssao.radius = 0.3f;
+        ssao.intensity = 1.0f;
+        ssao.quality = View::QualityLevel::MEDIUM;
+        _filamentView->setAmbientOcclusionOptions(ssao);
+    }
+
+    // TAA for edge AA — temporal accumulation smooths the metallic
+    // frame silhouette as the head moves and damps sub-pixel jitter
+    // FXAA can't reach. See ADR 0012.
+    {
+        View::TemporalAntiAliasingOptions taa;
+        taa.enabled = true;
+        _filamentView->setTemporalAntiAliasingOptions(taa);
+    }
+
     // Create swap chain from Metal layer
     CAMetalLayer *metalLayer = (CAMetalLayer *)_metalView.layer;
     metalLayer.opaque = YES;  // We don't need transparency - we render full camera background

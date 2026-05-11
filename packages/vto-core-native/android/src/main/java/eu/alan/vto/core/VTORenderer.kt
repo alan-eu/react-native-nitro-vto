@@ -166,6 +166,24 @@ class VTORenderer(private val context: Context) {
             .build(engine)
         view.colorGrading = colorGrading
 
+        // SSAO — grounds the glasses to the face (contact shadow at the
+        // temple-skin boundary, around the nose-pad). 0.3m radius is
+        // right for face-scale geometry; MEDIUM is the cheap-but-visible
+        // knee. See ADR 0012.
+        view.ambientOcclusionOptions = view.ambientOcclusionOptions.apply {
+            enabled = true
+            radius = 0.3f
+            intensity = 1.0f
+            quality = View.QualityLevel.MEDIUM
+        }
+
+        // TAA for edge AA — temporal accumulation smooths the metallic
+        // frame silhouette as the head moves and damps sub-pixel jitter
+        // FXAA can't reach. See ADR 0012.
+        view.temporalAntiAliasingOptions = view.temporalAntiAliasingOptions.apply {
+            enabled = true
+        }
+
         // Setup UiHelper for surface management
         uiHelper = UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK).apply {
             renderCallback = object : UiHelper.RendererCallback {
