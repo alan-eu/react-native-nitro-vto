@@ -70,6 +70,12 @@ export interface NitroVtoViewProps extends HybridViewProps {
    * Default: false.
    */
   debug?: boolean;
+
+  /**
+   * Show a small native FPS counter in the top-right corner of the view.
+   * Default: false.
+   */
+  showNativeFPS?: boolean;
 }
 
 /** Methods available on the NitroVtoView component. */

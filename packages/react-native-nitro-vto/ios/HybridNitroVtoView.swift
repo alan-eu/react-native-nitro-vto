@@ -79,6 +79,12 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
         }
     }
 
+    public var showNativeFPS: Bool? = nil {
+        didSet {
+            nitroVtoView.setShowNativeFPS(showNativeFPS)
+        }
+    }
+
     // MARK: - Methods implementation
 
     public func hideGlasses() throws {

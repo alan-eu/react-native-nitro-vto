@@ -50,6 +50,11 @@ public class VtoView: UIView {
     // Display link for rendering
     private var displayLink: CADisplayLink?
 
+    // FPS counter overlay (visible when debug=true).
+    private var fpsLabel: UILabel?
+    private var fpsFrameCount: Int = 0
+    private var fpsLastUpdateTime: CFTimeInterval = 0
+
     public override init(frame: CGRect) {
         super.init(frame: frame)
         setupMetalView()
@@ -72,6 +77,18 @@ public class VtoView: UIView {
         mtkView.enableSetNeedsDisplay = false
         addSubview(mtkView)
         metalView = mtkView
+
+        // FPS overlay — top-right, monospace, hidden until debug=true.
+        let label = UILabel(frame: CGRect(x: bounds.width - 110, y: 30, width: 100, height: 18))
+        label.autoresizingMask = [.flexibleLeftMargin, .flexibleBottomMargin]
+        label.font = UIFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold)
+        label.textColor = .yellow
+        label.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        label.textAlignment = .right
+        label.text = "—"
+        label.isHidden = true
+        addSubview(label)
+        fpsLabel = label
     }
 
     // MARK: - Public API
@@ -122,6 +139,10 @@ public class VtoView: UIView {
     func setDebug(_ enabled: Bool?) {
         debugState = enabled ?? false
         vtoRenderer?.setDebug(debugState)
+    }
+
+    func setShowNativeFPS(_ enabled: Bool?) {
+        fpsLabel?.isHidden = !(enabled ?? false)
     }
 
     // MARK: - Initialization
@@ -256,6 +277,18 @@ public class VtoView: UIView {
 
         // Update renderer with current frame
         vtoRenderer?.render(with: frame, faces: faces)
+
+        // FPS counter — refresh once per 500ms.
+        fpsFrameCount += 1
+        let now = CACurrentMediaTime()
+        if fpsLastUpdateTime == 0 { fpsLastUpdateTime = now }
+        let dt = now - fpsLastUpdateTime
+        if dt >= 0.5, let label = fpsLabel, !label.isHidden {
+            let fps = Double(fpsFrameCount) / dt
+            label.text = String(format: "%.0f fps · %.1f ms", fps, 1000.0 / max(fps, 1))
+            fpsFrameCount = 0
+            fpsLastUpdateTime = now
+        }
     }
 
     // MARK: - ARKit Setup

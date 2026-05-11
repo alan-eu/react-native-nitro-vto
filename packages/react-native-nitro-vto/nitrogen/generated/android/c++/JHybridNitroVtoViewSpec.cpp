@@ -150,6 +150,15 @@ namespace margelo::nitro::nitrovto {
     static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JBoolean> /* debug */)>("setDebug");
     method(_javaPart, debug.has_value() ? jni::JBoolean::valueOf(debug.value()) : nullptr);
   }
+  std::optional<bool> JHybridNitroVtoViewSpec::getShowNativeFPS() {
+    static const auto method = javaClassStatic()->getMethod<jni::local_ref<jni::JBoolean>()>("getShowNativeFPS");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional(static_cast<bool>(__result->value())) : std::nullopt;
+  }
+  void JHybridNitroVtoViewSpec::setShowNativeFPS(std::optional<bool> showNativeFPS) {
+    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JBoolean> /* showNativeFPS */)>("setShowNativeFPS");
+    method(_javaPart, showNativeFPS.has_value() ? jni::JBoolean::valueOf(showNativeFPS.value()) : nullptr);
+  }
 
   // Methods
   void JHybridNitroVtoViewSpec::hideGlasses() {

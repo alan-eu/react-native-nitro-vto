@@ -76,6 +76,10 @@ public class VtoBridgeView: VtoView {
         super.setDebug(enabled?.boolValue)
     }
 
+    @objc public func rnSetShowNativeFPS(_ enabled: NSNumber?) {
+        super.setShowNativeFPS(enabled?.boolValue)
+    }
+
     @objc public func rnHideGlasses() {
         super.hideGlasses()
     }

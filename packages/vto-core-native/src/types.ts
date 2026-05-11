@@ -43,6 +43,14 @@ export interface VtoCommonProps {
    */
   debug?: boolean;
 
+  /**
+   * Show a small native FPS counter in the top-right corner of the view.
+   * Reads frames-per-second + frame-time-in-ms directly from the render
+   * loop on each platform. Intended for performance profiling.
+   * Default: false.
+   */
+  showNativeFPS?: boolean;
+
   /** Fires once when the glTF model finishes loading. */
   onModelLoaded?: (modelUrl: string) => void;
 

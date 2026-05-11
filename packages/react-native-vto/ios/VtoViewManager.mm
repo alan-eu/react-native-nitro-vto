@@ -49,6 +49,10 @@ RCT_CUSTOM_VIEW_PROPERTY(debug, BOOL, VtoBridgeView) {
   [view rnSetDebug:(json ? @([RCTConvert BOOL:json]) : nil)];
 }
 
+RCT_CUSTOM_VIEW_PROPERTY(showNativeFPS, BOOL, VtoBridgeView) {
+  [view rnSetShowNativeFPS:(json ? @([RCTConvert BOOL:json]) : nil)];
+}
+
 // --- Callbacks (RN wires these via the event names) -------------------------
 // The JS-side prop names are onXxx; the Swift bridge view exposes them under
 // `onXxxEvent` to avoid clashing with the core closure properties of the same

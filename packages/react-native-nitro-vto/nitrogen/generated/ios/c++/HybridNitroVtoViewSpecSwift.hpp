@@ -120,6 +120,13 @@ namespace margelo::nitro::nitrovto {
     inline void setDebug(std::optional<bool> debug) noexcept override {
       _swiftPart.setDebug(debug);
     }
+    inline std::optional<bool> getShowNativeFPS() noexcept override {
+      auto __result = _swiftPart.getShowNativeFPS();
+      return __result;
+    }
+    inline void setShowNativeFPS(std::optional<bool> showNativeFPS) noexcept override {
+      _swiftPart.setShowNativeFPS(showNativeFPS);
+    }
 
   public:
     // Methods
