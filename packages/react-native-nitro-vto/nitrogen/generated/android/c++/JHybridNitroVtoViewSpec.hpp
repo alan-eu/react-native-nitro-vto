@@ -68,6 +68,8 @@ namespace margelo::nitro::nitrovto {
     void setForwardOffset(std::optional<double> forwardOffset) override;
     std::optional<bool> getDebug() override;
     void setDebug(std::optional<bool> debug) override;
+    std::optional<bool> getShowNativeFPS() override;
+    void setShowNativeFPS(std::optional<bool> showNativeFPS) override;
 
   public:
     // Methods

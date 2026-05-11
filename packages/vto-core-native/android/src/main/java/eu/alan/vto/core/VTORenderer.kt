@@ -112,6 +112,13 @@ class VTORenderer(private val context: Context) {
     // across frames — cleared only by showGlasses().
     private var isHidden = false
 
+    // FPS tracking — VtoView reads `lastFps` periodically to update the
+    // overlay label.
+    private var fpsFrameCount = 0
+    private var fpsLastUpdateNs = 0L
+    @Volatile var lastFps: Float = 0f
+        private set
+
     /**
      * Initialize Filament and attach to surface view
      */
@@ -397,6 +404,17 @@ class VTORenderer(private val context: Context) {
             if (renderer.beginFrame(swap, frame.timestamp)) {
                 renderer.render(view)
                 renderer.endFrame()
+            }
+
+            // FPS bookkeeping — refresh the public lastFps every 500ms.
+            fpsFrameCount++
+            val now = System.nanoTime()
+            if (fpsLastUpdateNs == 0L) fpsLastUpdateNs = now
+            val dtNs = now - fpsLastUpdateNs
+            if (dtNs >= 500_000_000L) {
+                lastFps = (fpsFrameCount * 1_000_000_000f) / dtNs
+                fpsFrameCount = 0
+                fpsLastUpdateNs = now
             }
 
         } catch (e: Exception) {

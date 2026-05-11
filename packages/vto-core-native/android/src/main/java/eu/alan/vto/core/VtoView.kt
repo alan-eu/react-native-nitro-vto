@@ -1,9 +1,19 @@
 package eu.alan.vto.core
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
+import android.graphics.Color
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.SurfaceView
+import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.TextView
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.Config
 import com.google.ar.core.Session
@@ -37,6 +47,50 @@ class VtoView(context: Context) : FrameLayout(context) {
     // SurfaceView for rendering
     private val surfaceView: SurfaceView = SurfaceView(context)
 
+    // FPS overlay (visible when debug=true).
+    private val fpsLabel: TextView = TextView(context).apply {
+        text = "—"
+        setTextColor(Color.YELLOW)
+        setBackgroundColor(Color.argb(102, 0, 0, 0))
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+        typeface = android.graphics.Typeface.MONOSPACE
+        gravity = Gravity.END
+        visibility = View.GONE
+        val pad = (context.resources.displayMetrics.density * 4f).toInt()
+        setPadding(pad, pad / 2, pad, pad / 2)
+    }
+    private val fpsHandler = Handler(Looper.getMainLooper())
+    private val fpsRunnable = object : Runnable {
+        override fun run() {
+            val fps = vtoRenderer?.lastFps ?: 0f
+            fpsLabel.text = "%.0f fps · %.1f ms".format(
+                fps,
+                if (fps > 0f) 1000f / fps else 0f
+            )
+            fpsHandler.postDelayed(this, 500)
+        }
+    }
+
+    private fun resolveActivity(): Activity? {
+        // 1. Direct cast (works when consumer passes a plain Activity context).
+        (context as? Activity)?.let { return it }
+        // 2. Walk the ContextWrapper chain (works for some wrappers).
+        var c: Context? = context
+        while (c is ContextWrapper) {
+            if (c is Activity) return c
+            c = c.baseContext
+        }
+        // 3. React Native's ThemedReactContext.getCurrentActivity() —
+        //    accessed via reflection so vto-core-native doesn't take a
+        //    hard dependency on the RN host classes.
+        return try {
+            val method = context.javaClass.methods.firstOrNull { it.name == "getCurrentActivity" }
+            method?.invoke(context) as? Activity
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     // Filament renderer
     private var vtoRenderer: VTORenderer? = null
 
@@ -59,6 +113,34 @@ class VtoView(context: Context) : FrameLayout(context) {
             LayoutParams.MATCH_PARENT,
             LayoutParams.MATCH_PARENT
         ))
+        // The fpsLabel is intentionally NOT added here — Filament's
+        // SurfaceView surface composites above sibling views on some
+        // devices, so the label gets parented to the activity's decor
+        // view (outside the React Native subtree) lazily on first
+        // setDebug(true). See attachFpsLabelIfNeeded().
+    }
+
+    private fun attachFpsLabelIfNeeded() {
+        if (fpsLabel.parent != null) return
+        val activity = resolveActivity() ?: return
+        val decor = activity.window?.decorView as? ViewGroup ?: return
+        val density = context.resources.displayMetrics.density
+        // Top-right of the activity window. Parented to the decor view
+        // rather than this FrameLayout so the SurfaceView's separately-
+        // composited GL surface can't occlude it.
+        val lp = FrameLayout.LayoutParams(
+            (110 * density).toInt(),
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.TOP or Gravity.END
+        ).apply {
+            topMargin = (30 * density).toInt()
+            rightMargin = (8 * density).toInt()
+        }
+        activity.runOnUiThread { decor.addView(fpsLabel, lp) }
+    }
+
+    private fun detachFpsLabel() {
+        (fpsLabel.parent as? ViewGroup)?.removeView(fpsLabel)
     }
 
     /**
@@ -109,10 +191,25 @@ class VtoView(context: Context) : FrameLayout(context) {
     }
 
     /**
-     * Set debug mode enabled
+     * Set debug visualization (colored face-mesh + back-plane overlays).
      */
     fun setDebug(enabled: Boolean?) {
         vtoRenderer?.setDebug(enabled ?: false)
+    }
+
+    /**
+     * Show/hide the native FPS counter overlay (top-right of the activity).
+     */
+    fun setShowNativeFPS(enabled: Boolean?) {
+        val on = enabled ?: false
+        if (on) {
+            attachFpsLabelIfNeeded()
+            fpsLabel.visibility = View.VISIBLE
+        } else {
+            fpsLabel.visibility = View.GONE
+        }
+        fpsHandler.removeCallbacks(fpsRunnable)
+        if (on) fpsHandler.post(fpsRunnable)
     }
 
     /**
@@ -191,6 +288,8 @@ class VtoView(context: Context) : FrameLayout(context) {
      * Destroy and clean up resources
      */
     fun destroy() {
+        fpsHandler.removeCallbacks(fpsRunnable)
+        detachFpsLabel()
         arSession?.close()
         arSession = null
         vtoRenderer?.destroy()

@@ -119,6 +119,12 @@ abstract class HybridNitroVtoViewSpec: HybridView() {
   @set:DoNotStrip
   @set:Keep
   abstract var debug: Boolean?
+  
+  @get:DoNotStrip
+  @get:Keep
+  @set:DoNotStrip
+  @set:Keep
+  abstract var showNativeFPS: Boolean?
 
   // Methods
   @DoNotStrip

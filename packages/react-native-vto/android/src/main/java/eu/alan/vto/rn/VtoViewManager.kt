@@ -76,6 +76,11 @@ class VtoViewManager : SimpleViewManager<VtoView>() {
         view.setDebug(enabled)
     }
 
+    @ReactProp(name = "showNativeFPS")
+    fun setShowNativeFPS(view: VtoView, enabled: Boolean?) {
+        view.setShowNativeFPS(enabled)
+    }
+
     // --- Commands --------------------------------------------------------
 
     override fun receiveCommand(view: VtoView, commandId: String, args: ReadableArray?) {

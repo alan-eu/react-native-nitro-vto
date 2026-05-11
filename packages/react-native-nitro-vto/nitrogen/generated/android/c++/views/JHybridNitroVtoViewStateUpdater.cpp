@@ -72,6 +72,10 @@ void JHybridNitroVtoViewStateUpdater::updateViewProps(jni::alias_ref<jni::JClass
     view->setDebug(props.debug.value);
     // TODO: Set isDirty = false
   }
+  if (props.showNativeFPS.isDirty) {
+    view->setShowNativeFPS(props.showNativeFPS.value);
+    // TODO: Set isDirty = false
+  }
 
   // Update hybridRef if it changed
   if (props.hybridRef.isDirty) {

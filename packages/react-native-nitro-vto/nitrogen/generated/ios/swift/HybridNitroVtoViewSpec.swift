@@ -20,6 +20,7 @@ public protocol HybridNitroVtoViewSpec_protocol: HybridObject, HybridView {
   var backPlaneOcclusion: Bool? { get set }
   var forwardOffset: Double? { get set }
   var debug: Bool? { get set }
+  var showNativeFPS: Bool? { get set }
 
   // Methods
   func hideGlasses() throws -> Void

@@ -76,6 +76,12 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.setDebug(value)
         }
 
+    override var showNativeFPS: Boolean? = null
+        set(value) {
+            field = value
+            nitroVtoView.setShowNativeFPS(value)
+        }
+
     // Methods implementation
     override fun hideGlasses() {
         nitroVtoView.hideGlasses()

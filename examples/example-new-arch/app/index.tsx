@@ -158,6 +158,7 @@ const App = () => {
         backPlaneOcclusion={backPlaneOcclusionEnabled}
         forwardOffset={0.0035}
         debug={debugEnabled}
+        showNativeFPS={true}
         onModelLoaded={callback(handleModelLoaded)}
         onFaceTracked={callback(handleFaceTracked)}
         onGlassesDisplayed={callback(handleGlassesDisplayed)}

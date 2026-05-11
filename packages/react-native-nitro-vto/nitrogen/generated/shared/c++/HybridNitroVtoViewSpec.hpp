@@ -64,6 +64,8 @@ namespace margelo::nitro::nitrovto {
       virtual void setForwardOffset(std::optional<double> forwardOffset) = 0;
       virtual std::optional<bool> getDebug() = 0;
       virtual void setDebug(std::optional<bool> debug) = 0;
+      virtual std::optional<bool> getShowNativeFPS() = 0;
+      virtual void setShowNativeFPS(std::optional<bool> showNativeFPS) = 0;
 
     public:
       // Methods
