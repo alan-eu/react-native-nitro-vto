@@ -96,6 +96,20 @@ static NSString *const TAG = @"VTORenderer";
     }
 
     _renderer = _engine->createRenderer();
+
+    // Works around a Filament iOS Metal bug: with
+    // `setPostProcessingEnabled(true)`, the intermediate HDR color
+    // buffer is pool-allocated and not initialized at frame start. The
+    // camera-background fullscreen quad fails to cover the rightmost
+    // column on Metal, so recycled-texture memory bleeds through as a
+    // white vertical band when geometry approaches that edge. Forcing
+    // a per-frame clear masks the uncovered pixels.
+    Renderer::ClearOptions co{};
+    co.clear = true;
+    co.clearColor = {0, 0, 0, 1};
+
+    _renderer->setClearOptions(co);
+    
     _scene = _engine->createScene();
     _filamentView = _engine->createView();
 
