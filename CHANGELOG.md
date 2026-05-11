@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.12.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.6...v0.12.0) (2026-05-11)
+
+### ✨ Features
+
+* add native FPS counter ([#57](https://github.com/alan-eu/react-native-nitro-vto/issues/57)) ([8cb3bea](https://github.com/alan-eu/react-native-nitro-vto/commit/8cb3beaef56f6ad9f7006543cd38aa8a1a7da5f2))
+* enable post-processing and filmic tone mapping ([#55](https://github.com/alan-eu/react-native-nitro-vto/issues/55)) ([f11324d](https://github.com/alan-eu/react-native-nitro-vto/commit/f11324d38da8146c10ff207644e2747404a5e506))
+* enable post-processing and filmic tone mapping ([#55](https://github.com/alan-eu/react-native-nitro-vto/issues/55)) ([#56](https://github.com/alan-eu/react-native-nitro-vto/issues/56)) ([e8d0fa9](https://github.com/alan-eu/react-native-nitro-vto/commit/e8d0fa9a8bea2490057ec04ec242d8159f605c55))
+* **ios, android:** articulate temples, single occlusion back plane and const extraction ([#52](https://github.com/alan-eu/react-native-nitro-vto/issues/52)) ([2399c5b](https://github.com/alan-eu/react-native-nitro-vto/commit/2399c5b4d0ffc0df32667fa6ddb53cf33ad50eb4))
+* **ios, android:** Enable SSAO and TAA ([#58](https://github.com/alan-eu/react-native-nitro-vto/issues/58)) ([a74898f](https://github.com/alan-eu/react-native-nitro-vto/commit/a74898f83d10a33533ddf33ad8898078d6aec9d7))
+* **ios:** fill ARKit face mesh eye/mouth holes for occlusion ([#53](https://github.com/alan-eu/react-native-nitro-vto/issues/53)) ([2045859](https://github.com/alan-eu/react-native-nitro-vto/commit/204585972b7bb8472ae99eda63dc560bce4d37b5))
+
+### 🐛 Bug Fixes
+
+* bit-exact camera-feed round-trip through Filmic ([#60](https://github.com/alan-eu/react-native-nitro-vto/issues/60)) ([3b22397](https://github.com/alan-eu/react-native-nitro-vto/commit/3b22397944dee5335faef68b4f43d120d7851e3f))
+* **ios:** workaround for Filament iOS Metal bug ([#59](https://github.com/alan-eu/react-native-nitro-vto/issues/59)) ([39f48df](https://github.com/alan-eu/react-native-nitro-vto/commit/39f48df59968dbd316d37f44c4b4c016aed010d6))
+
 ## [0.11.6](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.5...v0.11.6) (2026-04-28)
 
 ### 🐛 Bug Fixes
