@@ -131,12 +131,10 @@ static NSString *const TAG = @"VTORenderer";
     // Configure view
     _filamentView->setPostProcessingEnabled(true);
 
-    // Use a Filmic tone mapper instead of the default ACES — Filmic
-    // compresses bright highlights more, taming the shine on the
-    // glasses frame coming off the IBL. NOTE: the camera material's
-    // `inverseTonemapSRGB` is the inverse of ACES, not Filmic, so the
-    // passthrough roundtrip is no longer exact; mid-tones look fine,
-    // bright highlights in the camera feed will sit slightly darker.
+    // Filmic tone mapper — compresses bright highlights more than the
+    // default ACES, taming the shine on the metallic glasses frame off
+    // the IBL. The camera material inverts this exact curve + the
+    // piecewise sRGB encoder so the feed round-trips unchanged.
     {
         FilmicToneMapper filmic;
         _colorGrading = ColorGrading::Builder()

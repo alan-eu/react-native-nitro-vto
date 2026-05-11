@@ -24,10 +24,18 @@ fragment {
         // It still reads visibly brighter than iOS's ARKit feed, so we scale down to match.
         // Tweak this value if a future device calibration drifts.
         color.rgb *= 0.90;
-        // Camera feed is already display-encoded; the post-processing pass
-        // would re-tone-map it and blow out highlights. Pre-invert the
-        // ACES-to-sRGB curve so the round-trip is a no-op.
-        color.rgb = inverseTonemapSRGB(color.rgb);
+        // Camera feed is already display-encoded; pre-invert the view's
+        // (Filmic tonemap + sRGB encoder) so the round-trip is exact.
+        // Filament's `inverseTonemapSRGB` uses pow(x, 2.2) for the
+        // gamma step, which doesn't match the piecewise sRGB encoder on
+        // output — we use the real piecewise sRGB→linear here, then the
+        // analytical Filmic inverse.
+        vec3 sRGBToLinear = mix(
+            color.rgb / 12.92,
+            pow((color.rgb + 0.055) / 1.055, vec3(2.4)),
+            step(0.04045, color.rgb)
+        );
+        color.rgb = inverseTonemap(sRGBToLinear);
         material.baseColor = color;
     }
 }
