@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.12.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.12.0...v0.13.0) (2026-05-18)
+## [0.12.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.12.0...v0.12.1) (2026-05-18)
 
 ### ✨ Features
 
