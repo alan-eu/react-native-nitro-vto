@@ -1,6 +1,5 @@
 #import "GlassesRenderer.h"
 #import "LoaderUtils.h"
-#import "KalmanFilter.h"
 #import "MatrixUtils.h"
 #import "OcclusionConstants.h"
 
@@ -25,12 +24,6 @@ using namespace utils;
 
 static NSString *const TAG = @"GlassesRenderer";
 
-// Kalman filter tuning shared by the position + rotation filters. Higher
-// process-noise = more responsive; higher measurement-noise = smoother. Same
-// values used on Android — see GlassesRenderer.kt.
-static const float kKalmanProcessNoise     = 0.1f;
-static const float kKalmanMeasurementNoise = 0.05f;
-
 @interface GlassesRenderer ()
 
 @property (nonatomic, assign) Engine *engine;
@@ -49,10 +42,6 @@ static const float kKalmanMeasurementNoise = 0.05f;
 
 // Current model info
 @property (nonatomic, copy) NSString *currentModelUrl;
-
-// Kalman filters for smoothing
-@property (nonatomic, strong) KalmanFilter3D *positionFilter;
-@property (nonatomic, strong) KalmanFilterQuaternion *rotationFilter;
 
 // Forward offset for glasses positioning (in meters)
 @property (nonatomic, assign) float forwardOffset;
@@ -82,8 +71,6 @@ static const float kKalmanMeasurementNoise = 0.05f;
     if (self) {
         _loadQueue = dispatch_queue_create("com.nitrovto.glassesloader", DISPATCH_QUEUE_SERIAL);
         _isLoading = NO;
-        _positionFilter = [[KalmanFilter3D alloc] initWithProcessNoise:kKalmanProcessNoise measurementNoise:kKalmanMeasurementNoise];
-        _rotationFilter = [[KalmanFilterQuaternion alloc] initWithProcessNoise:kKalmanProcessNoise measurementNoise:kKalmanMeasurementNoise];
         _forwardOffset = kForwardOffset;
     }
     return self;
@@ -246,12 +233,8 @@ static const float kKalmanMeasurementNoise = 0.05f;
     // Get face rotation from transform (world space)
     simd_quatf faceRotationWorld = simd_quaternion(face.transform);
 
-    // Apply Kalman filter smoothing
-    simd_float3 smoothedPosition = [_positionFilter updateWithX:noseBridgeWorld.x y:noseBridgeWorld.y z:noseBridgeWorld.z];
-    simd_quatf smoothedRotation = [_rotationFilter updateWithQuaternion:faceRotationWorld];
-
     // Build world-space transform matrix (no scaling - models are in real-world meters)
-    simd_float4x4 rotationMatrix = [MatrixUtils quaternionToMatrix:smoothedRotation];
+    simd_float4x4 rotationMatrix = [MatrixUtils quaternionToMatrix:faceRotationWorld];
 
     // Offset glasses along face's Z axis (forward/backward)
     simd_float3 forward = simd_make_float3(rotationMatrix.columns[2].x,
@@ -259,9 +242,9 @@ static const float kKalmanMeasurementNoise = 0.05f;
                                             rotationMatrix.columns[2].z);
 
     // Set world-space position with forward offset
-    rotationMatrix.columns[3].x = smoothedPosition.x + forward.x * _forwardOffset;
-    rotationMatrix.columns[3].y = smoothedPosition.y + forward.y * _forwardOffset;
-    rotationMatrix.columns[3].z = smoothedPosition.z + forward.z * _forwardOffset;
+    rotationMatrix.columns[3].x = noseBridgeWorld.x + forward.x * _forwardOffset;
+    rotationMatrix.columns[3].y = noseBridgeWorld.y + forward.y * _forwardOffset;
+    rotationMatrix.columns[3].z = noseBridgeWorld.z + forward.z * _forwardOffset;
 
     // Convert simd matrix to filament matrix
     filament::math::mat4f filamentTransform;
@@ -314,13 +297,6 @@ static const float kKalmanMeasurementNoise = 0.05f;
 
     filament::math::mat4f hideMatrix = [MatrixUtils createHideMatrix];
     transformManager.setTransform(instance, hideMatrix);
-
-    [self resetFilters];
-}
-
-- (void)resetFilters {
-    [_positionFilter reset];
-    [_rotationFilter reset];
 }
 
 - (void)setForwardOffset:(float)offset {
@@ -372,8 +348,6 @@ static const float kKalmanMeasurementNoise = 0.05f;
         _assetLoader->destroyAsset(_glassesAsset);
         _glassesAsset = nullptr;
     }
-
-    [self resetFilters];
 
     // Update current model info
     _currentModelUrl = modelUrl;

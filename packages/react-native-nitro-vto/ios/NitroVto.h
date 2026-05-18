@@ -15,7 +15,6 @@
 #import "CameraTextureRenderer.h"
 #import "EnvironmentLightingRenderer.h"
 #import "GlassesRenderer.h"
-#import "KalmanFilter.h"
 #import "LoaderUtils.h"
 #import "MatrixUtils.h"
 

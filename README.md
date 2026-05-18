@@ -42,7 +42,6 @@ Glasses positioning uses world-space coordinates driven by the platform's perspe
    - Android (ARCore): vertices 351 and 122
    - iOS (ARKit): vertices 818 and 366
 3. **Rotation** — face-transform rotation quaternion, in world space.
-4. **Smoothing** — Kalman filters applied to position and rotation for stability.
 
 Models should be authored in meters at real-world size (e.g. a glasses frame width of ~0.135 m). World-space coordinates — rather than screen-space — ensure correct perspective projection and natural glasses behavior when the head moves.
 
