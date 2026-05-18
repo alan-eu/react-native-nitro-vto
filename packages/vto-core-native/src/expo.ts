@@ -12,6 +12,7 @@ const withNitroVto: ConfigPlugin = (config) => {
     config.modResults = addCameraARFeatureToAndroidManifestManifest(
       config.modResults
     );
+    config.modResults = addHighSamplingRateSensorsPermission(config.modResults);
     return config;
   });
 
@@ -68,6 +69,29 @@ const addCameraARFeatureToAndroidManifestManifest = (
       },
     });
   }
+
+  return androidManifest;
+};
+
+const addHighSamplingRateSensorsPermission = (
+  androidManifest: AndroidConfig.Manifest.AndroidManifest
+) => {
+  if (!Array.isArray(androidManifest.manifest["uses-permission"])) {
+    androidManifest.manifest["uses-permission"] = [];
+  }
+
+  const permission = "android.permission.HIGH_SAMPLING_RATE_SENSORS";
+  if (
+    androidManifest.manifest["uses-permission"].some(
+      (p) => p["$"]["android:name"] === permission
+    )
+  ) {
+    return androidManifest;
+  }
+
+  androidManifest.manifest["uses-permission"].push({
+    $: { "android:name": permission },
+  });
 
   return androidManifest;
 };
