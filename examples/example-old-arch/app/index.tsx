@@ -23,10 +23,6 @@ const App = () => {
   const [hasPermission, setHasPermission] = useState(false);
   const [currentModelIndex, setCurrentModelIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [faceMeshOcclusionEnabled, setFaceMeshOcclusionEnabled] =
-    useState(true);
-  const [backPlaneOcclusionEnabled, setBackPlaneOcclusionEnabled] =
-    useState(true);
   const [debugEnabled, setDebugEnabled] = useState(false);
   const [glassesHidden, setGlassesHidden] = useState(false);
 
@@ -98,14 +94,6 @@ const App = () => {
     );
   }, []);
 
-  const handleFaceMeshOcclusion = useCallback(() => {
-    setFaceMeshOcclusionEnabled((prev) => !prev);
-  }, []);
-
-  const handleBackPlaneOcclusion = useCallback(() => {
-    setBackPlaneOcclusionEnabled((prev) => !prev);
-  }, []);
-
   const handleDebug = useCallback(() => {
     setDebugEnabled((prev) => !prev);
   }, []);
@@ -145,8 +133,6 @@ const App = () => {
         style={styles.vtoView}
         modelUrl={currentModel}
         isActive={true}
-        faceMeshOcclusion={faceMeshOcclusionEnabled}
-        backPlaneOcclusion={backPlaneOcclusionEnabled}
         forwardOffset={0.0035}
         debug={debugEnabled}
         showNativeFPS={true}
@@ -166,36 +152,6 @@ const App = () => {
           disabled={isLoading}
         >
           <Text style={styles.buttonText}>Next Model</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.button,
-            faceMeshOcclusionEnabled
-              ? styles.buttonEnabled
-              : styles.buttonDisabled,
-          ]}
-          onPress={handleFaceMeshOcclusion}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>
-            Face Mesh Occlusion{" "}
-            {faceMeshOcclusionEnabled ? "Enabled" : "Disabled"}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.button,
-            backPlaneOcclusionEnabled
-              ? styles.buttonEnabled
-              : styles.buttonDisabled,
-          ]}
-          onPress={handleBackPlaneOcclusion}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>
-            Back Plane Occlusion{" "}
-            {backPlaneOcclusionEnabled ? "Enabled" : "Disabled"}
-          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[

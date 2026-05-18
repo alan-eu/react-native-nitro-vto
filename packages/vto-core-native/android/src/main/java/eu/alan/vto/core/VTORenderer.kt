@@ -308,24 +308,6 @@ class VTORenderer(private val context: Context) {
     }
 
     /**
-     * Set face mesh occlusion enabled
-     */
-    fun setFaceMeshOcclusion(enabled: Boolean) {
-        if (initialized) {
-            faceOcclusionRenderer.setFaceMeshOcclusion(enabled)
-        }
-    }
-
-    /**
-     * Set back plane occlusion enabled
-     */
-    fun setBackPlaneOcclusion(enabled: Boolean) {
-        if (initialized) {
-            faceOcclusionRenderer.setBackPlaneOcclusion(enabled)
-        }
-    }
-
-    /**
      * Set forward offset for glasses positioning (in meters)
      */
     fun setForwardOffset(offset: Float) {

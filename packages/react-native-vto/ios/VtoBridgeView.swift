@@ -60,14 +60,6 @@ public class VtoBridgeView: VtoView {
         super.setIsActive(active)
     }
 
-    @objc public func rnSetFaceMeshOcclusion(_ enabled: NSNumber?) {
-        super.setFaceMeshOcclusion(enabled?.boolValue)
-    }
-
-    @objc public func rnSetBackPlaneOcclusion(_ enabled: NSNumber?) {
-        super.setBackPlaneOcclusion(enabled?.boolValue)
-    }
-
     @objc public func rnSetForwardOffset(_ offset: NSNumber?) {
         super.setForwardOffset(offset?.doubleValue)
     }

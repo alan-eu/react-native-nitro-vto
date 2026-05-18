@@ -279,18 +279,6 @@ static NSString *const TAG = @"VTORenderer";
     _isHidden = NO;
 }
 
-- (void)setFaceMeshOcclusion:(BOOL)enabled {
-    if (_initialized) {
-        [_faceOcclusionRenderer setFaceMeshOcclusion:enabled];
-    }
-}
-
-- (void)setBackPlaneOcclusion:(BOOL)enabled {
-    if (_initialized) {
-        [_faceOcclusionRenderer setBackPlaneOcclusion:enabled];
-    }
-}
-
 - (void)setForwardOffset:(float)offset {
     if (_initialized) {
         [_glassesRenderer setForwardOffset:offset];

@@ -114,24 +114,6 @@ namespace margelo::nitro::nitrovto {
     static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<JFunc_void_std__string::javaobject> /* onGlassesDisplayed */)>("setOnGlassesDisplayed_cxx");
     method(_javaPart, onGlassesDisplayed.has_value() ? JFunc_void_std__string_cxx::fromCpp(onGlassesDisplayed.value()) : nullptr);
   }
-  std::optional<bool> JHybridNitroVtoViewSpec::getFaceMeshOcclusion() {
-    static const auto method = javaClassStatic()->getMethod<jni::local_ref<jni::JBoolean>()>("getFaceMeshOcclusion");
-    auto __result = method(_javaPart);
-    return __result != nullptr ? std::make_optional(static_cast<bool>(__result->value())) : std::nullopt;
-  }
-  void JHybridNitroVtoViewSpec::setFaceMeshOcclusion(std::optional<bool> faceMeshOcclusion) {
-    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JBoolean> /* faceMeshOcclusion */)>("setFaceMeshOcclusion");
-    method(_javaPart, faceMeshOcclusion.has_value() ? jni::JBoolean::valueOf(faceMeshOcclusion.value()) : nullptr);
-  }
-  std::optional<bool> JHybridNitroVtoViewSpec::getBackPlaneOcclusion() {
-    static const auto method = javaClassStatic()->getMethod<jni::local_ref<jni::JBoolean>()>("getBackPlaneOcclusion");
-    auto __result = method(_javaPart);
-    return __result != nullptr ? std::make_optional(static_cast<bool>(__result->value())) : std::nullopt;
-  }
-  void JHybridNitroVtoViewSpec::setBackPlaneOcclusion(std::optional<bool> backPlaneOcclusion) {
-    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JBoolean> /* backPlaneOcclusion */)>("setBackPlaneOcclusion");
-    method(_javaPart, backPlaneOcclusion.has_value() ? jni::JBoolean::valueOf(backPlaneOcclusion.value()) : nullptr);
-  }
   std::optional<double> JHybridNitroVtoViewSpec::getForwardOffset() {
     static const auto method = javaClassStatic()->getMethod<jni::local_ref<jni::JDouble>()>("getForwardOffset");
     auto __result = method(_javaPart);

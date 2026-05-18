@@ -9,8 +9,6 @@
     "onModelLoaded": true,
     "onFaceTracked": true,
     "onGlassesDisplayed": true,
-    "faceMeshOcclusion": true,
-    "backPlaneOcclusion": true,
     "forwardOffset": true,
     "debug": true,
     "showNativeFPS": true,

@@ -30,12 +30,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setupWithEngine:(filament::Engine *)engine
                   scene:(filament::Scene *)scene;
 
-/// Set face mesh occlusion enabled
-- (void)setFaceMeshOcclusion:(BOOL)enabled;
-
-/// Set back plane occlusion enabled
-- (void)setBackPlaneOcclusion:(BOOL)enabled;
-
 /// Update face mesh geometry. The face anchor supplies the world transform;
 /// the topology supplies the (filled) vertex + index buffers — never read
 /// `face.geometry` directly from this method.

@@ -33,14 +33,6 @@ RCT_CUSTOM_VIEW_PROPERTY(isActive, BOOL, VtoBridgeView) {
   [view rnSetIsActive:(json ? [RCTConvert BOOL:json] : YES)];
 }
 
-RCT_CUSTOM_VIEW_PROPERTY(faceMeshOcclusion, BOOL, VtoBridgeView) {
-  [view rnSetFaceMeshOcclusion:(json ? @([RCTConvert BOOL:json]) : nil)];
-}
-
-RCT_CUSTOM_VIEW_PROPERTY(backPlaneOcclusion, BOOL, VtoBridgeView) {
-  [view rnSetBackPlaneOcclusion:(json ? @([RCTConvert BOOL:json]) : nil)];
-}
-
 RCT_CUSTOM_VIEW_PROPERTY(forwardOffset, CGFloat, VtoBridgeView) {
   [view rnSetForwardOffset:(json ? @([RCTConvert CGFloat:json]) : nil)];
 }

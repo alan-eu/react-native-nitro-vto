@@ -58,10 +58,6 @@ class FaceOcclusionRenderer(private val context: Context) {
     private val faceMeshMatrix16 = FloatArray(16)
     private val backPlaneVertexData = FloatArray(4 * 3)
 
-    // Occlusion settings (both enabled by default)
-    private var faceMeshEnabled = true
-    private var backPlaneEnabled = true
-
     /**
      * Half-width of the user's ears in face-local meters, derived from the
      * face mesh's lateral extent and the same earMargin constant used to size
@@ -119,34 +115,6 @@ class FaceOcclusionRenderer(private val context: Context) {
         createBackPlane()
 
         Log.d(TAG, "Face occlusion renderer setup complete")
-    }
-
-    /**
-     * Set face mesh occlusion enabled.
-     */
-    fun setFaceMeshOcclusion(enabled: Boolean) {
-        // If face mesh is being disabled, remove from scene
-        if (faceMeshEnabled && !enabled && entityInScene) {
-            scene.removeEntity(faceMeshEntity)
-            entityInScene = false
-        }
-
-        faceMeshEnabled = enabled
-        Log.d(TAG, "Face mesh occlusion updated: $enabled")
-    }
-
-    /**
-     * Set back plane occlusion enabled.
-     */
-    fun setBackPlaneOcclusion(enabled: Boolean) {
-        // If back plane is being disabled, remove from scene
-        if (backPlaneEnabled && !enabled && backPlaneInScene) {
-            scene.removeEntity(backPlaneEntity)
-            backPlaneInScene = false
-        }
-
-        backPlaneEnabled = enabled
-        Log.d(TAG, "Back plane occlusion updated: $enabled")
     }
 
     /**
@@ -259,8 +227,7 @@ class FaceOcclusionRenderer(private val context: Context) {
             indexBufferInitialized = true
         }
 
-        // Create renderable if entity not in scene yet (only if face mesh is enabled)
-        if (!entityInScene && faceMeshEnabled) {
+        if (!entityInScene) {
             // Create bounding box (approximate head size)
             val boundingBox = Box(0f, 0f, 0f, 0.15f, 0.15f, 0.15f)
 
@@ -348,7 +315,7 @@ class FaceOcclusionRenderer(private val context: Context) {
         val backPlaneInstance = engine.transformManager.getInstance(backPlaneEntity)
         engine.transformManager.setTransform(backPlaneInstance, backPlaneMatrix16)
 
-        if (backPlaneEnabled && !backPlaneInScene) {
+        if (!backPlaneInScene) {
             scene.addEntity(backPlaneEntity)
             backPlaneInScene = true
         }

@@ -18,19 +18,6 @@ export interface VtoCommonProps {
   isActive: boolean;
 
   /**
-   * Enable face mesh occlusion (depth-only face mesh clips glasses behind the face).
-   * Default: true.
-   */
-  faceMeshOcclusion?: boolean;
-
-  /**
-   * Enable back plane occlusion (depth planes behind the head clip temples that
-   * extend too far back).
-   * Default: true.
-   */
-  backPlaneOcclusion?: boolean;
-
-  /**
    * Forward offset for glasses positioning in meters.
    * Default: 0.005 (5mm in front of the nose bridge).
    */
