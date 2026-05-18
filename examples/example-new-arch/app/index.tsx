@@ -142,7 +142,7 @@ const App = () => {
         style={styles.vtoView}
         modelUrl={currentModel}
         isActive={true}
-        forwardOffset={0.0035}
+        forwardOffset={0.005}
         debug={debugEnabled}
         showNativeFPS={true}
         onModelLoaded={callback(handleModelLoaded)}
