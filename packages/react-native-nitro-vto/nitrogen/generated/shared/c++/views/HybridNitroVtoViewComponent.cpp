@@ -75,26 +75,6 @@ namespace margelo::nitro::nitrovto::views {
         throw std::runtime_error(std::string("NitroVtoView.onGlassesDisplayed: ") + exc.what());
       }
     }()),
-    faceMeshOcclusion([&]() -> CachedProp<std::optional<bool>> {
-      try {
-        const react::RawValue* rawValue = rawProps.at("faceMeshOcclusion", nullptr, nullptr);
-        if (rawValue == nullptr) return sourceProps.faceMeshOcclusion;
-        const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
-        return CachedProp<std::optional<bool>>::fromRawValue(*runtime, value, sourceProps.faceMeshOcclusion);
-      } catch (const std::exception& exc) {
-        throw std::runtime_error(std::string("NitroVtoView.faceMeshOcclusion: ") + exc.what());
-      }
-    }()),
-    backPlaneOcclusion([&]() -> CachedProp<std::optional<bool>> {
-      try {
-        const react::RawValue* rawValue = rawProps.at("backPlaneOcclusion", nullptr, nullptr);
-        if (rawValue == nullptr) return sourceProps.backPlaneOcclusion;
-        const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
-        return CachedProp<std::optional<bool>>::fromRawValue(*runtime, value, sourceProps.backPlaneOcclusion);
-      } catch (const std::exception& exc) {
-        throw std::runtime_error(std::string("NitroVtoView.backPlaneOcclusion: ") + exc.what());
-      }
-    }()),
     forwardOffset([&]() -> CachedProp<std::optional<double>> {
       try {
         const react::RawValue* rawValue = rawProps.at("forwardOffset", nullptr, nullptr);
@@ -143,8 +123,6 @@ namespace margelo::nitro::nitrovto::views {
     onModelLoaded(other.onModelLoaded),
     onFaceTracked(other.onFaceTracked),
     onGlassesDisplayed(other.onGlassesDisplayed),
-    faceMeshOcclusion(other.faceMeshOcclusion),
-    backPlaneOcclusion(other.backPlaneOcclusion),
     forwardOffset(other.forwardOffset),
     debug(other.debug),
     showNativeFPS(other.showNativeFPS),
@@ -157,8 +135,6 @@ namespace margelo::nitro::nitrovto::views {
       case hashString("onModelLoaded"): return true;
       case hashString("onFaceTracked"): return true;
       case hashString("onGlassesDisplayed"): return true;
-      case hashString("faceMeshOcclusion"): return true;
-      case hashString("backPlaneOcclusion"): return true;
       case hashString("forwardOffset"): return true;
       case hashString("debug"): return true;
       case hashString("showNativeFPS"): return true;

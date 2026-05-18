@@ -43,8 +43,6 @@ export const nitroVtoVersion = version;
  *       modelUrl="https://example.com/glasses.glb"
  *       isActive={true}
  *       onModelLoaded={callback(handleModelLoaded)}
- *       faceMeshOcclusion={true}
- *       backPlaneOcclusion={true}
  *       forwardOffset={0.005}
  *       style={{ flex: 1 }}
  *       hybridRef={(ref) => {

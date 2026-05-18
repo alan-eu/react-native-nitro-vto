@@ -56,10 +56,6 @@ namespace margelo::nitro::nitrovto {
       virtual void setOnFaceTracked(const std::optional<std::function<void()>>& onFaceTracked) = 0;
       virtual std::optional<std::function<void(const std::string& /* modelUrl */)>> getOnGlassesDisplayed() = 0;
       virtual void setOnGlassesDisplayed(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onGlassesDisplayed) = 0;
-      virtual std::optional<bool> getFaceMeshOcclusion() = 0;
-      virtual void setFaceMeshOcclusion(std::optional<bool> faceMeshOcclusion) = 0;
-      virtual std::optional<bool> getBackPlaneOcclusion() = 0;
-      virtual void setBackPlaneOcclusion(std::optional<bool> backPlaneOcclusion) = 0;
       virtual std::optional<double> getForwardOffset() = 0;
       virtual void setForwardOffset(std::optional<double> forwardOffset) = 0;
       virtual std::optional<bool> getDebug() = 0;

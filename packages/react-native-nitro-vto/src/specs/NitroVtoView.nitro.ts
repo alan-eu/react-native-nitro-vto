@@ -48,18 +48,6 @@ export interface NitroVtoViewProps extends HybridViewProps {
   onGlassesDisplayed?: (modelUrl: string) => void;
 
   /**
-   * Enable face mesh occlusion (glasses appear behind face edges).
-   * Default: true.
-   */
-  faceMeshOcclusion?: boolean;
-
-  /**
-   * Enable back plane occlusion (clips glasses temples behind the head).
-   * Default: true.
-   */
-  backPlaneOcclusion?: boolean;
-
-  /**
    * Forward offset for glasses positioning in meters.
    * Default: 0.005 (5mm forward).
    */

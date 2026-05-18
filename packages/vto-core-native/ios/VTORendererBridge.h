@@ -48,12 +48,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// No-op if they weren't hidden.
 - (void)showGlasses;
 
-/// Set face mesh occlusion enabled
-- (void)setFaceMeshOcclusion:(BOOL)enabled;
-
-/// Set back plane occlusion enabled
-- (void)setBackPlaneOcclusion:(BOOL)enabled;
-
 /// Set forward offset for glasses positioning (in meters)
 - (void)setForwardOffset:(float)offset;
 

@@ -53,16 +53,6 @@ class VtoViewManager : SimpleViewManager<VtoView>() {
         view.setIsActive(active)
     }
 
-    @ReactProp(name = "faceMeshOcclusion")
-    fun setFaceMeshOcclusion(view: VtoView, enabled: Boolean?) {
-        view.setFaceMeshOcclusion(enabled)
-    }
-
-    @ReactProp(name = "backPlaneOcclusion")
-    fun setBackPlaneOcclusion(view: VtoView, enabled: Boolean?) {
-        view.setBackPlaneOcclusion(enabled)
-    }
-
     // Using primitive `Double` + `defaultDouble` because RN old-arch
     // `ViewManagerPropertyUpdater` doesn't accept boxed `java.lang.Double` —
     // `Double?` would compile to that and crash at register time.

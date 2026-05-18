@@ -52,18 +52,6 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.onGlassesDisplayed = value
         }
 
-    override var faceMeshOcclusion: Boolean? = null
-        set(value) {
-            field = value
-            nitroVtoView.setFaceMeshOcclusion(value)
-        }
-
-    override var backPlaneOcclusion: Boolean? = null
-        set(value) {
-            field = value
-            nitroVtoView.setBackPlaneOcclusion(value)
-        }
-
     override var forwardOffset: Double? = null
         set(value) {
             field = value

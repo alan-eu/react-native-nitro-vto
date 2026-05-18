@@ -26,8 +26,6 @@ function App() {
       style={{ flex: 1 }}
       modelUrl="https://example.com/glasses.glb"
       isActive={true}
-      faceMeshOcclusion={true}
-      backPlaneOcclusion={true}
       forwardOffset={0.005}
       onModelLoaded={(url) => console.log("loaded", url)}
       onFaceTracked={() => console.log("face tracked")}
@@ -52,8 +50,6 @@ vtoRef.current?.showGlasses();
 | --- | --- | --- | --- |
 | `modelUrl` | `string` | — | URL to the GLB model (meters, real-world size) |
 | `isActive` | `boolean` | — | Whether the AR session is running |
-| `faceMeshOcclusion` | `boolean` | `true` | Glasses appear behind face edges |
-| `backPlaneOcclusion` | `boolean` | `true` | Clips glasses temples extending behind head |
 | `forwardOffset` | `number` | `0.005` | Forward offset (meters) for fine-tuning glasses position |
 | `debug` | `boolean` | `false` | Debug visualization (red=face mesh, green/blue=planes) |
 | `onModelLoaded` | `(url: string) => void` | — | Fires once per model load |

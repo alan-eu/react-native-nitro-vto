@@ -100,18 +100,6 @@ abstract class HybridNitroVtoViewSpec: HybridView() {
   @get:Keep
   @set:DoNotStrip
   @set:Keep
-  abstract var faceMeshOcclusion: Boolean?
-  
-  @get:DoNotStrip
-  @get:Keep
-  @set:DoNotStrip
-  @set:Keep
-  abstract var backPlaneOcclusion: Boolean?
-  
-  @get:DoNotStrip
-  @get:Keep
-  @set:DoNotStrip
-  @set:Keep
   abstract var forwardOffset: Double?
   
   @get:DoNotStrip

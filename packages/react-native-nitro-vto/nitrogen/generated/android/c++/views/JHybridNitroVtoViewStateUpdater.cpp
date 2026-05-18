@@ -56,14 +56,6 @@ void JHybridNitroVtoViewStateUpdater::updateViewProps(jni::alias_ref<jni::JClass
     view->setOnGlassesDisplayed(props.onGlassesDisplayed.value);
     // TODO: Set isDirty = false
   }
-  if (props.faceMeshOcclusion.isDirty) {
-    view->setFaceMeshOcclusion(props.faceMeshOcclusion.value);
-    // TODO: Set isDirty = false
-  }
-  if (props.backPlaneOcclusion.isDirty) {
-    view->setBackPlaneOcclusion(props.backPlaneOcclusion.value);
-    // TODO: Set isDirty = false
-  }
   if (props.forwardOffset.isDirty) {
     view->setForwardOffset(props.forwardOffset.value);
     // TODO: Set isDirty = false

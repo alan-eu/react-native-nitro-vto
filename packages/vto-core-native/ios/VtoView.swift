@@ -33,8 +33,6 @@ public class VtoView: UIView {
     // Configuration
     private var modelUrl: String = ""
     private var isActiveState: Bool = true
-    private var faceMeshOcclusionState: Bool = true
-    private var backPlaneOcclusionState: Bool = true
     private var forwardOffsetState: Float = kForwardOffset
     private var debugState: Bool = false
 
@@ -121,16 +119,6 @@ public class VtoView: UIView {
         vtoRenderer?.showGlasses()
     }
 
-    func setFaceMeshOcclusion(_ enabled: Bool?) {
-        faceMeshOcclusionState = enabled ?? true
-        vtoRenderer?.setFaceMeshOcclusion(faceMeshOcclusionState)
-    }
-
-    func setBackPlaneOcclusion(_ enabled: Bool?) {
-        backPlaneOcclusionState = enabled ?? true
-        vtoRenderer?.setBackPlaneOcclusion(backPlaneOcclusionState)
-    }
-
     func setForwardOffset(_ offset: Double?) {
         forwardOffsetState = offset.map { Float($0) } ?? kForwardOffset
         vtoRenderer?.setForwardOffset(forwardOffsetState)
@@ -173,8 +161,6 @@ public class VtoView: UIView {
         vtoRenderer?.initialize(withModelUrl: modelUrl)
 
         // Apply stored configuration states
-        vtoRenderer?.setFaceMeshOcclusion(faceMeshOcclusionState)
-        vtoRenderer?.setBackPlaneOcclusion(backPlaneOcclusionState)
         vtoRenderer?.setForwardOffset(forwardOffsetState)
         vtoRenderer?.setDebug(debugState)
 

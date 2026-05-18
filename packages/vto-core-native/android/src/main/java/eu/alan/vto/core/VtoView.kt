@@ -170,20 +170,6 @@ class VtoView(context: Context) : FrameLayout(context) {
     }
 
     /**
-     * Set face mesh occlusion enabled
-     */
-    fun setFaceMeshOcclusion(enabled: Boolean?) {
-        vtoRenderer?.setFaceMeshOcclusion(enabled ?: true)
-    }
-
-    /**
-     * Set back plane occlusion enabled
-     */
-    fun setBackPlaneOcclusion(enabled: Boolean?) {
-        vtoRenderer?.setBackPlaneOcclusion(enabled ?: true)
-    }
-
-    /**
      * Set forward offset for glasses positioning (in meters)
      */
     fun setForwardOffset(offset: Double?) {
