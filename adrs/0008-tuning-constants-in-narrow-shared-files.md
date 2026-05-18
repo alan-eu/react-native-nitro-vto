@@ -18,10 +18,9 @@ places.
 ## Decision Outcome
 
 Chosen option: **narrow per-domain files**. Constants used in only
-one renderer stay as named locals there (e.g. Kalman tuning in
-`GlassesRenderer`). Constants shared across renderers move into a
-domain file. New domain → new file rather than appending to an
-existing one.
+one renderer stay as named locals there. Constants shared across
+renderers move into a domain file. New domain → new file rather than
+appending to an existing one.
 
 ### Consequences
 

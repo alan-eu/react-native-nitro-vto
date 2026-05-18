@@ -1,5 +1,7 @@
 # Kalman-filter the tracked face pose
 
+> **Superseded by [ADR 0014](0014-drop-pose-smoothing-trust-sdk-output.md).** The Kalman pipeline was removed after side-by-side A/B on physical iOS + Android devices showed no perceptible jitter improvement over the raw ARKit/ARCore pose. Recorded here as the prior state of the system.
+
 ## Context and Problem Statement
 
 ARKit and ARCore face poses jitter frame to frame. Without smoothing,

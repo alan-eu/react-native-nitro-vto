@@ -28,12 +28,6 @@ class GlassesRenderer(private val context: Context) {
 
     companion object {
         private const val TAG = "GlassesRenderer"
-
-        // Kalman filter tuning shared by the position + rotation filters.
-        // Higher process-noise = more responsive; higher measurement-noise =
-        // smoother. Same values used on iOS — see GlassesRenderer.mm.
-        private const val KALMAN_PROCESS_NOISE     = 0.1f
-        private const val KALMAN_MEASUREMENT_NOISE = 0.05f
     }
 
     private lateinit var engine: Engine
@@ -62,11 +56,6 @@ class GlassesRenderer(private val context: Context) {
     // Reusable arrays to avoid per-frame allocations
     private val tempVec4 = FloatArray(4)
     private val tempMatrix16 = FloatArray(16)
-
-    // Kalman filters for smoothing (reduce jitter)
-    // Higher processNoise = more responsive, higher measurementNoise = smoother
-    private val positionFilter = KalmanFilter3D(processNoise = KALMAN_PROCESS_NOISE, measurementNoise = KALMAN_MEASUREMENT_NOISE)
-    private val rotationFilter = KalmanFilterQuaternion(processNoise = KALMAN_PROCESS_NOISE, measurementNoise = KALMAN_MEASUREMENT_NOISE)
 
     // Forward offset for glasses positioning (in meters)
     private var forwardOffset = OcclusionConstants.FORWARD_OFFSET
@@ -232,12 +221,8 @@ class GlassesRenderer(private val context: Context) {
             // Get face rotation from pose (world space)
             val faceQuaternion = face.centerPose.rotationQuaternion
 
-            // Apply Kalman filter smoothing
-            val smoothedPosition = positionFilter.update(noseBridgeWorld)
-            val smoothedRotation = rotationFilter.update(faceQuaternion)
-
             // Build world-space transform matrix (no scaling - models are in real-world meters)
-            val rotationMatrix = MatrixUtils.quaternionToMatrix(smoothedRotation)
+            val rotationMatrix = MatrixUtils.quaternionToMatrix(faceQuaternion)
             System.arraycopy(rotationMatrix, 0, tempMatrix16, 0, 16)
 
             // Offset glasses along face's Z axis (forward/backward)
@@ -246,9 +231,9 @@ class GlassesRenderer(private val context: Context) {
             val forwardZ = rotationMatrix[10]  // Z axis Z component (column 2, row 2)
 
             // Set world-space position with forward offset
-            tempMatrix16[12] = smoothedPosition[0] + forwardX * forwardOffset
-            tempMatrix16[13] = smoothedPosition[1] + forwardY * forwardOffset
-            tempMatrix16[14] = smoothedPosition[2] + forwardZ * forwardOffset
+            tempMatrix16[12] = noseBridgeWorld[0] + forwardX * forwardOffset
+            tempMatrix16[13] = noseBridgeWorld[1] + forwardY * forwardOffset
+            tempMatrix16[14] = noseBridgeWorld[2] + forwardZ * forwardOffset
 
             // Mirror X for the front-facing camera: ARCore's projection encodes the mirror
             // in m[0] < 0, but VTORenderer uses Filament's setProjection(fov, aspect, …) which
@@ -289,12 +274,6 @@ class GlassesRenderer(private val context: Context) {
             val instance = engine.transformManager.getInstance(asset.root)
             engine.transformManager.setTransform(instance, MatrixUtils.createHideMatrix())
         }
-        resetFilters()
-    }
-
-    private fun resetFilters() {
-        positionFilter.reset()
-        rotationFilter.reset()
     }
 
     /**
@@ -355,7 +334,6 @@ class GlassesRenderer(private val context: Context) {
             assetLoader.destroyAsset(asset)
         }
         glassesAsset = null
-        resetFilters()
 
         // Update current model info
         currentModelUrl = modelUrl
