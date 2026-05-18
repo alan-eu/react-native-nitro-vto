@@ -309,6 +309,7 @@ class VtoView(context: Context) : FrameLayout(context) {
                 augmentedFaceMode = Config.AugmentedFaceMode.MESH3D
                 planeFindingMode = Config.PlaneFindingMode.DISABLED
                 lightEstimationMode = Config.LightEstimationMode.AMBIENT_INTENSITY
+                updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
                 // Enable depth if supported by device
                 depthMode = if (arSession!!.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
                     Config.DepthMode.AUTOMATIC
