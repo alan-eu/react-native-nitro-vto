@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.12.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.12.0...v0.13.0) (2026-05-18)
+
+### ✨ Features
+
+* **android:** add `HIGH_SAMPLING_RATE_SENSORS` perm to avoid Samsung crash ([#65](https://github.com/alan-eu/react-native-nitro-vto/issues/65)) ([8f40f6a](https://github.com/alan-eu/react-native-nitro-vto/commit/8f40f6a5fbc73d770f107bad85310a725e89d426))
+* **android:** Rely on `LATEST_CAMERA_IMAGE` ARCore update mode instead of `BLOCKING` ([#64](https://github.com/alan-eu/react-native-nitro-vto/issues/64)) ([e39de8f](https://github.com/alan-eu/react-native-nitro-vto/commit/e39de8f3073d74779de6c7511900e103b7f7c54e))
+* drop kalman filters as they bring nothing ([#63](https://github.com/alan-eu/react-native-nitro-vto/issues/63)) ([3197efa](https://github.com/alan-eu/react-native-nitro-vto/commit/3197efab3baaa07d63d015de3f165a7287bd05ba))
+* drop occlusion props, always on from now on ([#62](https://github.com/alan-eu/react-native-nitro-vto/issues/62)) ([30b465d](https://github.com/alan-eu/react-native-nitro-vto/commit/30b465d446db6bb7e563b3dcac12faaf54bf6ec3))
+
 ## [0.12.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.11.6...v0.12.0) (2026-05-11)
 
 ### ✨ Features
