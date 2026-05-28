@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.2](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.12.1...v0.12.2) (2026-05-28)
+
+### 🐛 Bug Fixes
+
+* **android:** aim the directional light off the camera axis ([#69](https://github.com/alan-eu/react-native-nitro-vto/issues/69)) ([2044d4e](https://github.com/alan-eu/react-native-nitro-vto/commit/2044d4e97986734ae37d82d21af087108e544fb6))
+* **ios, android:** center glasses on face anchor symmetry axis ([#67](https://github.com/alan-eu/react-native-nitro-vto/issues/67)) ([b4cf394](https://github.com/alan-eu/react-native-nitro-vto/commit/b4cf3941c422150ee5ab1750c364044d10d81c9b))
+* **ios, android:** reduce X shrink to avoidbad nose occlusion ([#68](https://github.com/alan-eu/react-native-nitro-vto/issues/68)) ([8c740e4](https://github.com/alan-eu/react-native-nitro-vto/commit/8c740e47388354a2d8adac092bf4b09d18393460))
+
 ## [0.12.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.12.0...v0.12.1) (2026-05-18)
 
 ### ✨ Features
