@@ -29,7 +29,7 @@ internal object OcclusionConstants {
      * nose/eyes/brow at X≈0 stay put, so nose-bridge occlusion of the
      * glasses bridge is preserved.
      */
-    const val FACE_MESH_X_SHRINK = 0.95f
+    const val FACE_MESH_X_SHRINK = 0.975f
 
     /**
      * Distance behind the deepest face-mesh vertex (face-local meters) at
