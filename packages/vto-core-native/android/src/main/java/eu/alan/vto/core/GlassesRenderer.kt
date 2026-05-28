@@ -251,16 +251,18 @@ class GlassesRenderer(private val context: Context) {
     }
 
     /**
-     * Get nose bridge center position in world coordinates.
-     * Uses vertices 351 (left) and 122 (right) from ARCore face mesh.
+     * Get nose bridge center position in world coordinates. Uses vertices
+     * 351 and 122 of the ARCore face mesh for the bridge's Y (height) and
+     * Z (depth). X is locked to the face anchor's symmetry axis — see
+     * ADR 0016 for the asymmetry that motivated that choice.
      */
     private fun getNoseBridgeWorldPos(face: AugmentedFace): FloatArray {
-        val left = MatrixUtils.getPositionForVertice(351, face)
-        val right = MatrixUtils.getPositionForVertice(122, face)
+        val a = MatrixUtils.getPositionForVertice(351, face)
+        val b = MatrixUtils.getPositionForVertice(122, face)
 
-        val centerX = (left[0] + right[0]) / 2f
-        val centerY = (left[1] + right[1]) / 2f
-        val centerZ = (left[2] + right[2]) / 2f
+        val centerX = 0f
+        val centerY = (a[1] + b[1]) / 2f
+        val centerZ = (a[2] + b[2]) / 2f
 
         face.centerPose.toMatrix(tempMatrix16, 0)
         return MatrixUtils.transformToWorld(centerX, centerY, centerZ, tempMatrix16, tempVec4)

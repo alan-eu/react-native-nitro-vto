@@ -258,31 +258,30 @@ static NSString *const TAG = @"GlassesRenderer";
 }
 
 - (simd_float3)getNoseBridgeWorldPosWithFace:(ARFaceAnchor *)face {
-    // ARKit face mesh vertex indices for nose bridge
-    // Reference: https://www.oxfordechoes.com/ios-arkit-face-tracking-vertices/
-    const int leftIndex = 818;  // Left side of nose bridge
-    const int rightIndex = 366; // Right side of nose bridge
+    // ARKit face mesh vertex indices flanking the nose bridge. Only Y/Z are
+    // taken from these — see ADR 0016 for why X comes from the face anchor's
+    // symmetry axis instead.
+    const int aIndex = 818;
+    const int bIndex = 366;
 
     ARFaceGeometry *geometry = face.geometry;
     const simd_float3 *vertices = geometry.vertices;
     NSUInteger vertexCount = geometry.vertexCount;
 
-    if (leftIndex >= vertexCount || rightIndex >= vertexCount) {
+    if (aIndex >= vertexCount || bIndex >= vertexCount) {
         // Fallback to face center
         return simd_make_float3(face.transform.columns[3].x,
                                 face.transform.columns[3].y,
                                 face.transform.columns[3].z);
     }
 
-    simd_float3 left = vertices[leftIndex];
-    simd_float3 right = vertices[rightIndex];
+    simd_float3 a = vertices[aIndex];
+    simd_float3 b = vertices[bIndex];
 
-    // Calculate center in local face coordinates
-    float centerX = (left.x + right.x) / 2.0f;
-    float centerY = (left.y + right.y) / 2.0f;
-    float centerZ = (left.z + right.z) / 2.0f;
+    float centerX = 0.0f;
+    float centerY = (a.y + b.y) / 2.0f;
+    float centerZ = (a.z + b.z) / 2.0f;
 
-    // Transform to world coordinates
     simd_float4 localPos = simd_make_float4(centerX, centerY, centerZ, 1.0f);
     simd_float4 worldPos = simd_mul(face.transform, localPos);
 
