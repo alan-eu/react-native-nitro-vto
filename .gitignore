@@ -14,6 +14,16 @@ lib/
 *.iml
 .vscode/
 
+# Zed kotlin-lsp stub at repo root (personal dev env, not for building)
+settings.gradle.kts
+build.gradle.kts
+gradle.properties
+gradlew
+gradlew.bat
+gradle/
+packages/vto-core-native/android/build.gradle.kts
+build/
+
 # Android
 .gradle/
 local.properties
