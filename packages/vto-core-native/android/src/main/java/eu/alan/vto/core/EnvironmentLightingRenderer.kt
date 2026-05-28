@@ -79,14 +79,18 @@ class EnvironmentLightingRenderer(private val context: Context) {
 
         // Create the directional ("sun") light. ARCore's
         // AMBIENT_INTENSITY mode doesn't expose a direction on the front
-        // camera, so we point the light "into" the face from the camera
-        // side (-Z in world space). Intensity + color overridden each
-        // frame by updateDirectionalFromARCore.
+        // camera, so we pick a plausible top-front studio direction
+        // (~45° down from above the user). This keeps the lens specular
+        // highlight off-center — pointing the light straight into the
+        // face (e.g. (0, 0, -1)) produces an obvious centered hotspot
+        // when the user faces the camera, which iOS doesn't have (its
+        // direction tracks ARKit's primaryLightDirection). Intensity +
+        // color are overridden each frame by updateDirectionalFromARCore.
         directionalLightEntity = EntityManager.get().create()
         LightManager.Builder(LightManager.Type.DIRECTIONAL)
             .color(1.0f, 1.0f, 1.0f)
-            .intensity(0.0f)               // overridden per-frame
-            .direction(0.0f, 0.0f, -1.0f)  // fixed; ARCore can't tell us
+            .intensity(0.0f)                       // overridden per-frame
+            .direction(0.196f, -0.819f, -0.539f)   // fixed top-front, 55° down, 20° toward +X (highlight ≈ 25% from top, 75% from left)
             .castShadows(false)
             .build(engine, directionalLightEntity)
         scene.addEntity(directionalLightEntity)
