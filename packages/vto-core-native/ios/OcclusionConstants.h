@@ -21,7 +21,7 @@ static const float kMinHalfWidth = 0.07f;
 // X-only shrink applied to the face mesh when it writes depth. Pulls the
 // cheek edge inward away from where the temples pass; the nose/eyes/brow at
 // X≈0 stay put, so nose-bridge occlusion of the glasses bridge is preserved.
-static const float kFaceMeshXShrink = 0.95f;
+static const float kFaceMeshXShrink = 0.975f;
 
 // Distance behind the deepest face-mesh vertex (face-local meters) at which
 // the back plane sits.
