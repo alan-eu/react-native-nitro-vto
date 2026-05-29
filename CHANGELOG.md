@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.12.3](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.12.2...v0.12.3) (2026-05-29)
+
+### ✨ Features
+
+* bump `filament` to 1.71.4 ([#70](https://github.com/alan-eu/react-native-nitro-vto/issues/70)) ([cfd1368](https://github.com/alan-eu/react-native-nitro-vto/commit/cfd13686d529259a3677e310bf041392576a04b4))
+
 ## [0.12.2](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.12.1...v0.12.2) (2026-05-28)
 
 ### 🐛 Bug Fixes
