@@ -52,5 +52,5 @@ Pod::Spec.new do |s|
   }
 
   s.dependency 'React-Core'
-  s.dependency 'Filament', '1.69.3'
+  s.dependency 'Filament', '1.71.4'
 end
