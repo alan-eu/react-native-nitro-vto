@@ -30,7 +30,7 @@ npm install
 
 ### Filament toolchain (only needed to edit materials or IBL)
 
-Download Filament 1.69.3 binaries from [filament releases](https://github.com/google/filament/releases), then at the **repo root** copy `.env.example` to `.env` and set:
+Download Filament 1.71.4 binaries from [filament releases](https://github.com/google/filament/releases), then at the **repo root** copy `.env.example` to `.env` and set:
 
 ```
 MATC_PATH=/path/to/filament/bin/matc
@@ -96,7 +96,7 @@ The two wrappers expose the **same** props / methods / callbacks. Any surface ch
 
 - **iOS**: core renderers are Objective-C++ (`.mm` / `.h`) using Filament's C++ API directly; the `VtoView` facade is Swift. Keep the public Swift API `public` so it reaches each wrapper's auto-generated `<Module>-Swift.h` — that's what the Nitro HybridView and the old-arch RCTViewManager both import.
 - **Android**: core is Kotlin, package `eu.alan.vto.core`. Do not put anything in `com.margelo.nitro.nitrovto` — that namespace is reserved for Nitro-specific bridge code.
-- **Filament**: version is pinned at `1.69.3` in both podspecs and both `android/build.gradle` files; don't bump one without the other.
+- **Filament**: version is pinned at `1.71.4` in both podspecs and both `android/build.gradle` files; don't bump one without the other.
 - **Assets**: source `.mat` / `.hdr` live in `packages/vto-core-native/assets/`; compiled `.filamat` / `.ktx` / `.txt` are checked in under `packages/vto-core-native/android/src/main/assets/` and `packages/vto-core-native/ios/assets/`. Always recompile and commit both source and compiled forms together.
 - **Resource bundle lookup on iOS**: `LoaderUtils.loadAssetNamed:` tries both `NitroVtoAssets.bundle` and `ReactNativeVtoAssets.bundle` (each wrapper podspec names its `resource_bundles` differently). If you add a third wrapper, extend that list.
 

@@ -51,6 +51,6 @@ Pod::Spec.new do |s|
 
   s.dependency 'React-jsi'
   s.dependency 'React-callinvoker'
-  s.dependency 'Filament', '1.69.3'
+  s.dependency 'Filament', '1.71.4'
   install_modules_dependencies(s)
 end

@@ -149,9 +149,9 @@ dependencies {
   implementation("com.google.ar:core:1.51.0")
 
   // Filament
-  implementation("com.google.android.filament:filament-android:1.69.3")
-  implementation("com.google.android.filament:filament-utils-android:1.69.3")
-  implementation("com.google.android.filament:gltfio-android:1.69.3")
+  implementation("com.google.android.filament:filament-android:1.71.4")
+  implementation("com.google.android.filament:filament-utils-android:1.71.4")
+  implementation("com.google.android.filament:gltfio-android:1.71.4")
 }
 
 tasks.register('prepareHeaders', Copy) {
