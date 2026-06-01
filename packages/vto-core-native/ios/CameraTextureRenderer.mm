@@ -186,7 +186,7 @@ static constexpr uint16_t kIndices[6] = { 0, 1, 2, 2, 1, 3 };
         .culling(false)
         .receiveShadows(false)
         .castShadows(false)
-        .priority(7)  // Render first (at the back)
+        .priority(0)  // background: camera(0) → occluder(1) → glasses(4)
         .build(*_engine, _cameraFeedTriangle);
 
     // Set texture parameter

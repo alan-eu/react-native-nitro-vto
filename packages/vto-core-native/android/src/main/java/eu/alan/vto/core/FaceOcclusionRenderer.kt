@@ -19,8 +19,8 @@ import java.nio.ShortBuffer
 
 /**
  * Renders ARCore face mesh to depth buffer only for face occlusion.
- * Face mesh renders first (priority 0), writes depth, then camera background
- * overwrites color (ignoring depth), then glasses render with depth test.
+ * Draw order: camera background (priority 0), this depth mask (priority 1),
+ * then glasses (priority 4) which depth-test against it.
  */
 class FaceOcclusionRenderer(private val context: Context) {
 
@@ -171,7 +171,7 @@ class FaceOcclusionRenderer(private val context: Context) {
             .culling(false)
             .receiveShadows(false)
             .castShadows(false)
-            .priority(0)
+            .priority(1)  // after camera background (0), before glasses (4)
             .build(engine, backPlaneEntity)
     }
 
@@ -245,7 +245,7 @@ class FaceOcclusionRenderer(private val context: Context) {
                 .culling(false)
                 .receiveShadows(false)
                 .castShadows(false)
-                .priority(0)  // Render FIRST to write depth
+                .priority(1)  // after camera background (0), before glasses (4); writes depth mask
                 .build(engine, faceMeshEntity)
 
             scene.addEntity(faceMeshEntity)

@@ -98,9 +98,11 @@ const main = () => {
       try {
         execSync(command, { stdio: "pipe" });
 
+        // Skybox output is intentionally dropped — the camera feed is the
+        // background, so the skybox cubemap is never used (see
+        // EnvironmentLightingRenderer). Only the IBL reflections + SH are kept.
         const renames: [string, string][] = [
           [`envs_ibl.ktx`, `${sourceName}_ibl.ktx`],
-          [`envs_skybox.ktx`, `${sourceName}_skybox.ktx`],
           [`sh.txt`, `${sourceName}_sh.txt`],
         ];
 
@@ -112,7 +114,6 @@ const main = () => {
 
         const artifacts = [
           `${sourceName}_ibl.ktx`,
-          `${sourceName}_skybox.ktx`,
           `${sourceName}_sh.txt`,
         ];
 
