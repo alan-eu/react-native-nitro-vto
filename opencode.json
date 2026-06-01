@@ -1,0 +1,18 @@
+{
+  "mcp": {
+    "argent": {
+      "type": "local",
+      "command": [
+        "argent",
+        "mcp"
+      ],
+      "enabled": true,
+      "environment": {
+        "ARGENT_MCP_LOG": "/Users/xavier.seignard/.argent/mcp-calls.log"
+      }
+    }
+  },
+  "tools": {
+    "argent*": true
+  }
+}
