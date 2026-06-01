@@ -48,6 +48,11 @@ public class VtoView: UIView {
     // Display link for rendering
     private var displayLink: CADisplayLink?
 
+    // HARNESS (dev/simulator only): true when face tracking is unavailable
+    // (e.g. running in the simulator). Renders a static preview so render order
+    // can be inspected without a live AR camera.
+    private var harnessMode = false
+
     // FPS counter overlay (visible when debug=true).
     private var fpsLabel: UILabel?
     private var fpsFrameCount: Int = 0
@@ -203,8 +208,14 @@ public class VtoView: UIView {
             initialize()
         }
 
-        // Setup AR session if needed
-        setupARSession()
+        // Setup AR session if available; otherwise fall into the dev harness
+        // (e.g. simulator) so render order can be inspected without a camera.
+        if ARFaceTrackingConfiguration.isSupported {
+            setupARSession()
+        } else {
+            harnessMode = true
+            NSLog("VtoView: ARFaceTracking unsupported — entering static preview HARNESS")
+        }
 
         // Start display link for rendering
         startDisplayLink()
@@ -255,6 +266,13 @@ public class VtoView: UIView {
 
     @objc private func render() {
         guard isInitialized, isActiveState else { return }
+
+        // HARNESS: static preview path (no AR session) for the simulator.
+        if harnessMode {
+            vtoRenderer?.renderStaticPreview()
+            return
+        }
+
         guard let session = arSession, let frame = session.currentFrame else { return }
 
         // Get tracked faces

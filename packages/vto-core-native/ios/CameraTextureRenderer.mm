@@ -112,6 +112,40 @@ static constexpr uint16_t kIndices[6] = { 0, 1, 2, 2, 1, 3 };
     _viewportSize = size;
 }
 
+// HARNESS (dev/simulator only). Builds a recognizable test pattern (grid +
+// diagonal + distinctly-colored corners) and binds it as the camera feed with
+// an identity UV transform, so render order can be inspected without live AR.
+- (void)useStaticTestPattern {
+    if (!_engine || !_cameraMaterialInstance) return;
+    const uint32_t S = 256;
+    uint8_t *px = (uint8_t *)malloc(S * S * 4);
+    for (uint32_t y = 0; y < S; y++) {
+        for (uint32_t x = 0; x < S; x++) {
+            uint8_t r = 30, g = 40, b = 70;                  // base: dark blue
+            if (x % 32 == 0 || y % 32 == 0) { r = 190; g = 190; b = 190; } // grid
+            if ((int)x - (int)y < 6 && (int)x - (int)y > -6) { r = 40; g = 200; b = 60; } // diagonal
+            if (x < 28 && y < 28) { r = 255; g = 0; b = 0; }          // TL red
+            else if (x >= S-28 && y < 28) { r = 255; g = 230; b = 0; } // TR yellow
+            else if (x < 28 && y >= S-28) { r = 0; g = 220; b = 255; } // BL cyan
+            else if (x >= S-28 && y >= S-28) { r = 255; g = 0; b = 230; } // BR magenta
+            uint8_t *p = &px[(y * S + x) * 4];
+            p[0] = r; p[1] = g; p[2] = b; p[3] = 255;
+        }
+    }
+    Texture *tex = Texture::Builder()
+        .width(S).height(S).levels(1)
+        .format(Texture::InternalFormat::RGBA8)
+        .sampler(Texture::Sampler::SAMPLER_2D)
+        .build(*_engine);
+    Texture::PixelBufferDescriptor pb(px, S * S * 4,
+        Texture::Format::RGBA, Texture::Type::UBYTE,
+        [](void *buf, size_t, void *) { free(buf); }, nullptr);
+    tex->setImage(*_engine, 0, std::move(pb));
+    _cameraMaterialInstance->setParameter("cameraFeed", tex, TextureSampler());
+    _cameraMaterialInstance->setParameter("textureTransform", math::mat3f()); // identity
+    NSLog(@"%@: HARNESS static test pattern bound", TAG);
+}
+
 - (void)updateTextureTransformWithFrame:(ARFrame *)frame {
     if (!_cameraMaterialInstance) return;
 
