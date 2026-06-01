@@ -26,11 +26,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// Update background transform to compensate for perspective camera
 - (void)updateTransformWithFrame:(ARFrame *)frame;
 
-/// HARNESS (dev/simulator only): bind a static test-pattern texture to the
-/// camera feed with an identity UV transform, so the renderer can be exercised
-/// without a live AR camera. Idempotent.
-- (void)useStaticTestPattern;
-
 /// Cleanup and destroy resources
 - (void)destroy;
 

@@ -38,11 +38,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// Hide glasses by moving off-screen
 - (void)hide;
 
-/// HARNESS (dev/simulator only): place the loaded glasses at a fixed pose in
-/// front of the camera (no face tracking), so render order can be inspected.
-/// No-op until the model has loaded.
-- (void)setStaticPreviewTransform;
-
 /// Switch to a different glasses model
 - (void)switchModelWithUrl:(NSString *)modelUrl;
 

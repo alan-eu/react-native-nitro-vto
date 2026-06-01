@@ -66,9 +66,6 @@ static NSString *const TAG = @"VTORenderer";
 // Model configuration
 @property (nonatomic, copy) NSString *modelUrl;
 
-// HARNESS (dev/simulator only): one-time setup guard for the static preview.
-@property (nonatomic, assign) BOOL staticPreviewSetup;
-
 @end
 
 @implementation VTORendererBridge
@@ -347,36 +344,6 @@ static NSString *const TAG = @"VTORenderer";
 
 - (void)setARSession:(ARSession *)session {
     _arSession = session;
-}
-
-// HARNESS (dev/simulator only). Renders with a fixed perspective camera, a
-// static camera-feed test pattern, and the glasses at a fixed pose — no AR
-// session. Lets render order (camera / occluder / glasses) be inspected in the
-// simulator via screenshots.
-- (void)renderStaticPreview {
-    if (!_initialized) return;
-
-    // Fixed camera at origin looking down -Z (Filament default), perspective.
-    double aspect = (_height > 0) ? (double)_width / (double)_height : 1.0;
-    _camera->setProjection(60.0, aspect, 0.01, 100.0, Camera::Fov::VERTICAL);
-    _camera->setModelMatrix(filament::math::mat4f());  // identity → camera at origin
-
-    // Bind the static camera background once.
-    if (!_staticPreviewSetup) {
-        [_cameraTextureRenderer useStaticTestPattern];
-        _staticPreviewSetup = YES;
-    }
-
-    // Place the glasses at a fixed pose (no-op until the model finishes loading).
-    [_glassesRenderer setStaticPreviewTransform];
-    // Drive temple articulation with a representative ear half-width (face-local
-    // meters) so the harness shows the on-face temple swing (#3) without a face.
-    [_glassesRenderer updateTempleArticulationWithEarHalfWidth:0.07f];
-
-    if (_renderer->beginFrame(_swapChain)) {
-        _renderer->render(_filamentView);
-        _renderer->endFrame();
-    }
 }
 
 - (void)destroy {
