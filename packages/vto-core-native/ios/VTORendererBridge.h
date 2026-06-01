@@ -60,6 +60,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// Set the AR session reference
 - (void)setARSession:(ARSession *)session;
 
+/// HARNESS (dev/simulator only): render the scene with a static camera-feed
+/// pattern, a fixed perspective camera, and the glasses at a fixed pose — no
+/// AR session required. Used to inspect render order in the simulator.
+- (void)renderStaticPreview;
+
 /// Cleanup and destroy resources
 - (void)destroy;
 
