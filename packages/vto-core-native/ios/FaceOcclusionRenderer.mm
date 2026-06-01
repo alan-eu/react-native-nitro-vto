@@ -148,9 +148,7 @@ static const size_t MAX_INDICES = 8000;
     // Initial bounding box (will be updated with actual face mesh bounds)
     filament::Box boundingBox = {{-0.2f, -0.2f, -0.2f}, {0.2f, 0.2f, 0.2f}};
 
-    // Build renderable - priority 0 so it renders FIRST (before camera background)
-    // Face mesh writes depth, then camera background overwrites color (with depth test disabled)
-    // Then glasses render with depth test and get occluded by face mesh depth
+    // Priority 1: after camera background (0), before glasses (4); depth-only.
     RenderableManager::Builder(1)
         .material(0, _occlusionMaterialInstance)
         .geometry(0, RenderableManager::PrimitiveType::TRIANGLES, _vertexBuffer, _indexBuffer, 0, 0)
@@ -158,7 +156,7 @@ static const size_t MAX_INDICES = 8000;
         .culling(false)
         .receiveShadows(false)
         .castShadows(false)
-        .priority(0)
+        .priority(1)
         .build(*engine, _faceMeshEntity);
 
     // Don't add to scene yet - will add when we have valid face data
@@ -214,7 +212,7 @@ static const size_t MAX_INDICES = 8000;
         .culling(false)
         .receiveShadows(false)
         .castShadows(false)
-        .priority(0)
+        .priority(1)  // after camera background (0), before glasses (4)
         .build(*_engine, _backPlaneEntity);
 }
 

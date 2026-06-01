@@ -8,7 +8,6 @@
 #include <filament/LightManager.h>
 #include <filament/Scene.h>
 #include <filament/IndirectLight.h>
-#include <filament/Skybox.h>
 #include <filament/Texture.h>
 #include <ktxreader/Ktx1Reader.h>
 #include <math/vec3.h>
@@ -27,9 +26,7 @@ static NSString *const TAG = @"EnvironmentLighting";
 @property (nonatomic, assign) Engine *engine;
 @property (nonatomic, assign) Scene *scene;
 @property (nonatomic, assign) IndirectLight *indirectLight;
-@property (nonatomic, assign) Skybox *skybox;
 @property (nonatomic, assign) Texture *iblTexture;
-@property (nonatomic, assign) Texture *skyboxTexture;
 
 // Directional light driven per-frame from ARDirectionalLightEstimate.
 @property (nonatomic, assign) Entity directionalLightEntity;
@@ -99,35 +96,6 @@ static NSString *const TAG = @"EnvironmentLighting";
         NSLog(@"%@: Failed to load IBL file", TAG);
     }
 
-    // Load skybox from ktx file
-    NSData *skyboxData = [LoaderUtils loadAssetNamed:@"envs/studio_small_02_2k_skybox.ktx"];
-    if (skyboxData) {
-        // Create Ktx1Bundle from raw bytes
-        auto skyboxBundle = new image::Ktx1Bundle(
-            (const uint8_t *)skyboxData.bytes,
-            (uint32_t)skyboxData.length
-        );
-        // Create texture from bundle (takes ownership and destroys bundle after upload)
-        _skyboxTexture = ktxreader::Ktx1Reader::createTexture(
-            engine,
-            skyboxBundle,
-            false // sRGB
-        );
-
-        if (_skyboxTexture) {
-            _skybox = Skybox::Builder()
-                .environment(_skyboxTexture)
-                .build(*engine);
-
-            scene->setSkybox(_skybox);
-            NSLog(@"%@: Loaded skybox", TAG);
-        } else {
-            NSLog(@"%@: Failed to create skybox texture", TAG);
-        }
-    } else {
-        NSLog(@"%@: Failed to load skybox file", TAG);
-    }
-
     // Create the directional ("sun") light entity. Driven per-frame from
     // ARDirectionalLightEstimate. Castles and shadows are off — face
     // occlusion handles "behind the head" depth, and shadow maps would
@@ -182,14 +150,8 @@ static NSString *const TAG = @"EnvironmentLighting";
     if (_indirectLight) {
         _engine->destroy(_indirectLight);
     }
-    if (_skybox) {
-        _engine->destroy(_skybox);
-    }
     if (_iblTexture) {
         _engine->destroy(_iblTexture);
-    }
-    if (_skyboxTexture) {
-        _engine->destroy(_skyboxTexture);
     }
 }
 

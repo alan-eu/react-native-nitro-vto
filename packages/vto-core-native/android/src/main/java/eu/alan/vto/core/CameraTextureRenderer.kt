@@ -332,7 +332,7 @@ class CameraTextureRenderer(private val context: Context) {
             .culling(false)
             .receiveShadows(false)
             .castShadows(false)
-            .priority(7)
+            .priority(0)  // background: camera(0) → occluder(1) → glasses(4)
             .build(engine, backgroundQuadEntity)
 
         scene.addEntity(backgroundQuadEntity)

@@ -8,7 +8,6 @@ import com.google.android.filament.EntityManager
 import com.google.android.filament.IndirectLight
 import com.google.android.filament.LightManager
 import com.google.android.filament.Scene
-import com.google.android.filament.Skybox
 import com.google.android.filament.utils.KTX1Loader
 import com.google.ar.core.Frame
 import com.google.ar.core.LightEstimate
@@ -30,7 +29,6 @@ class EnvironmentLightingRenderer(private val context: Context) {
     }
 
     private var indirectLight: IndirectLight? = null
-    private var skybox: Skybox? = null
     private lateinit var engine: Engine
     private lateinit var scene: Scene
 
@@ -47,7 +45,6 @@ class EnvironmentLightingRenderer(private val context: Context) {
         engine: Engine,
         scene: Scene,
         iblPath: String = "envs/studio_small_02_2k_ibl.ktx",
-        skyboxPath: String = "envs/studio_small_02_2k_skybox.ktx",
         shPath: String = "envs/studio_small_02_2k_sh.txt"
     ) {
         this.engine = engine
@@ -70,12 +67,6 @@ class EnvironmentLightingRenderer(private val context: Context) {
 
         indirectLight = builder.build(engine)
         scene.indirectLight = indirectLight
-
-        // Load skybox from ktx file
-        val skyBuffer = LoaderUtils.loadAsset(context, skyboxPath)
-        val skyboxBundle = KTX1Loader.createSkybox(engine, skyBuffer)
-        skybox = skyboxBundle.skybox
-        scene.skybox = skybox
 
         // Create the directional ("sun") light. ARCore's
         // AMBIENT_INTENSITY mode doesn't expose a direction on the front
@@ -177,6 +168,5 @@ class EnvironmentLightingRenderer(private val context: Context) {
             EntityManager.get().destroy(directionalLightEntity)
         }
         indirectLight?.let { engine.destroyIndirectLight(it) }
-        skybox?.let { engine.destroySkybox(it) }
     }
 }
