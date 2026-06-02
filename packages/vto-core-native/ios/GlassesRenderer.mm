@@ -7,6 +7,7 @@
 #include <filament/Scene.h>
 #include <filament/TransformManager.h>
 #include <filament/RenderableManager.h>
+#include <filament/MaterialInstance.h>
 #include <filament/Box.h>
 #include <gltfio/AssetLoader.h>
 #include <gltfio/ResourceLoader.h>
@@ -116,6 +117,7 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
            targetX:(float)targetX
     outwardYawSign:(float)outwardYawSign
                 tm:(filament::TransformManager &)tm;
+- (void)configureLensCulling;
 
 @end
 
@@ -217,9 +219,33 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
         // updateTransformWithFace will fire the callback.
         _hasDisplayedCurrentModel = NO;
         [self cacheTempleArticulationState];
+        [self configureLensCulling];
         [self hide];
     } else {
         NSLog(@"%@: Failed to create glasses asset", TAG);
+    }
+}
+
+// The lenses are thin single-sided shells. Tinted (solar/clip-on) lenses
+// vanish at view angles where the camera sees their back face — backface
+// culling drops the only face, so the lens shows the background instead of its
+// tint. Disable culling on the lens material instances so both faces always
+// render and the lens is stable from every angle. Clear lenses are unaffected
+// (invisible either way); other geometry keeps its normal culling.
+- (void)configureLensCulling {
+    if (!_glassesAsset || !_engine) return;
+    RenderableManager &rm = _engine->getRenderableManager();
+    const char *lensNodes[] = {"LensL_geometry", "LensR_geometry"};
+    for (const char *name : lensNodes) {
+        Entity e = _glassesAsset->getFirstEntityByName(name);
+        if (e.isNull()) continue;
+        RenderableManager::Instance ri = rm.getInstance(e);
+        if (!ri.isValid()) continue;
+        size_t primCount = rm.getPrimitiveCount(ri);
+        for (size_t p = 0; p < primCount; p++) {
+            MaterialInstance *mi = rm.getMaterialInstanceAt(ri, p);
+            if (mi) mi->setCullingMode(MaterialInstance::CullingMode::NONE);
+        }
     }
 }
 

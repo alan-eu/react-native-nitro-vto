@@ -9,6 +9,7 @@ import com.google.android.filament.Box
 import com.google.android.filament.Engine
 import com.google.android.filament.Entity
 import com.google.android.filament.EntityManager
+import com.google.android.filament.Material
 import com.google.android.filament.RenderableManager
 import com.google.android.filament.Scene
 import com.google.android.filament.gltfio.AssetLoader
@@ -170,9 +171,29 @@ class GlassesRenderer(private val context: Context) {
             // the next time updateTransform runs for this freshly-loaded model.
             hasDisplayedCurrentModel = false
             cacheTempleArticulationState(asset)
+            configureLensCulling(asset)
             hide()
         } ?: run {
             Log.e(TAG, "Failed to create glasses asset")
+        }
+    }
+
+    // The lenses are thin single-sided shells. Tinted (solar/clip-on) lenses
+    // vanish at view angles where the camera sees their back face — backface
+    // culling drops the only face, so the lens shows the background instead of
+    // its tint. Disable culling on the lens material instances so both faces
+    // always render and the lens is stable from every angle. Clear lenses are
+    // unaffected (invisible either way); other geometry keeps its normal culling.
+    private fun configureLensCulling(asset: FilamentAsset) {
+        val rm = engine.renderableManager
+        for (name in arrayOf("LensL_geometry", "LensR_geometry")) {
+            val e = asset.getFirstEntityByName(name)
+            if (e == 0) continue
+            val ri = rm.getInstance(e)
+            if (ri == 0) continue
+            for (p in 0 until rm.getPrimitiveCount(ri)) {
+                rm.getMaterialInstanceAt(ri, p).setCullingMode(Material.CullingMode.NONE)
+            }
         }
     }
 
