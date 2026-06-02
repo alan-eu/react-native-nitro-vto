@@ -47,6 +47,22 @@ internal object OcclusionConstants {
     const val TEMPLE_TIP_SCALE = 0.6f
 
     /**
+     * Downward pitch (degrees) of each temple about the hinge's lateral axis,
+     * so the tips sit at ear height instead of riding slightly high. The rest
+     * temple points back and a touch up; this drops the tip with negligible
+     * depth change.
+     */
+    const val TEMPLE_DOWN_PITCH_DEG = 1.5f
+
+    /**
+     * Extra outward yaw (degrees) of each temple about the vertical axis,
+     * applied on top of the lateral swing so the temple lifts off the facemesh
+     * occluder and is not clipped by it. Complements FACE_MESH_X_SHRINK (which
+     * pulls the cheek mesh inward); this angles the temple itself outward.
+     */
+    const val TEMPLE_OUTWARD_YAW_DEG = 2.0f
+
+    /**
      * Default forward offset (face-local meters) of the glasses from the
      * nose bridge. Exposed as the `forwardOffset` JS prop; this is the
      * fallback when nothing is provided.

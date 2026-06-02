@@ -63,18 +63,40 @@ class GlassesRenderer(private val context: Context) {
     // Temple articulation state. articulationEnabled stays false if any of
     // the four expected hinge/temple node names is missing from the asset —
     // articulation becomes a no-op for that asset.
+    //
+    // Everything is captured in asset-root-local space, which is convention-
+    // invariant: regardless of each glb's units (cm vs m), root scale, exporter
+    // (Fbx vs Blender) or hierarchy depth, the hinge lands at the same metric
+    // pose here and the temple extends back by the same metric lever. *LocalRest
+    // is the parent-relative transform setTransform expects; *RootRest is
+    // relative to the asset root; the lever (length + bearing in the root-local
+    // X–Z plane) is what the swing solver needs to drive the tip's X.
     private var articulationEnabled = false
     @Entity private var hingeLEntity: Int = 0
     @Entity private var hingeREntity: Int = 0
-    private val hingeLRest = FloatArray(16)
-    private val hingeRRest = FloatArray(16)
-    private var restTipXL = 0f       // glb-cm (AABB center.x of TempleL_geometry)
-    private var restTipXR = 0f       // glb-cm
-    private var templeLLength = 0f   // glb-cm, hinge-to-tip distance along glb +Y
-    private var templeRLength = 0f   // glb-cm
-    private val articulationRotMatrix = FloatArray(16)
-    private val articulationOutMatrix = FloatArray(16)
+    private val hingeLLocalRest = FloatArray(16)
+    private val hingeRLocalRest = FloatArray(16)
+    private val hingeLRootRest = FloatArray(16)
+    private val hingeRRootRest = FloatArray(16)
+    private var templeLLeverLen = 0f      // meters
+    private var templeRLeverLen = 0f
+    private var templeLLeverAngle = 0f    // radians, atan2(dz, dx)
+    private var templeRLeverAngle = 0f
     private val articulationBbox = Box(0f, 0f, 0f, 0f, 0f, 0f)
+    // Per-call scratch (avoid allocations): parent-walk accumulators, swing math.
+    private val artAcc = FloatArray(16)
+    private val artLocal = FloatArray(16)
+    private val artTmp = FloatArray(16)
+    private val artToRoot = FloatArray(16)
+    private val artCorner = FloatArray(4)
+    private val artCornerOut = FloatArray(4)
+    private val artTip = FloatArray(3)
+    private val artRotY = FloatArray(16)
+    private val artRotX = FloatArray(16)
+    private val artM = FloatArray(16)
+    private val artInvHr = FloatArray(16)
+    private val artTmp2 = FloatArray(16)
+    private val articulationOutMatrix = FloatArray(16)
 
     /**
      * Setup the glasses renderer with Filament engine and scene.
@@ -169,39 +191,94 @@ class GlassesRenderer(private val context: Context) {
 
         val tm = engine.transformManager
         val rm = engine.renderableManager
-
-        tm.getTransform(tm.getInstance(hingeL), hingeLRest)
-        tm.getTransform(tm.getInstance(hingeR), hingeRRest)
+        val root = asset.root
 
         hingeLEntity = hingeL
         hingeREntity = hingeR
-        // Translation Y is at index 13 in column-major 4x4.
-        val hingeLY = hingeLRest[13]
-        val hingeRY = hingeRRest[13]
+        tm.getTransform(tm.getInstance(hingeL), hingeLLocalRest)
+        tm.getTransform(tm.getInstance(hingeR), hingeRLocalRest)
+        transformRelativeToRoot(tm, hingeL, root, hingeLRootRest)
+        transformRelativeToRoot(tm, hingeR, root, hingeRRootRest)
 
-        // Temples are authored extending along glb +Y in Z-up cm: the hinge
-        // sits at the front of the frame (smaller Y) and the geometry runs
-        // back to a larger +Y for the tip. Approximate the rest tip with
-        // the AABB:
-        //   restTipX  ≈ AABB.center.x   (X is roughly constant along the temple)
-        //   templeLen = AABB.maxY - hingeY  (distance from hinge to the +Y end)
-        rm.getAxisAlignedBoundingBox(rm.getInstance(templeL), articulationBbox)
-        restTipXL = articulationBbox.center[0]
-        templeLLength = (articulationBbox.center[1] + articulationBbox.halfExtent[1]) - hingeLY
-        rm.getAxisAlignedBoundingBox(rm.getInstance(templeR), articulationBbox)
-        restTipXR = articulationBbox.center[0]
-        templeRLength = (articulationBbox.center[1] + articulationBbox.halfExtent[1]) - hingeRY
+        // Rest temple tips in root-local space, then the hinge→tip lever in the
+        // horizontal (X–Z) plane. Articulation swings the temple about the
+        // root-local vertical (Y) to drive the tip's X to the ear target;
+        // length + bearing of the lever are all the solver needs.
+        templeTipRootLocal(tm, rm, templeL, root, artTip)
+        val dxL = artTip[0] - hingeLRootRest[12]
+        val dzL = artTip[2] - hingeLRootRest[14]
+        templeTipRootLocal(tm, rm, templeR, root, artTip)
+        val dxR = artTip[0] - hingeRRootRest[12]
+        val dzR = artTip[2] - hingeRRootRest[14]
+        templeLLeverLen = kotlin.math.sqrt(dxL * dxL + dzL * dzL)
+        templeRLeverLen = kotlin.math.sqrt(dxR * dxR + dzR * dzR)
+        templeLLeverAngle = kotlin.math.atan2(dzL, dxL)
+        templeRLeverAngle = kotlin.math.atan2(dzR, dxR)
 
-        if (templeLLength <= 0f || templeRLength <= 0f) {
-            Log.d(TAG, "Degenerate temple AABB — articulation disabled")
+        if (templeLLeverLen <= 0f || templeRLeverLen <= 0f) {
+            Log.d(TAG, "Degenerate temple lever — articulation disabled")
             return
         }
 
         articulationEnabled = true
         Log.d(
             TAG,
-            "Temple articulation enabled (L tipX=$restTipXL cm, len=$templeLLength cm; R tipX=$restTipXR cm, len=$templeRLength cm)"
+            "Temple articulation enabled (L pivotX=${hingeLRootRest[12]} m, len=$templeLLeverLen m; R pivotX=${hingeRRootRest[12]} m, len=$templeRLeverLen m)"
         )
+    }
+
+    /**
+     * Transform of [node] relative to [root], composed from local transforms by
+     * walking up the parent chain. Independent of any committed world transform,
+     * so it is valid immediately after load. Writes identity when node == root.
+     */
+    private fun transformRelativeToRoot(
+        tm: com.google.android.filament.TransformManager,
+        node: Int,
+        root: Int,
+        out: FloatArray,
+    ) {
+        Matrix.setIdentityM(out, 0)        // accumulates in `out`
+        var e = node
+        while (e != 0 && e != root) {
+            val inst = tm.getInstance(e)
+            if (inst == 0) break
+            tm.getTransform(inst, artLocal)
+            // out = artLocal × out
+            Matrix.multiplyMM(artAcc, 0, artLocal, 0, out, 0)
+            System.arraycopy(artAcc, 0, out, 0, 16)
+            e = tm.getParent(inst)
+        }
+    }
+
+    /**
+     * Temple tip in asset-root-local space: the rear-most (min root-local Z)
+     * corner of the temple renderable's bounding box. Temples extend back toward
+     * the ears, so that corner is the tip whose lateral position we articulate.
+     */
+    private fun templeTipRootLocal(
+        tm: com.google.android.filament.TransformManager,
+        rm: RenderableManager,
+        temple: Int,
+        root: Int,
+        outXYZ: FloatArray,
+    ) {
+        transformRelativeToRoot(tm, temple, root, artToRoot)
+        rm.getAxisAlignedBoundingBox(rm.getInstance(temple), articulationBbox)
+        val c = articulationBbox.center
+        val h = articulationBbox.halfExtent
+        var first = true
+        for (sx in intArrayOf(-1, 1)) for (sy in intArrayOf(-1, 1)) for (sz in intArrayOf(-1, 1)) {
+            artCorner[0] = c[0] + sx * h[0]
+            artCorner[1] = c[1] + sy * h[1]
+            artCorner[2] = c[2] + sz * h[2]
+            artCorner[3] = 1f
+            Matrix.multiplyMV(artCornerOut, 0, artToRoot, 0, artCorner, 0)
+            if (first || artCornerOut[2] < outXYZ[2]) {
+                outXYZ[0] = artCornerOut[0]; outXYZ[1] = artCornerOut[1]; outXYZ[2] = artCornerOut[2]
+                first = false
+            }
+        }
     }
 
     /**
@@ -293,31 +370,75 @@ class GlassesRenderer(private val context: Context) {
      */
     fun updateTempleArticulation(earHalfWidth: Float) {
         if (!articulationEnabled || earHalfWidth <= 0f) return
-        glassesAsset ?: return
 
-        // Scale ear half-width to the temple tip's depth (see
-        // TEMPLE_TIP_SCALE doc in OcclusionConstants). Convert face-local
-        // meters → glb-cm.
-        val desiredXcm = earHalfWidth * OcclusionConstants.TEMPLE_TIP_SCALE * 100f
+        // Temple tips target ±(earHalfWidth · TEMPLE_TIP_SCALE) on the glasses'
+        // own left/right axis (root-local X, metric — no unit conversion).
+        // HingeL is on +X, HingeR on −X (see the cached pivots).
+        val targetX = earHalfWidth * OcclusionConstants.TEMPLE_TIP_SCALE
+        // HingeL sits on +X: outward (away from the head) is a negative yaw about
+        // root-local +Y; HingeR mirrors it.
+        swingHinge(hingeLEntity, hingeLLocalRest, hingeLRootRest, templeLLeverLen, templeLLeverAngle, +targetX, -1f)
+        swingHinge(hingeREntity, hingeRLocalRest, hingeRRootRest, templeRLeverLen, templeRLeverAngle, -targetX, +1f)
+    }
 
-        // Temples extend along glb +Y from the hinge. Rotating around the
-        // hinge's local Z axis by θ moves the tip's parent X by
-        // approximately -L·sin(θ). Solve for θ to land the tip at
-        // ±desiredXcm.
-        val sinL = ((restTipXL - desiredXcm) / templeLLength).coerceIn(-1f, 1f)
-        val sinR = ((restTipXR - (-desiredXcm)) / templeRLength).coerceIn(-1f, 1f)
-        val thetaLDeg = Math.toDegrees(kotlin.math.asin(sinL).toDouble()).toFloat()
-        val thetaRDeg = Math.toDegrees(kotlin.math.asin(sinR).toDouble()).toFloat()
+    /**
+     * Swing one temple about the root-local vertical (Y) through its hinge pivot
+     * so the tip's root-local X reaches [targetX]. The tip traces a circle of
+     * radius [leverLen] about the pivot; with the rest bearing β = [beta] the tip
+     * X is pivotX + leverLen·cos(φ − β), so φ − β = ±acos((targetX − pivotX)/leverLen).
+     * We take the root nearest the rest pose (φ = 0) for a gentle swing. The
+     * root-local rotation M is conjugated into the hinge's parent-relative frame:
+     * newLocal = Lr · Hr⁻¹ · M · Hr (which collapses to Lr when φ = 0), so it is
+     * correct whatever the hierarchy above the hinge.
+     */
+    private fun swingHinge(
+        hinge: Int,
+        localRest: FloatArray,  // Lr
+        rootRest: FloatArray,   // Hr
+        leverLen: Float,
+        beta: Float,
+        targetX: Float,
+        outwardYawSign: Float,
+    ) {
+        val pivotX = rootRest[12]
+        val c = ((targetX - pivotX) / leverLen).coerceIn(-1f, 1f)
+        val d = kotlin.math.acos(c)
+        val phiA = wrapToPi(beta + d)
+        val phiB = wrapToPi(beta - d)
+        val phi = if (kotlin.math.abs(phiA) <= kotlin.math.abs(phiB)) phiA else phiB
+        val phiDeg = Math.toDegrees(phi.toDouble()).toFloat()
 
-        val tm = engine.transformManager
+        // On top of the solved lateral swing: yaw the temple a touch outward
+        // (off the facemesh occluder) and pitch its tip down to ear height.
+        val yawDeg = outwardYawSign * OcclusionConstants.TEMPLE_OUTWARD_YAW_DEG
+        val pitchDeg = -OcclusionConstants.TEMPLE_DOWN_PITCH_DEG
 
-        Matrix.setRotateM(articulationRotMatrix, 0, thetaLDeg, 0f, 0f, 1f)
-        Matrix.multiplyMM(articulationOutMatrix, 0, hingeLRest, 0, articulationRotMatrix, 0)
-        tm.setTransform(tm.getInstance(hingeLEntity), articulationOutMatrix)
+        // M = T(P) · Ry(φ + yaw) · Rx(pitch) · T(−P), P = hinge pivot in root-local space.
+        val px = rootRest[12]; val py = rootRest[13]; val pz = rootRest[14]
+        Matrix.setIdentityM(artM, 0)
+        Matrix.translateM(artM, 0, px, py, pz)                 // T(P)
+        Matrix.setRotateM(artRotY, 0, phiDeg + yawDeg, 0f, 1f, 0f)
+        Matrix.multiplyMM(artTmp, 0, artM, 0, artRotY, 0)      // T(P)·Ry
+        System.arraycopy(artTmp, 0, artM, 0, 16)
+        Matrix.setRotateM(artRotX, 0, pitchDeg, 1f, 0f, 0f)
+        Matrix.multiplyMM(artTmp, 0, artM, 0, artRotX, 0)      // T(P)·Ry·Rx
+        System.arraycopy(artTmp, 0, artM, 0, 16)
+        Matrix.translateM(artM, 0, -px, -py, -pz)              // T(P)·Ry·Rx·T(−P)
 
-        Matrix.setRotateM(articulationRotMatrix, 0, thetaRDeg, 0f, 0f, 1f)
-        Matrix.multiplyMM(articulationOutMatrix, 0, hingeRRest, 0, articulationRotMatrix, 0)
-        tm.setTransform(tm.getInstance(hingeREntity), articulationOutMatrix)
+        // newLocal = Lr · Hr⁻¹ · M · Hr
+        Matrix.invertM(artInvHr, 0, rootRest, 0)
+        Matrix.multiplyMM(artTmp, 0, artInvHr, 0, artM, 0)     // Hr⁻¹·M
+        Matrix.multiplyMM(artTmp2, 0, artTmp, 0, rootRest, 0)  // Hr⁻¹·M·Hr
+        Matrix.multiplyMM(articulationOutMatrix, 0, localRest, 0, artTmp2, 0)
+        engine.transformManager.setTransform(engine.transformManager.getInstance(hinge), articulationOutMatrix)
+    }
+
+    /** Wrap an angle (radians) into (−π, π] for a fair magnitude comparison. */
+    private fun wrapToPi(angle: Float): Float {
+        var a = angle
+        while (a > Math.PI) a -= (2.0 * Math.PI).toFloat()
+        while (a < -Math.PI) a += (2.0 * Math.PI).toFloat()
+        return a
     }
 
     /**
