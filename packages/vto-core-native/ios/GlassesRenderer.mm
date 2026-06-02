@@ -109,6 +109,12 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
 @property (nonatomic, assign) float templeLLeverAngle;  // radians, atan2(dz, dx)
 @property (nonatomic, assign) float templeRLeverAngle;
 
+// Lens-center height above the model origin (root-local meters). Some models
+// are authored with the frame shifted vertically off the origin, so anchoring
+// the origin to the nose bridge makes them ride too high. We instead anchor the
+// lens-center, shifting placement down by this. ~0 for well-authored models.
+@property (nonatomic, assign) float lensVerticalOffset;
+
 - (void)swingHinge:(Entity)hinge
          localRest:(filament::math::mat4f)Lr
           rootRest:(filament::math::mat4f)Hr
@@ -118,6 +124,7 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
     outwardYawSign:(float)outwardYawSign
                 tm:(filament::TransformManager &)tm;
 - (void)configureLensCulling;
+- (void)cacheLensVerticalOffset;
 
 @end
 
@@ -220,6 +227,7 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
         _hasDisplayedCurrentModel = NO;
         [self cacheTempleArticulationState];
         [self configureLensCulling];
+        [self cacheLensVerticalOffset];
         [self hide];
     } else {
         NSLog(@"%@: Failed to create glasses asset", TAG);
@@ -247,6 +255,29 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
             if (mi) mi->setCullingMode(MaterialInstance::CullingMode::NONE);
         }
     }
+}
+
+// Cache the lens-center height (root-local Y) so updateTransformWithFace can
+// anchor the lens-center — not the model origin — to the nose bridge. Stays 0
+// (no correction) if the lens nodes are missing.
+- (void)cacheLensVerticalOffset {
+    _lensVerticalOffset = 0.0f;
+    if (!_glassesAsset || !_engine) return;
+    TransformManager &tm = _engine->getTransformManager();
+    RenderableManager &rm = _engine->getRenderableManager();
+    Entity root = _glassesAsset->getRoot();
+    float sum = 0.0f; int n = 0;
+    for (const char *name : {"LensL_geometry", "LensR_geometry"}) {
+        Entity e = _glassesAsset->getFirstEntityByName(name);
+        if (e.isNull()) continue;
+        RenderableManager::Instance ri = rm.getInstance(e);
+        if (!ri.isValid()) continue;
+        filament::Box box = rm.getAxisAlignedBoundingBox(ri);
+        filament::math::mat4f toRoot = transformRelativeToRoot(tm, e, root);
+        filament::math::float4 c = toRoot * filament::math::float4{box.center.x, box.center.y, box.center.z, 1.0f};
+        sum += c.y; n++;
+    }
+    if (n > 0) _lensVerticalOffset = sum / (float)n;
 }
 
 - (void)cacheTempleArticulationState {
@@ -324,10 +355,17 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
                                             rotationMatrix.columns[2].y,
                                             rotationMatrix.columns[2].z);
 
-    // Set world-space position with forward offset
-    rotationMatrix.columns[3].x = noseBridgeWorld.x + forward.x * _forwardOffset;
-    rotationMatrix.columns[3].y = noseBridgeWorld.y + forward.y * _forwardOffset;
-    rotationMatrix.columns[3].z = noseBridgeWorld.z + forward.z * _forwardOffset;
+    // Anchor the lens-center (not the model origin) to the nose bridge: shift
+    // down along the face's up axis by the cached lens-center height, so models
+    // authored with a vertical offset don't ride too high. ~0 for normal models.
+    simd_float3 up = simd_make_float3(rotationMatrix.columns[1].x,
+                                       rotationMatrix.columns[1].y,
+                                       rotationMatrix.columns[1].z);
+
+    // Set world-space position with forward offset and lens-center anchoring.
+    rotationMatrix.columns[3].x = noseBridgeWorld.x + forward.x * _forwardOffset - up.x * _lensVerticalOffset;
+    rotationMatrix.columns[3].y = noseBridgeWorld.y + forward.y * _forwardOffset - up.y * _lensVerticalOffset;
+    rotationMatrix.columns[3].z = noseBridgeWorld.z + forward.z * _forwardOffset - up.z * _lensVerticalOffset;
 
     // Convert simd matrix to filament matrix
     filament::math::mat4f filamentTransform;

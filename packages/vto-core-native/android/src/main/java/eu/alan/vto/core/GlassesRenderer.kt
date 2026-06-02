@@ -98,6 +98,11 @@ class GlassesRenderer(private val context: Context) {
     private val artInvHr = FloatArray(16)
     private val artTmp2 = FloatArray(16)
     private val articulationOutMatrix = FloatArray(16)
+    // Lens-center height above the model origin (root-local meters). Some models
+    // are authored with the frame shifted vertically off the origin, so anchoring
+    // the origin to the nose bridge makes them ride too high. We instead anchor
+    // the lens-center, shifting placement down by this. ~0 for normal models.
+    private var lensVerticalOffset = 0f
 
     /**
      * Setup the glasses renderer with Filament engine and scene.
@@ -172,6 +177,7 @@ class GlassesRenderer(private val context: Context) {
             hasDisplayedCurrentModel = false
             cacheTempleArticulationState(asset)
             configureLensCulling(asset)
+            cacheLensVerticalOffset(asset)
             hide()
         } ?: run {
             Log.e(TAG, "Failed to create glasses asset")
@@ -195,6 +201,34 @@ class GlassesRenderer(private val context: Context) {
                 rm.getMaterialInstanceAt(ri, p).setCullingMode(Material.CullingMode.NONE)
             }
         }
+    }
+
+    // Cache the lens-center height (root-local Y) so updateTransform can anchor
+    // the lens-center — not the model origin — to the nose bridge. Stays 0 (no
+    // correction) if the lens nodes are missing. Reuses articulation scratch.
+    private fun cacheLensVerticalOffset(asset: FilamentAsset) {
+        lensVerticalOffset = 0f
+        val tm = engine.transformManager
+        val rm = engine.renderableManager
+        val root = asset.root
+        var sum = 0f
+        var n = 0
+        for (name in arrayOf("LensL_geometry", "LensR_geometry")) {
+            val e = asset.getFirstEntityByName(name)
+            if (e == 0) continue
+            val ri = rm.getInstance(e)
+            if (ri == 0) continue
+            rm.getAxisAlignedBoundingBox(ri, articulationBbox)
+            transformRelativeToRoot(tm, e, root, artToRoot)
+            artCorner[0] = articulationBbox.center[0]
+            artCorner[1] = articulationBbox.center[1]
+            artCorner[2] = articulationBbox.center[2]
+            artCorner[3] = 1f
+            Matrix.multiplyMV(artCornerOut, 0, artToRoot, 0, artCorner, 0)
+            sum += artCornerOut[1]
+            n++
+        }
+        if (n > 0) lensVerticalOffset = sum / n
     }
 
     private fun cacheTempleArticulationState(asset: FilamentAsset) {
@@ -328,10 +362,17 @@ class GlassesRenderer(private val context: Context) {
             val forwardY = rotationMatrix[9]   // Z axis Y component (column 2, row 1)
             val forwardZ = rotationMatrix[10]  // Z axis Z component (column 2, row 2)
 
-            // Set world-space position with forward offset
-            tempMatrix16[12] = noseBridgeWorld[0] + forwardX * forwardOffset
-            tempMatrix16[13] = noseBridgeWorld[1] + forwardY * forwardOffset
-            tempMatrix16[14] = noseBridgeWorld[2] + forwardZ * forwardOffset
+            // Face up axis (column 1) — used to anchor the lens-center (not the
+            // model origin) to the nose bridge, so models authored with a
+            // vertical offset don't ride too high. ~0 shift for normal models.
+            val upX = rotationMatrix[4]
+            val upY = rotationMatrix[5]
+            val upZ = rotationMatrix[6]
+
+            // Set world-space position with forward offset and lens-center anchoring.
+            tempMatrix16[12] = noseBridgeWorld[0] + forwardX * forwardOffset - upX * lensVerticalOffset
+            tempMatrix16[13] = noseBridgeWorld[1] + forwardY * forwardOffset - upY * lensVerticalOffset
+            tempMatrix16[14] = noseBridgeWorld[2] + forwardZ * forwardOffset - upZ * lensVerticalOffset
 
             // Mirror X for the front-facing camera: ARCore's projection encodes the mirror
             // in m[0] < 0, but VTORenderer uses Filament's setProjection(fov, aspect, …) which
