@@ -24,6 +24,42 @@ using namespace utils;
 
 static NSString *const TAG = @"GlassesRenderer";
 
+// Transform of `node` relative to `root`, composed from local transforms by
+// walking up the parent chain. Independent of any committed world transform,
+// so it is valid immediately after load. Identity when node == root.
+static filament::math::mat4f transformRelativeToRoot(filament::TransformManager &tm,
+                                                     Entity node, Entity root) {
+    filament::math::mat4f acc;  // identity
+    Entity e = node;
+    while (!e.isNull() && e != root) {
+        filament::TransformManager::Instance inst = tm.getInstance(e);
+        if (!inst.isValid()) break;
+        acc = tm.getTransform(inst) * acc;
+        e = tm.getParent(inst);
+    }
+    return acc;
+}
+
+// Temple tip in asset-root-local space: the rear-most (min root-local Z) corner
+// of the temple renderable's bounding box. Temples extend back toward the ears,
+// so that corner is the tip whose lateral position we articulate.
+static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
+                                                 filament::RenderableManager &rm,
+                                                 Entity temple, Entity root) {
+    using namespace filament::math;
+    mat4f toRoot = transformRelativeToRoot(tm, temple, root);
+    filament::Box box = rm.getAxisAlignedBoundingBox(rm.getInstance(temple));
+    float3 c = box.center, h = box.halfExtent;
+    float3 best{}; bool first = true;
+    for (float sx : {-1.0f, 1.0f})
+        for (float sy : {-1.0f, 1.0f})
+            for (float sz : {-1.0f, 1.0f}) {
+                float4 w = toRoot * float4{c.x + sx * h.x, c.y + sy * h.y, c.z + sz * h.z, 1.0f};
+                if (first || w.z < best.z) { best = float3{w.x, w.y, w.z}; first = false; }
+            }
+    return best;
+}
+
 @interface GlassesRenderer ()
 
 @property (nonatomic, assign) Engine *engine;
@@ -52,15 +88,34 @@ static NSString *const TAG = @"GlassesRenderer";
 // Temple articulation state, populated when the loaded glb exposes the
 // expected hinge node names. articulationEnabled stays NO if any of the four
 // nodes is missing — articulation becomes a no-op for that asset.
+//
+// Everything is captured in asset-root-local space, which is convention-
+// invariant: regardless of each glb's units (cm vs m), root scale, exporter
+// (Fbx vs Blender) or hierarchy depth, the hinge lands at the same metric pose
+// here and the temple extends back by the same metric lever. *LocalRest is the
+// parent-relative transform setTransform expects; *RootRest is relative to the
+// asset root; the lever (length + bearing in the root-local X–Z plane) is what
+// the swing solver needs to drive the tip's X to the ear target.
 @property (nonatomic, assign) BOOL articulationEnabled;
 @property (nonatomic, assign) Entity hingeLEntity;
 @property (nonatomic, assign) Entity hingeREntity;
-@property (nonatomic, assign) filament::math::mat4f hingeLRest;
-@property (nonatomic, assign) filament::math::mat4f hingeRRest;
-@property (nonatomic, assign) float restTipXL;     // glb-cm (AABB center.x of TempleL_geometry)
-@property (nonatomic, assign) float restTipXR;     // glb-cm
-@property (nonatomic, assign) float templeLLength;  // glb-cm, hinge-to-tip distance along glb +Y
-@property (nonatomic, assign) float templeRLength;  // glb-cm
+@property (nonatomic, assign) filament::math::mat4f hingeLLocalRest;
+@property (nonatomic, assign) filament::math::mat4f hingeRLocalRest;
+@property (nonatomic, assign) filament::math::mat4f hingeLRootRest;
+@property (nonatomic, assign) filament::math::mat4f hingeRRootRest;
+@property (nonatomic, assign) float templeLLeverLen;    // meters
+@property (nonatomic, assign) float templeRLeverLen;
+@property (nonatomic, assign) float templeLLeverAngle;  // radians, atan2(dz, dx)
+@property (nonatomic, assign) float templeRLeverAngle;
+
+- (void)swingHinge:(Entity)hinge
+         localRest:(filament::math::mat4f)Lr
+          rootRest:(filament::math::mat4f)Hr
+          leverLen:(float)leverLen
+        leverAngle:(float)beta
+           targetX:(float)targetX
+    outwardYawSign:(float)outwardYawSign
+                tm:(filament::TransformManager &)tm;
 
 @end
 
@@ -184,34 +239,36 @@ static NSString *const TAG = @"GlassesRenderer";
 
     TransformManager &tm = _engine->getTransformManager();
     RenderableManager &rm = _engine->getRenderableManager();
+    Entity root = _glassesAsset->getRoot();
 
     _hingeLEntity = hingeL;
     _hingeREntity = hingeR;
-    _hingeLRest = tm.getTransform(tm.getInstance(hingeL));
-    _hingeRRest = tm.getTransform(tm.getInstance(hingeR));
-    float hingeLY = _hingeLRest[3][1];
-    float hingeRY = _hingeRRest[3][1];
+    _hingeLLocalRest = tm.getTransform(tm.getInstance(hingeL));
+    _hingeRLocalRest = tm.getTransform(tm.getInstance(hingeR));
+    _hingeLRootRest = transformRelativeToRoot(tm, hingeL, root);
+    _hingeRRootRest = transformRelativeToRoot(tm, hingeR, root);
 
-    // Temples are authored extending along glb +Y in Z-up cm: the hinge sits
-    // at the front of the frame (smaller Y) and the geometry runs back to a
-    // larger +Y for the tip. Approximate the rest tip with the AABB:
-    //   restTipX  ≈ AABB.center.x   (X is roughly constant along the temple)
-    //   templeLen = AABB.maxY - hingeY  (distance from hinge to the +Y end)
-    filament::Box bboxL = rm.getAxisAlignedBoundingBox(rm.getInstance(templeL));
-    filament::Box bboxR = rm.getAxisAlignedBoundingBox(rm.getInstance(templeR));
-    _restTipXL = bboxL.center.x;
-    _restTipXR = bboxR.center.x;
-    _templeLLength = (bboxL.center.y + bboxL.halfExtent.y) - hingeLY;
-    _templeRLength = (bboxR.center.y + bboxR.halfExtent.y) - hingeRY;
+    // Rest temple tips in root-local space, then the hinge→tip lever in the
+    // horizontal (X–Z) plane. Articulation swings the temple about the
+    // root-local vertical (Y) to drive the tip's X to the ear target; length +
+    // bearing of the lever are all the solver needs.
+    filament::math::float3 tipL = templeTipRootLocal(tm, rm, templeL, root);
+    filament::math::float3 tipR = templeTipRootLocal(tm, rm, templeR, root);
+    float dxL = tipL.x - _hingeLRootRest[3][0], dzL = tipL.z - _hingeLRootRest[3][2];
+    float dxR = tipR.x - _hingeRRootRest[3][0], dzR = tipR.z - _hingeRRootRest[3][2];
+    _templeLLeverLen = hypotf(dxL, dzL);
+    _templeRLeverLen = hypotf(dxR, dzR);
+    _templeLLeverAngle = atan2f(dzL, dxL);
+    _templeRLeverAngle = atan2f(dzR, dxR);
 
-    if (_templeLLength <= 0.0f || _templeRLength <= 0.0f) {
-        NSLog(@"%@: Degenerate temple AABB — articulation disabled", TAG);
+    if (_templeLLeverLen <= 0.0f || _templeRLeverLen <= 0.0f) {
+        NSLog(@"%@: Degenerate temple lever — articulation disabled", TAG);
         return;
     }
 
     _articulationEnabled = YES;
-    NSLog(@"%@: Temple articulation enabled (L tipX=%.2f cm, len=%.2f cm; R tipX=%.2f cm, len=%.2f cm)",
-          TAG, _restTipXL, _templeLLength, _restTipXR, _templeRLength);
+    NSLog(@"%@: Temple articulation enabled (L pivotX=%.3f m, len=%.3f m; R pivotX=%.3f m, len=%.3f m)",
+          TAG, _hingeLRootRest[3][0], _templeLLeverLen, _hingeRRootRest[3][0], _templeRLeverLen);
 }
 
 - (void)updateTransformWithFace:(ARFaceAnchor *)face frame:(ARFrame *)frame {
@@ -319,30 +376,61 @@ static NSString *const TAG = @"GlassesRenderer";
 }
 
 - (void)updateTempleArticulationWithEarHalfWidth:(float)earHalfWidth {
-    if (!_articulationEnabled || !_engine || !_glassesAsset) return;
+    if (!_articulationEnabled || !_engine) return;
     if (earHalfWidth <= 0.0f) return;
 
-    // Scale ear half-width to the temple tip's depth (see kTempleTipScale
-    // doc in OcclusionConstants.h). Convert face-local meters → glb-cm.
-    float desiredXcm = earHalfWidth * kTempleTipScale * 100.0f;
-
-    // Temples extend along glb +Y from the hinge. Rotating around the
-    // hinge's local Z axis by θ moves the tip's parent X by approximately
-    // -L·sin(θ). Solve for θ to land the tip at ±desiredXcm.
-    float sinL = (_restTipXL - desiredXcm) / _templeLLength;
-    float sinR = (_restTipXR - (-desiredXcm)) / _templeRLength;
-    sinL = fmaxf(-1.0f, fminf(1.0f, sinL));
-    sinR = fmaxf(-1.0f, fminf(1.0f, sinR));
-    float thetaL = asinf(sinL);
-    float thetaR = asinf(sinR);
-
-    using namespace filament::math;
-    mat4f rotL = mat4f::rotation(thetaL, float3{0.0f, 0.0f, 1.0f});
-    mat4f rotR = mat4f::rotation(thetaR, float3{0.0f, 0.0f, 1.0f});
-
+    // Temple tips target ±(earHalfWidth · kTempleTipScale) on the glasses' own
+    // left/right axis (root-local X, metric — no unit conversion). HingeL is
+    // on +X, HingeR on −X (see the cached pivots).
     TransformManager &tm = _engine->getTransformManager();
-    tm.setTransform(tm.getInstance(_hingeLEntity), _hingeLRest * rotL);
-    tm.setTransform(tm.getInstance(_hingeREntity), _hingeRRest * rotR);
+    float targetX = earHalfWidth * kTempleTipScale;
+    // HingeL sits on +X: outward (away from the head) is a negative yaw about
+    // root-local +Y; HingeR mirrors it.
+    [self swingHinge:_hingeLEntity localRest:_hingeLLocalRest rootRest:_hingeLRootRest
+            leverLen:_templeLLeverLen leverAngle:_templeLLeverAngle targetX:+targetX
+       outwardYawSign:-1.0f tm:tm];
+    [self swingHinge:_hingeREntity localRest:_hingeRLocalRest rootRest:_hingeRRootRest
+            leverLen:_templeRLeverLen leverAngle:_templeRLeverAngle targetX:-targetX
+       outwardYawSign:+1.0f tm:tm];
+}
+
+// Swing one temple about the root-local vertical (Y) through its hinge pivot so
+// the tip's root-local X reaches targetX. The tip traces a circle of radius
+// `leverLen` about the pivot; with the rest bearing β = leverAngle the tip X is
+//   pivotX + leverLen·cos(φ − β),
+// so φ − β = ±acos((targetX − pivotX)/leverLen). We take the root nearest the
+// rest pose (φ = 0) for a gentle swing. The root-local rotation M is conjugated
+// into the hinge's parent-relative frame: newLocal = Lr · Hr⁻¹ · M · Hr (which
+// collapses to Lr when φ = 0), so it is correct whatever the hierarchy above.
+- (void)swingHinge:(Entity)hinge
+         localRest:(filament::math::mat4f)Lr
+          rootRest:(filament::math::mat4f)Hr
+          leverLen:(float)leverLen
+        leverAngle:(float)beta
+           targetX:(float)targetX
+    outwardYawSign:(float)outwardYawSign
+                tm:(filament::TransformManager &)tm {
+    using namespace filament::math;
+
+    float pivotX = Hr[3][0];
+    float c = fmaxf(-1.0f, fminf(1.0f, (targetX - pivotX) / leverLen));
+    float d = acosf(c);
+    auto wrap = [](float a) { while (a > M_PI) a -= 2.0f * M_PI; while (a < -M_PI) a += 2.0f * M_PI; return a; };
+    float phiA = wrap(beta + d), phiB = wrap(beta - d);
+    float phi = (fabsf(phiA) <= fabsf(phiB)) ? phiA : phiB;
+
+    // On top of the solved lateral swing: yaw the temple a touch outward (off
+    // the facemesh occluder) and pitch its tip down to ear height.
+    float yaw = outwardYawSign * kTempleOutwardYawDeg * (float)(M_PI / 180.0);
+    float pitch = -kTempleDownPitchDeg * (float)(M_PI / 180.0);
+
+    float3 pivot{Hr[3][0], Hr[3][1], Hr[3][2]};
+    mat4f M = mat4f::translation(pivot)
+            * mat4f::rotation(phi + yaw, float3{0.0f, 1.0f, 0.0f})
+            * mat4f::rotation(pitch, float3{1.0f, 0.0f, 0.0f})
+            * mat4f::translation(-pivot);
+    mat4f newLocal = Lr * inverse(Hr) * M * Hr;
+    tm.setTransform(tm.getInstance(hinge), newLocal);
 }
 
 - (void)switchModelWithUrl:(NSString *)modelUrl {
