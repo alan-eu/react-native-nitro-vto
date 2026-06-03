@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.13.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.12.3...v0.13.0) (2026-06-03)
+
+### ✨ Features
+
+* harness mod and argent agent conf ([#73](https://github.com/alan-eu/react-native-nitro-vto/issues/73)) ([ddab071](https://github.com/alan-eu/react-native-nitro-vto/commit/ddab071b767cd71bef93ac2d16af64088e74e5d1))
+
+### 🐛 Bug Fixes
+
+* **ios,android:** anchor glasses by lens-center so off-center frames don't ride too high/low ([#76](https://github.com/alan-eu/react-native-nitro-vto/issues/76)) ([dd58598](https://github.com/alan-eu/react-native-nitro-vto/commit/dd5859899523770371c763f10b1d2e46874b18d0))
+* **ios,android:** articulate temples in asset-root-local space ([#74](https://github.com/alan-eu/react-native-nitro-vto/issues/74)) ([30f4b89](https://github.com/alan-eu/react-native-nitro-vto/commit/30f4b8922013cc01341c7039355f0fd4ca2d8e89))
+* **ios,android:** remove skybox ([#71](https://github.com/alan-eu/react-native-nitro-vto/issues/71)) ([f71e4a6](https://github.com/alan-eu/react-native-nitro-vto/commit/f71e4a684eb2ab79d58ce67c410d41436bdf9e8b))
+* **ios,android:** render solar/clip-on lenses without backface culling ([#75](https://github.com/alan-eu/react-native-nitro-vto/issues/75)) ([1587409](https://github.com/alan-eu/react-native-nitro-vto/commit/15874097ed528f5e64683197fa419b41249bc37f))
+
 ## [0.12.3](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.12.2...v0.12.3) (2026-05-29)
 
 ### ✨ Features

@@ -1,6 +1,6 @@
 {
   "name": "@alaneu/react-native-nitro-vto-example",
-  "version": "0.12.3",
+  "version": "0.13.0",
   "private": true,
   "main": "index.js",
   "scripts": {
