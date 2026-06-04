@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.13.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.13.0...v0.13.1) (2026-06-04)
+
+### 🐛 Bug Fixes
+
+* remove `react-native.config.js` ([#77](https://github.com/alan-eu/react-native-nitro-vto/issues/77)) ([7fab152](https://github.com/alan-eu/react-native-nitro-vto/commit/7fab152f5e6c9a3968b39ce612c5ddd0939e2f68))
+
 ## [0.13.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.12.3...v0.13.0) (2026-06-03)
 
 ### ✨ Features
