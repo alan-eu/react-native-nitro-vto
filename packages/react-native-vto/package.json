@@ -9,7 +9,6 @@
   "source": "src/index.ts",
   "files": [
     "src",
-    "react-native.config.js",
     "lib",
     "android/build.gradle",
     "android/src",
