@@ -118,9 +118,7 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
 - (void)swingHinge:(Entity)hinge
          localRest:(filament::math::mat4f)Lr
           rootRest:(filament::math::mat4f)Hr
-          leverLen:(float)leverLen
-        leverAngle:(float)beta
-           targetX:(float)targetX
+               phi:(float)phi
     outwardYawSign:(float)outwardYawSign
                 tm:(filament::TransformManager &)tm;
 - (void)configureLensCulling;
@@ -443,48 +441,56 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
     if (!_articulationEnabled || !_engine) return;
     if (earHalfWidth <= 0.0f) return;
 
-    // Temple tips target ±(earHalfWidth · kTempleTipScale) on the glasses' own
-    // left/right axis (root-local X, metric — no unit conversion). HingeL is
-    // on +X, HingeR on −X (see the cached pivots).
     TransformManager &tm = _engine->getTransformManager();
+
+    // Temple tips target ±(earHalfWidth · kTempleTipScale) on the glasses' own
+    // left/right axis (root-local X, metric — no unit conversion).
     float targetX = earHalfWidth * kTempleTipScale;
-    // HingeL sits on +X: outward (away from the head) is a negative yaw about
-    // root-local +Y; HingeR mirrors it.
+
+    // The two temples are mirror-symmetric by construction, so we solve ONE
+    // swing from mirror-folded, averaged geometry and apply it as equal-and-
+    // opposite rotations. Solving each side independently against its own
+    // hinge→tip lever was not mirror-consistent: the rest lever is derived from
+    // the temple's bounding-box rear corner, a phantom point that lands several
+    // degrees apart between the two meshes, so the per-side solve rotated the
+    // temples by different amounts and broke symmetry on a symmetric rest pose.
+    auto wrap = [](float a) { while (a > M_PI) a -= 2.0f * M_PI; while (a < -M_PI) a += 2.0f * M_PI; return a; };
+    float pivotXSym = 0.5f * (fabsf(_hingeLRootRest[3][0]) + fabsf(_hingeRRootRest[3][0]));
+    float leverSym  = 0.5f * (_templeLLeverLen + _templeRLeverLen);
+    // betaL already lives in the +X half-space; mirror betaR (x→−x: atan2(z,−x))
+    // and take the circular mean so the shared bearing is exporter-agnostic.
+    float betaRFolded = atan2f(sinf(_templeRLeverAngle), -cosf(_templeRLeverAngle));
+    float betaSym = atan2f(sinf(_templeLLeverAngle) + sinf(betaRFolded),
+                           cosf(_templeLLeverAngle) + cosf(betaRFolded));
+
+    float c = fmaxf(-1.0f, fminf(1.0f, (targetX - pivotXSym) / leverSym));
+    float d = acosf(c);
+    float phiA = wrap(betaSym + d), phiB = wrap(betaSym - d);
+    float phiSym = (fabsf(phiA) <= fabsf(phiB)) ? phiA : phiB;  // +X-side swing
+
+    // HingeL on +X swings by +phiSym; HingeR mirrors with −phiSym. Each rotates
+    // about its own pivot (correct conjugation); the outward yaw and down pitch
+    // are applied inside swingHinge, already mirrored via outwardYawSign.
     [self swingHinge:_hingeLEntity localRest:_hingeLLocalRest rootRest:_hingeLRootRest
-            leverLen:_templeLLeverLen leverAngle:_templeLLeverAngle targetX:+targetX
-       outwardYawSign:-1.0f tm:tm];
+                 phi:+phiSym outwardYawSign:-1.0f tm:tm];
     [self swingHinge:_hingeREntity localRest:_hingeRLocalRest rootRest:_hingeRRootRest
-            leverLen:_templeRLeverLen leverAngle:_templeRLeverAngle targetX:-targetX
-       outwardYawSign:+1.0f tm:tm];
+                 phi:-phiSym outwardYawSign:+1.0f tm:tm];
 }
 
-// Swing one temple about the root-local vertical (Y) through its hinge pivot so
-// the tip's root-local X reaches targetX. The tip traces a circle of radius
-// `leverLen` about the pivot; with the rest bearing β = leverAngle the tip X is
-//   pivotX + leverLen·cos(φ − β),
-// so φ − β = ±acos((targetX − pivotX)/leverLen). We take the root nearest the
-// rest pose (φ = 0) for a gentle swing. The root-local rotation M is conjugated
-// into the hinge's parent-relative frame: newLocal = Lr · Hr⁻¹ · M · Hr (which
-// collapses to Lr when φ = 0), so it is correct whatever the hierarchy above.
+// Swing one temple about the root-local vertical (Y) through its hinge pivot by
+// `phi`, plus a small outward yaw (off the facemesh occluder) and a down pitch
+// (tip to ear height). The root-local rotation M is conjugated into the hinge's
+// parent-relative frame: newLocal = Lr · Hr⁻¹ · M · Hr (which collapses to Lr
+// when the total rotation is zero), so it is correct whatever the hierarchy
+// above the hinge.
 - (void)swingHinge:(Entity)hinge
          localRest:(filament::math::mat4f)Lr
           rootRest:(filament::math::mat4f)Hr
-          leverLen:(float)leverLen
-        leverAngle:(float)beta
-           targetX:(float)targetX
+               phi:(float)phi
     outwardYawSign:(float)outwardYawSign
                 tm:(filament::TransformManager &)tm {
     using namespace filament::math;
 
-    float pivotX = Hr[3][0];
-    float c = fmaxf(-1.0f, fminf(1.0f, (targetX - pivotX) / leverLen));
-    float d = acosf(c);
-    auto wrap = [](float a) { while (a > M_PI) a -= 2.0f * M_PI; while (a < -M_PI) a += 2.0f * M_PI; return a; };
-    float phiA = wrap(beta + d), phiB = wrap(beta - d);
-    float phi = (fabsf(phiA) <= fabsf(phiB)) ? phiA : phiB;
-
-    // On top of the solved lateral swing: yaw the temple a touch outward (off
-    // the facemesh occluder) and pitch its tip down to ear height.
     float yaw = outwardYawSign * kTempleOutwardYawDeg * (float)(M_PI / 180.0);
     float pitch = -kTempleDownPitchDeg * (float)(M_PI / 180.0);
 

@@ -435,43 +435,55 @@ class GlassesRenderer(private val context: Context) {
 
         // Temple tips target ±(earHalfWidth · TEMPLE_TIP_SCALE) on the glasses'
         // own left/right axis (root-local X, metric — no unit conversion).
-        // HingeL is on +X, HingeR on −X (see the cached pivots).
         val targetX = earHalfWidth * OcclusionConstants.TEMPLE_TIP_SCALE
-        // HingeL sits on +X: outward (away from the head) is a negative yaw about
-        // root-local +Y; HingeR mirrors it.
-        swingHinge(hingeLEntity, hingeLLocalRest, hingeLRootRest, templeLLeverLen, templeLLeverAngle, +targetX, -1f)
-        swingHinge(hingeREntity, hingeRLocalRest, hingeRRootRest, templeRLeverLen, templeRLeverAngle, -targetX, +1f)
+
+        // The two temples are mirror-symmetric by construction, so we solve ONE
+        // swing from mirror-folded, averaged geometry and apply it as equal-and-
+        // opposite rotations. Solving each side independently against its own
+        // hinge→tip lever was not mirror-consistent: the rest lever is derived
+        // from the temple's bounding-box rear corner, a phantom point that lands
+        // several degrees apart between the two meshes, so the per-side solve
+        // rotated the temples by different amounts and broke symmetry on a
+        // symmetric rest pose.
+        val pivotXSym = 0.5f * (kotlin.math.abs(hingeLRootRest[12]) + kotlin.math.abs(hingeRRootRest[12]))
+        val leverSym = 0.5f * (templeLLeverLen + templeRLeverLen)
+        // betaL already lives in the +X half-space; mirror betaR (x→−x: atan2(z,−x))
+        // and take the circular mean so the shared bearing is exporter-agnostic.
+        val betaRFolded = kotlin.math.atan2(kotlin.math.sin(templeRLeverAngle), -kotlin.math.cos(templeRLeverAngle))
+        val betaSym = kotlin.math.atan2(
+            kotlin.math.sin(templeLLeverAngle) + kotlin.math.sin(betaRFolded),
+            kotlin.math.cos(templeLLeverAngle) + kotlin.math.cos(betaRFolded),
+        )
+
+        val c = ((targetX - pivotXSym) / leverSym).coerceIn(-1f, 1f)
+        val d = kotlin.math.acos(c)
+        val phiA = wrapToPi(betaSym + d)
+        val phiB = wrapToPi(betaSym - d)
+        val phiSym = if (kotlin.math.abs(phiA) <= kotlin.math.abs(phiB)) phiA else phiB  // +X-side swing
+
+        // HingeL on +X swings by +phiSym; HingeR mirrors with −phiSym. Each
+        // rotates about its own pivot (correct conjugation); the outward yaw and
+        // down pitch are applied inside swingHinge, already mirrored.
+        swingHinge(hingeLEntity, hingeLLocalRest, hingeLRootRest, +phiSym, -1f)
+        swingHinge(hingeREntity, hingeRLocalRest, hingeRRootRest, -phiSym, +1f)
     }
 
     /**
      * Swing one temple about the root-local vertical (Y) through its hinge pivot
-     * so the tip's root-local X reaches [targetX]. The tip traces a circle of
-     * radius [leverLen] about the pivot; with the rest bearing β = [beta] the tip
-     * X is pivotX + leverLen·cos(φ − β), so φ − β = ±acos((targetX − pivotX)/leverLen).
-     * We take the root nearest the rest pose (φ = 0) for a gentle swing. The
-     * root-local rotation M is conjugated into the hinge's parent-relative frame:
-     * newLocal = Lr · Hr⁻¹ · M · Hr (which collapses to Lr when φ = 0), so it is
-     * correct whatever the hierarchy above the hinge.
+     * by [phi], plus a small outward yaw (off the facemesh occluder) and a down
+     * pitch (tip to ear height). The root-local rotation M is conjugated into the
+     * hinge's parent-relative frame: newLocal = Lr · Hr⁻¹ · M · Hr (which
+     * collapses to Lr when the total rotation is zero), so it is correct whatever
+     * the hierarchy above the hinge.
      */
     private fun swingHinge(
         hinge: Int,
         localRest: FloatArray,  // Lr
         rootRest: FloatArray,   // Hr
-        leverLen: Float,
-        beta: Float,
-        targetX: Float,
+        phi: Float,
         outwardYawSign: Float,
     ) {
-        val pivotX = rootRest[12]
-        val c = ((targetX - pivotX) / leverLen).coerceIn(-1f, 1f)
-        val d = kotlin.math.acos(c)
-        val phiA = wrapToPi(beta + d)
-        val phiB = wrapToPi(beta - d)
-        val phi = if (kotlin.math.abs(phiA) <= kotlin.math.abs(phiB)) phiA else phiB
         val phiDeg = Math.toDegrees(phi.toDouble()).toFloat()
-
-        // On top of the solved lateral swing: yaw the temple a touch outward
-        // (off the facemesh occluder) and pitch its tip down to ear height.
         val yawDeg = outwardYawSign * OcclusionConstants.TEMPLE_OUTWARD_YAW_DEG
         val pitchDeg = -OcclusionConstants.TEMPLE_DOWN_PITCH_DEG
 
