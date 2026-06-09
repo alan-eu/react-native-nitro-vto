@@ -5,7 +5,7 @@
 // scalar IBL sweep we used to do was structurally asymmetric across
 // platforms (ARKit lumens vs ARCore pixelIntensity) — see ADR 0011.
 // Mirrored on Android in LightingConstants.kt.
-static const float kStaticIblIntensity = 60000.0f;
+static const float kStaticIblIntensity = 30000.0f;
 
 // Directional ("sun") light driven per-frame from each AR SDK's light
 // estimate. Intensity is in lux; both platforms calibrate to a common
