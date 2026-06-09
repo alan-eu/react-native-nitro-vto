@@ -325,6 +325,15 @@ class VTORenderer(private val context: Context) {
         }
     }
 
+    /**
+     * Mark the loaded model as a clip-on / solar frame (tinted-lens treatment).
+     */
+    fun setIsClipOn(isClipOn: Boolean) {
+        if (initialized) {
+            glassesRenderer.setIsClipOn(isClipOn)
+        }
+    }
+
     private fun doFrame() {
         if (!initialized) return
 

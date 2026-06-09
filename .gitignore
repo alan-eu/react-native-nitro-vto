@@ -71,6 +71,7 @@ packages/react-native-nitro-vto/ios/MatrixUtils.*
 packages/react-native-nitro-vto/ios/LoaderUtils.*
 packages/react-native-nitro-vto/ios/OcclusionConstants.*
 packages/react-native-nitro-vto/ios/LightingConstants.*
+packages/react-native-nitro-vto/ios/LensConstants.*
 packages/react-native-nitro-vto/ios/FaceMeshTopology.*
 packages/react-native-nitro-vto/src/expo.ts
 packages/react-native-nitro-vto/src/types.ts
@@ -88,6 +89,7 @@ packages/react-native-vto/ios/MatrixUtils.*
 packages/react-native-vto/ios/LoaderUtils.*
 packages/react-native-vto/ios/OcclusionConstants.*
 packages/react-native-vto/ios/LightingConstants.*
+packages/react-native-vto/ios/LensConstants.*
 packages/react-native-vto/ios/FaceMeshTopology.*
 packages/react-native-vto/src/expo.ts
 packages/react-native-vto/src/types.ts

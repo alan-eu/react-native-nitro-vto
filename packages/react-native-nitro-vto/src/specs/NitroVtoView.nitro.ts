@@ -64,6 +64,15 @@ export interface NitroVtoViewProps extends HybridViewProps {
    * Default: false.
    */
   showNativeFPS?: boolean;
+
+  /**
+   * Marks the model as a clip-on / solar (tinted sunglass) frame, so the engine
+   * renders the lens as a tinted sunglass (its own glass material, no IBL chrome)
+   * instead of a clear lens. Pass `false` for clear lenses. Required (not
+   * optional): a nullable `is`-prefixed boolean mis-maps in the Nitro Android
+   * codegen, so always pass an explicit boolean.
+   */
+  isClipOn: boolean;
 }
 
 /** Methods available on the NitroVtoView component. */

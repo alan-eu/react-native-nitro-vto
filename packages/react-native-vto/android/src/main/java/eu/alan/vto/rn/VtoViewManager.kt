@@ -71,6 +71,11 @@ class VtoViewManager : SimpleViewManager<VtoView>() {
         view.setShowNativeFPS(enabled)
     }
 
+    @ReactProp(name = "isClipOn", defaultBoolean = false)
+    fun setIsClipOn(view: VtoView, enabled: Boolean) {
+        view.setIsClipOn(enabled)
+    }
+
     // --- Commands --------------------------------------------------------
 
     override fun receiveCommand(view: VtoView, commandId: String, args: ReadableArray?) {

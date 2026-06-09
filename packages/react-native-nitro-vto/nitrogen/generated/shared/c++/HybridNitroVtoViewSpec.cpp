@@ -30,6 +30,8 @@ namespace margelo::nitro::nitrovto {
       prototype.registerHybridSetter("debug", &HybridNitroVtoViewSpec::setDebug);
       prototype.registerHybridGetter("showNativeFPS", &HybridNitroVtoViewSpec::getShowNativeFPS);
       prototype.registerHybridSetter("showNativeFPS", &HybridNitroVtoViewSpec::setShowNativeFPS);
+      prototype.registerHybridGetter("isClipOn", &HybridNitroVtoViewSpec::getIsClipOn);
+      prototype.registerHybridSetter("isClipOn", &HybridNitroVtoViewSpec::setIsClipOn);
       prototype.registerHybridMethod("hideGlasses", &HybridNitroVtoViewSpec::hideGlasses);
       prototype.registerHybridMethod("showGlasses", &HybridNitroVtoViewSpec::showGlasses);
     });

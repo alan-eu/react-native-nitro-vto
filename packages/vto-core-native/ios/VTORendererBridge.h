@@ -54,6 +54,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Set debug mode enabled
 - (void)setDebug:(BOOL)enabled;
 
+/// Mark the loaded model as a clip-on / solar frame (tinted-lens treatment)
+- (void)setIsClipOn:(BOOL)isClipOn;
+
 /// Render a frame with ARKit data
 - (void)renderWithFrame:(ARFrame *)frame faces:(NSArray<ARFaceAnchor *> *)faces;
 

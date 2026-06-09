@@ -296,6 +296,17 @@ open class HybridNitroVtoViewSpec_cxx {
       }()
     }
   }
+  
+  public final var isClipOn: Bool {
+    @inline(__always)
+    get {
+      return self.__implementation.isClipOn
+    }
+    @inline(__always)
+    set {
+      self.__implementation.isClipOn = newValue
+    }
+  }
 
   // Methods
   @inline(__always)

@@ -70,6 +70,12 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.setShowNativeFPS(value)
         }
 
+    override var isClipOn: Boolean = false
+        set(value) {
+            field = value
+            nitroVtoView.setIsClipOn(value)
+        }
+
     // Methods implementation
     override fun hideGlasses() {
         nitroVtoView.hideGlasses()

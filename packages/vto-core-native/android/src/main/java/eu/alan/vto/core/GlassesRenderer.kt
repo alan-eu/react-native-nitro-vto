@@ -10,6 +10,7 @@ import com.google.android.filament.Engine
 import com.google.android.filament.Entity
 import com.google.android.filament.EntityManager
 import com.google.android.filament.Material
+import com.google.android.filament.MaterialInstance
 import com.google.android.filament.RenderableManager
 import com.google.android.filament.Scene
 import com.google.android.filament.gltfio.AssetLoader
@@ -19,7 +20,9 @@ import com.google.android.filament.gltfio.UbershaderProvider
 import com.google.ar.core.AugmentedFace
 import com.google.ar.core.Frame
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.concurrent.Executors
+import org.json.JSONObject
 
 /**
  * Renderer for glasses model with face tracking transform.
@@ -60,6 +63,22 @@ class GlassesRenderer(private val context: Context) {
 
     // Forward offset for glasses positioning (in meters)
     private var forwardOffset = OcclusionConstants.FORWARD_OFFSET
+
+    // Whether the current model is a clip-on / solar (tinted sunglass) frame. Set
+    // from the JS `isClipOn` prop; drives the clip-on lens treatment in
+    // configureLensMaterial.
+    private var isClipOn = false
+
+    // Lens material baseColor RGB, parsed from the glb at load (the Android
+    // Filament binding has no getParameter). Used as the clip-on tint. Null if the
+    // glb couldn't be parsed (then we skip the clip-on material swap).
+    private var lensBaseColorRgb: FloatArray? = null
+
+    // Clip-on lens material (unlit flat tint) and its reused instance. For clip-on
+    // models the lens primitives' material is swapped to this so the glossy glb
+    // lens stops reflecting the IBL; the `tint` uniform carries the per-SKU color.
+    private var cliponLensMaterial: Material? = null
+    private var cliponLensInstance: MaterialInstance? = null
 
     // Temple articulation state. articulationEnabled stays false if any of
     // the four expected hinge/temple node names is missing from the asset —
@@ -120,6 +139,17 @@ class GlassesRenderer(private val context: Context) {
         assetLoader = AssetLoader(engine, materialProvider, EntityManager.get())
         resourceLoader = ResourceLoader(engine)
 
+        // Clip-on lens material (unlit flat tint) — swapped onto clip-on lenses so
+        // the glb's glossy lens doesn't reflect the IBL as chrome. One instance is
+        // reused; its `tint` uniform is updated per model from the glb baseColor.
+        try {
+            val buf = LoaderUtils.loadAsset(context, "materials/clipon_lens.filamat")
+            cliponLensMaterial = Material.Builder().payload(buf, buf.remaining()).build(engine)
+            cliponLensInstance = cliponLensMaterial?.createInstance()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load clip-on lens material; clip-on tint disabled: ${e.message}")
+        }
+
         // Load model
         loadModel(modelUrl)
     }
@@ -164,6 +194,9 @@ class GlassesRenderer(private val context: Context) {
     }
 
     private fun loadModelBuffer(modelBuffer: ByteBuffer) {
+        // Parse the lens baseColor RGB before createAsset (which advances the
+        // buffer / releases source data). Used by the clip-on opacity override.
+        lensBaseColorRgb = parseLensBaseColorRgb(modelBuffer.duplicate())
         glassesAsset = assetLoader.createAsset(modelBuffer)
 
         glassesAsset?.let { asset ->
@@ -176,7 +209,7 @@ class GlassesRenderer(private val context: Context) {
             // the next time updateTransform runs for this freshly-loaded model.
             hasDisplayedCurrentModel = false
             cacheTempleArticulationState(asset)
-            configureLensCulling(asset)
+            configureLensMaterial(asset)
             cacheLensVerticalOffset(asset)
             hide()
         } ?: run {
@@ -184,22 +217,91 @@ class GlassesRenderer(private val context: Context) {
         }
     }
 
-    // The lenses are thin single-sided shells. Tinted (solar/clip-on) lenses
-    // vanish at view angles where the camera sees their back face — backface
-    // culling drops the only face, so the lens shows the background instead of
-    // its tint. Disable culling on the lens material instances so both faces
-    // always render and the lens is stable from every angle. Clear lenses are
-    // unaffected (invisible either way); other geometry keeps its normal culling.
-    private fun configureLensCulling(asset: FilamentAsset) {
+    // Configure the lens material on the loaded asset.
+    //
+    // Clip-on (isClipOn): the glb's lens is a glossy PBR transmission material whose
+    // smooth surface reflects the bright IBL as "chrome". We can't fix that through
+    // the ubershader at runtime (alphaMode / specular weight aren't settable), so we
+    // SWAP the lens material to our own unlit flat-tint material (clipon_lens): no IBL
+    // sampling → no reflection, see-through via the tint's alpha, per-SKU color from
+    // the glb baseColor (parsed into lensBaseColorRgb).
+    //
+    // Non-clip-on: keep the glb lens, just disable culling so the thin single-sided
+    // shell renders both faces.
+    private fun configureLensMaterial(asset: FilamentAsset) {
         val rm = engine.renderableManager
+        val rgb = lensBaseColorRgb
+        val instance = cliponLensInstance
+
+        // Update the shared clip-on instance: per-SKU tint (brightness-capped,
+        // hue-preserving) plus the reflection/roughness knobs.
+        if (isClipOn && instance != null && rgb != null) {
+            val maxc = maxOf(rgb[0], rgb[1], rgb[2])
+            val scale =
+                if (maxc > LensConstants.CLIP_ON_MAX_CHANNEL) LensConstants.CLIP_ON_MAX_CHANNEL / maxc else 1f
+            instance.setParameter("tint", rgb[0] * scale, rgb[1] * scale, rgb[2] * scale)
+            instance.setParameter("reflectance", LensConstants.CLIP_ON_REFLECTANCE)
+        }
+
+        val swap = isClipOn && instance != null && rgb != null
         for (name in arrayOf("LensL_geometry", "LensR_geometry")) {
             val e = asset.getFirstEntityByName(name)
             if (e == 0) continue
             val ri = rm.getInstance(e)
             if (ri == 0) continue
             for (p in 0 until rm.getPrimitiveCount(ri)) {
-                rm.getMaterialInstanceAt(ri, p).setCullingMode(Material.CullingMode.NONE)
+                if (swap) {
+                    rm.setMaterialInstanceAt(ri, p, instance!!)
+                } else {
+                    rm.getMaterialInstanceAt(ri, p).setCullingMode(Material.CullingMode.NONE)
+                }
             }
+        }
+    }
+
+    /**
+     * Parse the lens material's baseColor RGB from a glb buffer's JSON chunk:
+     * LensL_geometry node → mesh → primitive[0].material →
+     * pbrMetallicRoughness.baseColorFactor. Returns [r, g, b] or null on any
+     * parse miss. (iOS reads this via MaterialInstance.getParameter, which the
+     * Android Filament binding doesn't expose — hence this glb parse.)
+     */
+    private fun parseLensBaseColorRgb(buffer: ByteBuffer): FloatArray? {
+        return try {
+            val buf = buffer.order(ByteOrder.LITTLE_ENDIAN)
+            if (buf.remaining() < 20) return null
+            buf.position(12) // skip 12-byte glb header (magic, version, length)
+            val chunkLen = buf.int
+            val chunkType = buf.int
+            if (chunkType != 0x4E4F534A) return null // "JSON"
+            val jsonBytes = ByteArray(chunkLen)
+            buf.get(jsonBytes)
+            val gltf = JSONObject(String(jsonBytes, Charsets.UTF_8))
+
+            val nodes = gltf.getJSONArray("nodes")
+            var meshIndex = -1
+            for (i in 0 until nodes.length()) {
+                val node = nodes.getJSONObject(i)
+                if (node.optString("name") == "LensL_geometry" && node.has("mesh")) {
+                    meshIndex = node.getInt("mesh")
+                    break
+                }
+            }
+            if (meshIndex < 0) return null
+
+            val primitives = gltf.getJSONArray("meshes").getJSONObject(meshIndex)
+                .getJSONArray("primitives")
+            val matIndex = primitives.getJSONObject(0).getInt("material")
+            val bcf = gltf.getJSONArray("materials").getJSONObject(matIndex)
+                .getJSONObject("pbrMetallicRoughness").getJSONArray("baseColorFactor")
+            floatArrayOf(
+                bcf.getDouble(0).toFloat(),
+                bcf.getDouble(1).toFloat(),
+                bcf.getDouble(2).toFloat(),
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not parse lens baseColor from glb: ${e.message}")
+            null
         }
     }
 
@@ -425,6 +527,17 @@ class GlassesRenderer(private val context: Context) {
     }
 
     /**
+     * Mark the current model as a clip-on / solar frame. Re-applies the lens
+     * treatment if a model is already loaded; otherwise it runs at load time
+     * (configureLensMaterial reads this flag).
+     */
+    fun setIsClipOn(value: Boolean) {
+        if (isClipOn == value) return
+        isClipOn = value
+        glassesAsset?.let { configureLensMaterial(it) }
+    }
+
+    /**
      * Articulate the temples (swing left/right hinge nodes) so the temple
      * tips land at ±earHalfWidth (face-local meters). No-op if the loaded
      * glb does not expose the expected hinge node names
@@ -551,5 +664,10 @@ class GlassesRenderer(private val context: Context) {
         }
         resourceLoader.destroy()
         assetLoader.destroy()
+        // Our own clip-on lens material/instance (not owned by gltfio).
+        cliponLensInstance?.let { engine.destroyMaterialInstance(it) }
+        cliponLensInstance = null
+        cliponLensMaterial?.let { engine.destroyMaterial(it) }
+        cliponLensMaterial = null
     }
 }

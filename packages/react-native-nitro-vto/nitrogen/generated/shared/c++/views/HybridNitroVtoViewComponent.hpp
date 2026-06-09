@@ -51,6 +51,7 @@ namespace margelo::nitro::nitrovto::views {
     CachedProp<std::optional<double>> forwardOffset;
     CachedProp<std::optional<bool>> debug;
     CachedProp<std::optional<bool>> showNativeFPS;
+    CachedProp<bool> isClipOn;
     CachedProp<std::optional<std::function<void(const std::shared_ptr<HybridNitroVtoViewSpec>& /* ref */)>>> hybridRef;
 
   private:

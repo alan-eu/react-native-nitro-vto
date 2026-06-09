@@ -73,6 +73,12 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
         }
     }
 
+    public var isClipOn: Bool = false {
+        didSet {
+            nitroVtoView.setIsClipOn(isClipOn)
+        }
+    }
+
     // MARK: - Methods implementation
 
     public func hideGlasses() throws {

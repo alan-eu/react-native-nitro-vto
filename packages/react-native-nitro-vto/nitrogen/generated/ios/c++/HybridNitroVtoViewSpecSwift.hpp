@@ -113,6 +113,12 @@ namespace margelo::nitro::nitrovto {
     inline void setShowNativeFPS(std::optional<bool> showNativeFPS) noexcept override {
       _swiftPart.setShowNativeFPS(showNativeFPS);
     }
+    inline bool getIsClipOn() noexcept override {
+      return _swiftPart.isClipOn();
+    }
+    inline void setIsClipOn(bool isClipOn) noexcept override {
+      _swiftPart.setIsClipOn(std::forward<decltype(isClipOn)>(isClipOn));
+    }
 
   public:
     // Methods
