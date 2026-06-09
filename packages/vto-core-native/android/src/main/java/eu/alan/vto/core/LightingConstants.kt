@@ -14,7 +14,7 @@ package eu.alan.vto.core
  */
 internal object LightingConstants {
     /** Static IBL intensity (lux). */
-    const val STATIC_IBL_INTENSITY = 60_000f
+    const val STATIC_IBL_INTENSITY = 30_000f
 
     /**
      * Peak intensity (lux) the directional light reaches when the SDK

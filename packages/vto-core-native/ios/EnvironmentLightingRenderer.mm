@@ -41,7 +41,7 @@ static NSString *const TAG = @"EnvironmentLighting";
     _scene = scene;
 
     // Load IBL (indirect light) from ktx file
-    NSData *iblData = [LoaderUtils loadAssetNamed:@"envs/studio_small_02_2k_ibl.ktx"];
+    NSData *iblData = [LoaderUtils loadAssetNamed:@"envs/brown_photostudio_02_2k_ibl.ktx"];
     if (iblData) {
         // Create Ktx1Bundle from raw bytes
         auto iblBundle = new image::Ktx1Bundle(
@@ -61,7 +61,7 @@ static NSString *const TAG = @"EnvironmentLighting";
                 .intensity(kStaticIblIntensity);
 
             // Load spherical harmonics for irradiance (diffuse IBL)
-            NSData *shData = [LoaderUtils loadAssetNamed:@"envs/studio_small_02_2k_sh.txt"];
+            NSData *shData = [LoaderUtils loadAssetNamed:@"envs/brown_photostudio_02_2k_sh.txt"];
             if (shData) {
                 NSString *shString = [[NSString alloc] initWithData:shData encoding:NSUTF8StringEncoding];
                 filament::math::float3 sh[9];
