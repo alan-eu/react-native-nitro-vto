@@ -1,9 +1,11 @@
 package eu.alan.vto.core
 
 import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.Color
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -107,6 +109,41 @@ class VtoView(context: Context) : FrameLayout(context) {
     // State
     private var isInitialized = false
     private var isResumed = false
+
+    // App lifecycle. ARCore requires session.pause()/resume() around the host
+    // Activity's onPause/onResume — without it the camera is released by the
+    // system on background and the feed stays frozen on return. Callbacks are
+    // registered per-attached-window and filtered to the host activity, so
+    // they also fire when another activity covers the camera.
+    private var hostActivity: Activity? = null
+    private var lifecycleCallbacksRegistered = false
+    private val activityLifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
+        override fun onActivityResumed(activity: Activity) {
+            if (activity === hostActivity) resume()
+        }
+
+        override fun onActivityPaused(activity: Activity) {
+            if (activity === hostActivity) pause()
+        }
+
+        override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+        override fun onActivityStarted(activity: Activity) {}
+        override fun onActivityStopped(activity: Activity) {}
+        override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+        override fun onActivityDestroyed(activity: Activity) {}
+    }
+
+    // Bounded retry for ARCore's camera-handback race: on fast
+    // background→foreground cycles, Session.resume() can throw
+    // CameraNotAvailableException because the system hasn't released the
+    // camera back to us yet.
+    private val resumeRetryHandler = Handler(Looper.getMainLooper())
+    private var resumeRetryCount = 0
+    private val resumeRetryRunnable = Runnable {
+        if (isActive && isResumed && isAttachedToWindow) {
+            resume()
+        }
+    }
 
     init {
         // Add SurfaceView to fill the entire view
@@ -280,6 +317,7 @@ class VtoView(context: Context) : FrameLayout(context) {
      * Pause the AR session and rendering
      */
     fun pause() {
+        cancelResumeRetry()
         vtoRenderer?.pause()
         arSession?.pause()
         isResumed = false
@@ -289,6 +327,8 @@ class VtoView(context: Context) : FrameLayout(context) {
      * Destroy and clean up resources
      */
     fun destroy() {
+        cancelResumeRetry()
+        unregisterLifecycleCallbacks()
         fpsHandler.removeCallbacks(fpsRunnable)
         detachFpsLabel()
         arSession?.close()
@@ -298,14 +338,58 @@ class VtoView(context: Context) : FrameLayout(context) {
         isInitialized = false
     }
 
+    private fun registerLifecycleCallbacks() {
+        if (lifecycleCallbacksRegistered) return
+        // Without a resolved host activity the callbacks could never match —
+        // skip registration entirely (same behavior as before this hook).
+        val activity = resolveActivity() ?: return
+        val app = activity.application
+            ?: context.applicationContext as? Application
+            ?: return
+        hostActivity = activity
+        app.registerActivityLifecycleCallbacks(activityLifecycleCallbacks)
+        lifecycleCallbacksRegistered = true
+    }
+
+    private fun unregisterLifecycleCallbacks() {
+        if (!lifecycleCallbacksRegistered) return
+        val app = hostActivity?.application
+            ?: context.applicationContext as? Application
+        app?.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks)
+        lifecycleCallbacksRegistered = false
+        hostActivity = null
+    }
+
+    private fun scheduleResumeRetry() {
+        if (resumeRetryCount >= 3) {
+            Log.e(TAG, "Camera still unavailable after $resumeRetryCount resume retries — giving up")
+            return
+        }
+        resumeRetryCount++
+        resumeRetryHandler.postDelayed(resumeRetryRunnable, 300)
+    }
+
+    private fun cancelResumeRetry() {
+        resumeRetryHandler.removeCallbacks(resumeRetryRunnable)
+        resumeRetryCount = 0
+    }
+
     /**
      * Sets up the ARCore session with face tracking.
      * Assumes camera permission is already granted.
      */
     private fun setupArSession() {
         if (arSession != null) {
-            arSession?.resume()
-            vtoRenderer?.session = arSession
+            try {
+                arSession?.resume()
+                resumeRetryCount = 0
+                vtoRenderer?.session = arSession
+            } catch (e: CameraNotAvailableException) {
+                // System hasn't handed the camera back yet (fast
+                // background→foreground cycle) — retry shortly.
+                Log.w(TAG, "Camera not yet available on resume — scheduling retry")
+                scheduleResumeRetry()
+            }
             return
         }
 
@@ -374,6 +458,7 @@ class VtoView(context: Context) : FrameLayout(context) {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         Log.d(TAG, "onAttachedToWindow")
+        registerLifecycleCallbacks()
         // Auto-resume on attach so old-arch wrappers that don't have an
         // `afterUpdate`-style hook get the same behavior as Nitro. `resume()`
         // is idempotent; the Nitro path still calls it via `afterUpdate`,
@@ -384,6 +469,7 @@ class VtoView(context: Context) : FrameLayout(context) {
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         Log.d(TAG, "onDetachedFromWindow")
+        unregisterLifecycleCallbacks()
         // Only pause here — full teardown (`destroy()`) races with Filament's
         // `UiHelper.onDetachedFromSurface` and the Android `SurfaceHolder`
         // surfaceDestroyed callback, which can fire against an already-freed

@@ -271,6 +271,11 @@ class VTORenderer(private val context: Context) {
     }
 
     fun resume() {
+        // Choreographer doesn't dedupe and frameCallback re-posts itself, so
+        // a second post while running would permanently stack another
+        // render-per-vsync. resume() has multiple callers (prop updates,
+        // activity lifecycle) — make it idempotent.
+        choreographer.removeFrameCallback(frameCallback)
         choreographer.postFrameCallback(frameCallback)
     }
 
