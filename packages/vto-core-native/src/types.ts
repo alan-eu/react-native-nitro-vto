@@ -38,6 +38,15 @@ export interface VtoCommonProps {
    */
   showNativeFPS?: boolean;
 
+  /**
+   * Marks the model as a clip-on / solar (tinted sunglass) frame. When true, the
+   * engine renders the lens as a tinted sunglass (its own glass material, no IBL
+   * chrome) instead of the glb's clear lens. Pass `false` for clear prescription
+   * lenses. Required (not optional) on purpose — a nullable `is`-prefixed boolean
+   * mis-maps in the Nitro Android codegen — so always pass an explicit boolean.
+   */
+  isClipOn: boolean;
+
   /** Fires once when the glTF model finishes loading. */
   onModelLoaded?: (modelUrl: string) => void;
 

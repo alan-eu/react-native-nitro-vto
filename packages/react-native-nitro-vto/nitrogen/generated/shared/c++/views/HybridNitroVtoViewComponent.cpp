@@ -105,6 +105,16 @@ namespace margelo::nitro::nitrovto::views {
         throw std::runtime_error(std::string("NitroVtoView.showNativeFPS: ") + exc.what());
       }
     }()),
+    isClipOn([&]() -> CachedProp<bool> {
+      try {
+        const react::RawValue* rawValue = rawProps.at("isClipOn", nullptr, nullptr);
+        if (rawValue == nullptr) return sourceProps.isClipOn;
+        const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
+        return CachedProp<bool>::fromRawValue(*runtime, value, sourceProps.isClipOn);
+      } catch (const std::exception& exc) {
+        throw std::runtime_error(std::string("NitroVtoView.isClipOn: ") + exc.what());
+      }
+    }()),
     hybridRef([&]() -> CachedProp<std::optional<std::function<void(const std::shared_ptr<HybridNitroVtoViewSpec>& /* ref */)>>> {
       try {
         const react::RawValue* rawValue = rawProps.at("hybridRef", nullptr, nullptr);
@@ -126,6 +136,7 @@ namespace margelo::nitro::nitrovto::views {
     forwardOffset(other.forwardOffset),
     debug(other.debug),
     showNativeFPS(other.showNativeFPS),
+    isClipOn(other.isClipOn),
     hybridRef(other.hybridRef) { }
 
   bool HybridNitroVtoViewProps::filterObjectKeys(const std::string& propName) {
@@ -138,6 +149,7 @@ namespace margelo::nitro::nitrovto::views {
       case hashString("forwardOffset"): return true;
       case hashString("debug"): return true;
       case hashString("showNativeFPS"): return true;
+      case hashString("isClipOn"): return true;
       case hashString("hybridRef"): return true;
       default: return false;
     }

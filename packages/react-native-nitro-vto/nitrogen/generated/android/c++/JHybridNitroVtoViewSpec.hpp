@@ -66,6 +66,8 @@ namespace margelo::nitro::nitrovto {
     void setDebug(std::optional<bool> debug) override;
     std::optional<bool> getShowNativeFPS() override;
     void setShowNativeFPS(std::optional<bool> showNativeFPS) override;
+    bool getIsClipOn() override;
+    void setIsClipOn(bool isClipOn) override;
 
   public:
     // Methods

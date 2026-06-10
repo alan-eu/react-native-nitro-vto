@@ -19,6 +19,7 @@ public protocol HybridNitroVtoViewSpec_protocol: HybridObject, HybridView {
   var forwardOffset: Double? { get set }
   var debug: Bool? { get set }
   var showNativeFPS: Bool? { get set }
+  var isClipOn: Bool { get set }
 
   // Methods
   func hideGlasses() throws -> Void

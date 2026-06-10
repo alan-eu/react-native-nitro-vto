@@ -97,6 +97,7 @@ class VtoView(context: Context) : FrameLayout(context) {
     // Configuration
     private var modelUrl: String = ""
     private var isActive: Boolean = true
+    private var isClipOnState: Boolean = false
 
     // Callbacks
     var onModelLoaded: ((modelUrl: String) -> Unit)? = null
@@ -184,6 +185,14 @@ class VtoView(context: Context) : FrameLayout(context) {
     }
 
     /**
+     * Mark the model as a clip-on / solar frame (tinted-lens treatment).
+     */
+    fun setIsClipOn(enabled: Boolean) {
+        isClipOnState = enabled
+        vtoRenderer?.setIsClipOn(enabled)
+    }
+
+    /**
      * Show/hide the native FPS counter overlay (top-right of the activity).
      */
     fun setShowNativeFPS(enabled: Boolean?) {
@@ -236,6 +245,12 @@ class VtoView(context: Context) : FrameLayout(context) {
         vtoRenderer?.onFaceTracked = onFaceTracked
         vtoRenderer?.onGlassesDisplayed = onGlassesDisplayed
         vtoRenderer?.initialize(surfaceView, modelUrl)
+
+        // Re-apply stored configuration. `isClipOn` is read at model-load time
+        // (configureLensMaterial), so the prop can arrive before the renderer
+        // exists and be dropped — set it here so the first model loads with the
+        // correct lens treatment. Mirrors VtoView.swift's post-init apply.
+        vtoRenderer?.setIsClipOn(isClipOnState)
 
         isInitialized = true
         Log.d(TAG, "VtoView initialized")

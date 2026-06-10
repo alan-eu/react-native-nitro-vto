@@ -72,6 +72,10 @@ public class VtoBridgeView: VtoView {
         super.setShowNativeFPS(enabled?.boolValue)
     }
 
+    @objc public func rnSetIsClipOn(_ enabled: Bool) {
+        super.setIsClipOn(enabled)
+    }
+
     @objc public func rnHideGlasses() {
         super.hideGlasses()
     }

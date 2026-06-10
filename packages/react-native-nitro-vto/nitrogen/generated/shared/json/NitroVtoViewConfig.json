@@ -12,6 +12,7 @@
     "forwardOffset": true,
     "debug": true,
     "showNativeFPS": true,
+    "isClipOn": true,
     "hybridRef": true
   }
 }

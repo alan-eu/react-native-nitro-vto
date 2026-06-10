@@ -1,0 +1,32 @@
+// Clip-on / solar lens — lit glass with screen-space refraction and a
+// controlled (low) reflectance. Swapped onto clip-on lenses over the glb's own
+// glossy lens: same realistic refraction see-through as the well-authored
+// clip-ons, but WE set the reflectance/roughness (the IBL-reflection knobs the
+// gltfio ubershader didn't expose), so the lens doesn't read as chrome.
+// `tint` is the per-SKU color (glb baseColor, brightness-capped); it filters the
+// transmitted view. Tuning lives in LensConstants.{h,kt}.
+material {
+    name : clipon_lens,
+    shadingModel : lit,
+    refractionMode : screenspace,
+    refractionType : thin,
+    doubleSided : true,
+    parameters : [
+        { type : float3, name : tint },
+        { type : float, name : reflectance }
+    ]
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        material.baseColor = vec4(materialParams.tint, 1.0);
+        material.metallic = 0.0;
+        // Sharp/clear refraction — a lit material defaults to ~1.0 (frosted),
+        // which would blur the see-through, so pin it to 0.
+        material.roughness = 0.0;
+        material.reflectance = materialParams.reflectance;
+        material.transmission = 1.0;
+        material.ior = 1.5;
+    }
+}

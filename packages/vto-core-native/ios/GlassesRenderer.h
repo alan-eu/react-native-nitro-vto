@@ -49,6 +49,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Set forward offset for glasses positioning (in meters)
 - (void)setForwardOffset:(float)offset;
 
+/// Mark the current model as a clip-on / solar frame (tinted-lens treatment)
+- (void)setIsClipOn:(BOOL)isClipOn;
+
 /// Cleanup and destroy resources
 - (void)destroy;
 

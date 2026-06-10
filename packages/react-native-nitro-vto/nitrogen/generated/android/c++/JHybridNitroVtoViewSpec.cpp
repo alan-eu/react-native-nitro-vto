@@ -141,6 +141,15 @@ namespace margelo::nitro::nitrovto {
     static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JBoolean> /* showNativeFPS */)>("setShowNativeFPS");
     method(_javaPart, showNativeFPS.has_value() ? jni::JBoolean::valueOf(showNativeFPS.value()) : nullptr);
   }
+  bool JHybridNitroVtoViewSpec::getIsClipOn() {
+    static const auto method = javaClassStatic()->getMethod<jboolean()>("isClipOn");
+    auto __result = method(_javaPart);
+    return static_cast<bool>(__result);
+  }
+  void JHybridNitroVtoViewSpec::setIsClipOn(bool isClipOn) {
+    static const auto method = javaClassStatic()->getMethod<void(jboolean /* isClipOn */)>("setClipOn");
+    method(_javaPart, isClipOn);
+  }
 
   // Methods
   void JHybridNitroVtoViewSpec::hideGlasses() {

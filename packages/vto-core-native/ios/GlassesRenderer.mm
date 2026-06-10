@@ -2,6 +2,7 @@
 #import "LoaderUtils.h"
 #import "MatrixUtils.h"
 #import "OcclusionConstants.h"
+#import "LensConstants.h"
 
 #include <filament/Engine.h>
 #include <filament/Scene.h>
@@ -115,13 +116,26 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
 // lens-center, shifting placement down by this. ~0 for well-authored models.
 @property (nonatomic, assign) float lensVerticalOffset;
 
+// Whether the current model is a clip-on / solar (tinted sunglass) frame. Set
+// from the JS `isClipOn` prop; drives the clip-on lens treatment in
+// configureLensMaterial.
+@property (nonatomic, assign) BOOL isClipOn;
+
+// Clip-on lens material (unlit flat tint) and its reused instance. When a model
+// is a clip-on, the lens primitives' material is swapped to this so the glossy
+// glb lens stops reflecting the IBL. _lensBaseColorRgb caches the glb's authored
+// lens tint (read before the swap) so each model keeps its own color.
+@property (nonatomic, assign) Material *cliponLensMaterial;
+@property (nonatomic, assign) MaterialInstance *cliponLensInstance;
+@property (nonatomic, assign) filament::math::float3 lensBaseColorRgb;
+
 - (void)swingHinge:(Entity)hinge
          localRest:(filament::math::mat4f)Lr
           rootRest:(filament::math::mat4f)Hr
                phi:(float)phi
     outwardYawSign:(float)outwardYawSign
                 tm:(filament::TransformManager &)tm;
-- (void)configureLensCulling;
+- (void)configureLensMaterial;
 - (void)cacheLensVerticalOffset;
 
 @end
@@ -159,6 +173,22 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
     _textureProvider = createStbProvider(engine);
     _resourceLoader->addTextureProvider("image/png", _textureProvider);
     _resourceLoader->addTextureProvider("image/jpeg", _textureProvider);
+
+    // Clip-on lens material (unlit flat tint) — swapped onto clip-on lenses so
+    // the glb's glossy lens doesn't reflect the IBL as chrome. One instance is
+    // reused; its `tint` uniform is updated per model from the glb baseColor.
+    NSData *cliponData = [LoaderUtils loadAssetNamed:@"materials/clipon_lens.filamat"];
+    if (cliponData) {
+        _cliponLensMaterial = Material::Builder()
+            .package(cliponData.bytes, cliponData.length)
+            .build(*engine);
+        if (_cliponLensMaterial) {
+            _cliponLensInstance = _cliponLensMaterial->createInstance();
+        }
+    }
+    if (!_cliponLensInstance) {
+        NSLog(@"%@: Failed to load clip-on lens material; clip-on tint disabled", TAG);
+    }
 
     // Load model
     [self loadModelFromUrl:modelUrl];
@@ -224,7 +254,13 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
         // updateTransformWithFace will fire the callback.
         _hasDisplayedCurrentModel = NO;
         [self cacheTempleArticulationState];
-        [self configureLensCulling];
+        // Reset the cached lens tint to a neutral default before configuring.
+        // configureLensMaterial only overwrites it when a lens prim exposes
+        // baseColorFactor; without this reset a lens that lacks one would inherit
+        // the previous model's tint (or black on first load). White caps to a
+        // neutral grey, never black/stale.
+        _lensBaseColorRgb = filament::math::float3{1.0f, 1.0f, 1.0f};
+        [self configureLensMaterial];
         [self cacheLensVerticalOffset];
         [self hide];
     } else {
@@ -232,25 +268,66 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
     }
 }
 
-// The lenses are thin single-sided shells. Tinted (solar/clip-on) lenses
-// vanish at view angles where the camera sees their back face — backface
+// Configure the lens material instances on the loaded asset.
+//
+// Culling: the lenses are thin single-sided shells. Tinted (solar/clip-on)
+// lenses vanish at view angles where the camera sees their back face — backface
 // culling drops the only face, so the lens shows the background instead of its
-// tint. Disable culling on the lens material instances so both faces always
-// render and the lens is stable from every angle. Clear lenses are unaffected
-// (invisible either way); other geometry keeps its normal culling.
-- (void)configureLensCulling {
+// tint. Disable culling so both faces always render. Clear lenses are
+// unaffected (invisible either way); other geometry keeps its normal culling.
+//
+// Clip-on treatment (when _isClipOn): the glb's lens is a glossy PBR transmission
+// material whose smooth surface reflects the bright IBL as "chrome" (an artifact
+// of inconsistent authoring — see the working clip-ons that are authored matte).
+// We can't fix that through the ubershader at runtime (alphaMode / specular weight
+// aren't settable), so we SWAP the lens material to our own unlit flat-tint
+// material (clipon_lens.mat): no IBL sampling → no reflection, see-through via the
+// tint's alpha, per-SKU color carried in the `tint` uniform from the glb baseColor.
+- (void)configureLensMaterial {
     if (!_glassesAsset || !_engine) return;
     RenderableManager &rm = _engine->getRenderableManager();
     const char *lensNodes[] = {"LensL_geometry", "LensR_geometry"};
+
+    // Pass 1 — cache the glb's authored lens tint (only the original gltfio glass
+    // material exposes baseColorFactor; after we swap, our material has `tint`).
     for (const char *name : lensNodes) {
         Entity e = _glassesAsset->getFirstEntityByName(name);
         if (e.isNull()) continue;
         RenderableManager::Instance ri = rm.getInstance(e);
         if (!ri.isValid()) continue;
-        size_t primCount = rm.getPrimitiveCount(ri);
-        for (size_t p = 0; p < primCount; p++) {
+        for (size_t p = 0; p < rm.getPrimitiveCount(ri); p++) {
             MaterialInstance *mi = rm.getMaterialInstanceAt(ri, p);
-            if (mi) mi->setCullingMode(MaterialInstance::CullingMode::NONE);
+            if (mi && mi->getMaterial()->hasParameter("baseColorFactor")) {
+                filament::math::float4 bc = mi->getParameter<filament::math::float4>("baseColorFactor");
+                _lensBaseColorRgb = filament::math::float3{bc.x, bc.y, bc.z};
+            }
+        }
+    }
+
+    // Update the shared clip-on instance: per-SKU tint (brightness-capped,
+    // hue-preserving) plus the reflection/roughness knobs.
+    if (_isClipOn && _cliponLensInstance) {
+        filament::math::float3 c = _lensBaseColorRgb;
+        float maxc = fmaxf(c.x, fmaxf(c.y, c.z));
+        float s = (maxc > kLensClipOnMaxChannel) ? (kLensClipOnMaxChannel / maxc) : 1.0f;
+        _cliponLensInstance->setParameter("tint", filament::math::float3{c.x * s, c.y * s, c.z * s});
+        _cliponLensInstance->setParameter("reflectance", kLensClipOnReflectance);
+    }
+
+    // Pass 2 — for clip-ons swap in our material; otherwise keep the glb lens
+    // (just disable culling so the thin single-sided shell renders both faces).
+    for (const char *name : lensNodes) {
+        Entity e = _glassesAsset->getFirstEntityByName(name);
+        if (e.isNull()) continue;
+        RenderableManager::Instance ri = rm.getInstance(e);
+        if (!ri.isValid()) continue;
+        for (size_t p = 0; p < rm.getPrimitiveCount(ri); p++) {
+            if (_isClipOn && _cliponLensInstance) {
+                rm.setMaterialInstanceAt(ri, p, _cliponLensInstance);
+            } else {
+                MaterialInstance *mi = rm.getMaterialInstanceAt(ri, p);
+                if (mi) mi->setCullingMode(MaterialInstance::CullingMode::NONE);
+            }
         }
     }
 }
@@ -437,6 +514,16 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
     _forwardOffset = offset;
 }
 
+- (void)setIsClipOn:(BOOL)isClipOn {
+    if (_isClipOn == isClipOn) return;
+    _isClipOn = isClipOn;
+    // Re-apply the lens treatment if a model is already loaded; otherwise it
+    // runs at load time (configureLensMaterial reads _isClipOn).
+    if (_glassesAsset && _engine) {
+        [self configureLensMaterial];
+    }
+}
+
 - (void)updateTempleArticulationWithEarHalfWidth:(float)earHalfWidth {
     if (!_articulationEnabled || !_engine) return;
     if (earHalfWidth <= 0.0f) return;
@@ -557,6 +644,15 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
     if (_materialProvider) {
         _materialProvider->destroyMaterials();
         delete _materialProvider;
+    }
+    // Our own clip-on lens material/instance (not owned by gltfio).
+    if (_cliponLensInstance && _engine) {
+        _engine->destroy(_cliponLensInstance);
+        _cliponLensInstance = nullptr;
+    }
+    if (_cliponLensMaterial && _engine) {
+        _engine->destroy(_cliponLensMaterial);
+        _cliponLensMaterial = nullptr;
     }
 }
 

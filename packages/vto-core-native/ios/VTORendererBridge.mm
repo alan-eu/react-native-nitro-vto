@@ -294,6 +294,12 @@ static NSString *const TAG = @"VTORenderer";
     }
 }
 
+- (void)setIsClipOn:(BOOL)isClipOn {
+    if (_initialized) {
+        [_glassesRenderer setIsClipOn:isClipOn];
+    }
+}
+
 - (void)renderWithFrame:(ARFrame *)frame faces:(NSArray<ARFaceAnchor *> *)faces {
     if (!_initialized) return;
 

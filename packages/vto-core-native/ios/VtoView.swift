@@ -35,6 +35,7 @@ public class VtoView: UIView {
     private var isActiveState: Bool = true
     private var forwardOffsetState: Float = kForwardOffset
     private var debugState: Bool = false
+    private var isClipOnState: Bool = false
 
     // Callbacks
     var onModelLoaded: ((String) -> Void)?
@@ -138,6 +139,11 @@ public class VtoView: UIView {
         fpsLabel?.isHidden = !(enabled ?? false)
     }
 
+    func setIsClipOn(_ enabled: Bool) {
+        isClipOnState = enabled
+        vtoRenderer?.setIsClipOn(isClipOnState)
+    }
+
     // MARK: - Initialization
 
     private func initialize() {
@@ -168,6 +174,7 @@ public class VtoView: UIView {
         // Apply stored configuration states
         vtoRenderer?.setForwardOffset(forwardOffsetState)
         vtoRenderer?.setDebug(debugState)
+        vtoRenderer?.setIsClipOn(isClipOnState)
 
         // Sync viewport from current bounds. `layoutSubviews` may have already
         // fired before the renderer existed (happens on old-arch RN where the
