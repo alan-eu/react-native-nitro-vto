@@ -373,11 +373,16 @@ static NSString *const TAG = @"VTORenderer";
         _staticPreviewSetup = YES;
     }
 
-    // Place the glasses at a fixed pose (no-op until the model finishes loading).
-    [_glassesRenderer setStaticPreviewTransform];
-    // Drive temple articulation with a representative ear half-width (face-local
-    // meters) so the harness shows the on-face temple swing (#3) without a face.
-    [_glassesRenderer updateTempleArticulationWithEarHalfWidth:0.07f];
+    // Place the glasses at a fixed pose (no-op until the model finishes
+    // loading). Honors -hideGlasses like the real render path, so hide/show
+    // can be exercised in the simulator.
+    if (!_isHidden) {
+        [_glassesRenderer setStaticPreviewTransform];
+        // Drive temple articulation with a representative ear half-width
+        // (face-local meters) so the harness shows the on-face temple swing
+        // (#3) without a face.
+        [_glassesRenderer updateTempleArticulationWithEarHalfWidth:0.07f];
+    }
 
     if (_renderer->beginFrame(_swapChain)) {
         _renderer->render(_filamentView);

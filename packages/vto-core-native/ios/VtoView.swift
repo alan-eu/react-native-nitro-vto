@@ -22,6 +22,7 @@ public class VtoView: UIView {
 
     // ARKit session
     private var arSession: ARSession?
+    private let sessionObserver = ARSessionInterruptionObserver()
 
     // Metal view for rendering
     private var metalView: MTKView?
@@ -62,11 +63,17 @@ public class VtoView: UIView {
     public override init(frame: CGRect) {
         super.init(frame: frame)
         setupMetalView()
+        setupLifecycleObservers()
     }
 
     public required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupMetalView()
+        setupLifecycleObservers()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     private func setupMetalView() {
@@ -93,6 +100,50 @@ public class VtoView: UIView {
         label.isHidden = true
         addSubview(label)
         fpsLabel = label
+    }
+
+    // MARK: - App Lifecycle
+
+    // didEnterBackground/willEnterForeground rather than resignActive/
+    // becomeActive: the latter also fire on Control Center pull-down and
+    // app-switcher peeks, where pausing would blank the preview and force
+    // tracking re-acquisition. ARKit handles transient foreground
+    // interruptions itself (see sessionInterruptionEnded below), and Metal
+    // rendering is legal while inactive-but-foreground.
+    private func setupLifecycleObservers() {
+        let center = NotificationCenter.default
+        center.addObserver(
+            self,
+            selector: #selector(handleDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+        center.addObserver(
+            self,
+            selector: #selector(handleWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleDidEnterBackground() {
+        pause()
+    }
+
+    @objc private func handleWillEnterForeground() {
+        // Observers outlive window attachment: after willMove(toWindow: nil)
+        // → destroy(), resuming would re-initialize a renderer on a detached
+        // view.
+        guard window != nil else { return }
+        resume()
+    }
+
+    fileprivate func handleSessionInterruptionEnded(_ session: ARSession) {
+        guard isResumed, isActiveState, window != nil else { return }
+        session.run(
+            createARConfiguration(),
+            options: [.resetTracking, .removeExistingAnchors]
+        )
     }
 
     // MARK: - Public API
@@ -315,6 +366,8 @@ public class VtoView: UIView {
         guard ARFaceTrackingConfiguration.isSupported else { return }
 
         let session = ARSession()
+        sessionObserver.view = self
+        session.delegate = sessionObserver
         arSession = session
 
         let configuration = createARConfiguration()
@@ -372,5 +425,21 @@ public class VtoView: UIView {
         if isResumed && !isInitialized {
             resume()
         }
+    }
+}
+
+// Covers camera interruptions that happen without backgrounding (FaceTime
+// call, another app grabbing the camera, iPad Slide Over) — no UIApplication
+// notification fires for those, so the frame stream would stay frozen.
+//
+// A private proxy rather than conforming VtoView itself: VtoView is public,
+// and an @objc protocol conformance would be emitted into the wrappers'
+// auto-generated `<Module>-Swift.h`, which is compiled in units that don't
+// import ARKit.
+private final class ARSessionInterruptionObserver: NSObject, ARSessionDelegate {
+    weak var view: VtoView?
+
+    func sessionInterruptionEnded(_ session: ARSession) {
+        view?.handleSessionInterruptionEnded(session)
     }
 }

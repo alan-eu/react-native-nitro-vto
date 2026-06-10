@@ -31,7 +31,16 @@ interface NativeVtoViewProps
 const NativeVtoView =
   requireNativeComponent<NativeVtoViewProps>("VtoView") as HostComponent<NativeVtoViewProps>;
 
-export type VtoViewProps = VtoCommonProps & ViewProps;
+export type VtoViewProps = VtoCommonProps &
+  ViewProps & {
+    /**
+     * Callback receiving the imperative methods (`hideGlasses`,
+     * `showGlasses`). Same contract as the `hybridRef` prop on
+     * `@alaneu/react-native-nitro-vto`, so consumer code can swap between the
+     * two packages unchanged. Equivalent to attaching `ref`.
+     */
+    hybridRef?: (ref: VtoRef) => void;
+  };
 export type VtoRef = VtoCommonMethods;
 
 /**
@@ -49,11 +58,11 @@ export const VtoView = React.forwardRef<VtoRef, VtoViewProps>((props, ref) => {
     onModelLoaded,
     onFaceTracked,
     onGlassesDisplayed,
+    hybridRef,
     ...nativeProps
   } = props;
 
-  React.useImperativeHandle(
-    ref,
+  const methods = React.useMemo<VtoRef>(
     () => ({
       hideGlasses() {
         dispatchCommand(nativeRef.current, "hideGlasses", []);
@@ -64,6 +73,12 @@ export const VtoView = React.forwardRef<VtoRef, VtoViewProps>((props, ref) => {
     }),
     [],
   );
+
+  React.useImperativeHandle(ref, () => methods, [methods]);
+
+  React.useEffect(() => {
+    hybridRef?.(methods);
+  }, [hybridRef, methods]);
 
   return (
     <NativeVtoView
