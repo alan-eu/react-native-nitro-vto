@@ -1,6 +1,6 @@
 {
   "name": "@alaneu/vto-core-native",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "Internal shared native code (Filament + ARCore/ARKit) for the alan-eu VTO React Native libraries. Not intended to be consumed directly.",
   "private": true,
   "scripts": {

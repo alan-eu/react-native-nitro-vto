@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.14.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.13.1...v0.14.0) (2026-06-22)
+
+### ✨ Features
+
+* **ios, android:** dedicated shader/material for the clip-on lenses ([#80](https://github.com/alan-eu/react-native-nitro-vto/issues/80)) ([0f85e50](https://github.com/alan-eu/react-native-nitro-vto/commit/0f85e50893c067a903e31e6e7848a80c2d846a36))
+* **ios, android:** lifecycle (background/foreground) handlers ([#81](https://github.com/alan-eu/react-native-nitro-vto/issues/81)) ([5335e5e](https://github.com/alan-eu/react-native-nitro-vto/commit/5335e5ef2cac2dd14f28850d48aabe751a926f89))
+
+### 🐛 Bug Fixes
+
+* **ios, android:** better HDRi/IBL for realistic lenses reflections ([#79](https://github.com/alan-eu/react-native-nitro-vto/issues/79)) ([4fe9d0e](https://github.com/alan-eu/react-native-nitro-vto/commit/4fe9d0e3a7f44ee12df899858c42218f375c0f65))
+* temple asymmetry gone ([#78](https://github.com/alan-eu/react-native-nitro-vto/issues/78)) ([a8ec4c5](https://github.com/alan-eu/react-native-nitro-vto/commit/a8ec4c527c50420847a32b1bf852a2231b4d87e7))
+
 ## [0.13.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.13.0...v0.13.1) (2026-06-04)
 
 ### 🐛 Bug Fixes
