@@ -26,10 +26,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// Update background transform to compensate for perspective camera
 - (void)updateTransformWithFrame:(ARFrame *)frame;
 
-/// HARNESS (dev/simulator only): bind a static test-pattern texture to the
-/// camera feed with an identity UV transform, so the renderer can be exercised
-/// without a live AR camera. Idempotent.
-- (void)useStaticTestPattern;
+/// Preview mode: paint the background quad with a flat color instead of the
+/// camera feed. Components are sRGB in [0,1]; the material undoes the view's
+/// tonemap so the pixel on screen is exactly this color. Idempotent.
+- (void)useSolidBackgroundWithRed:(float)red green:(float)green blue:(float)blue;
+
+/// Bind the camera feed back onto the background quad after
+/// -useSolidBackgroundWithRed:green:blue:. Idempotent.
+- (void)useCameraFeed;
 
 /// Cleanup and destroy resources
 - (void)destroy;

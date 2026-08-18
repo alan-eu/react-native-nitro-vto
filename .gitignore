@@ -73,6 +73,8 @@ packages/react-native-nitro-vto/ios/OcclusionConstants.*
 packages/react-native-nitro-vto/ios/LightingConstants.*
 packages/react-native-nitro-vto/ios/LensConstants.*
 packages/react-native-nitro-vto/ios/FaceMeshTopology.*
+packages/react-native-nitro-vto/ios/PreviewCameraController.*
+packages/react-native-nitro-vto/ios/PreviewConstants.*
 packages/react-native-nitro-vto/src/expo.ts
 packages/react-native-nitro-vto/src/types.ts
 packages/react-native-vto/android/src/main/java/eu/alan/vto/core/
@@ -91,5 +93,7 @@ packages/react-native-vto/ios/OcclusionConstants.*
 packages/react-native-vto/ios/LightingConstants.*
 packages/react-native-vto/ios/LensConstants.*
 packages/react-native-vto/ios/FaceMeshTopology.*
+packages/react-native-vto/ios/PreviewCameraController.*
+packages/react-native-vto/ios/PreviewConstants.*
 packages/react-native-vto/src/expo.ts
 packages/react-native-vto/src/types.ts

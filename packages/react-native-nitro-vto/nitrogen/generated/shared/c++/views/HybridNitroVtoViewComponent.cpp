@@ -105,6 +105,26 @@ namespace margelo::nitro::nitrovto::views {
         throw std::runtime_error(std::string("NitroVtoView.showNativeFPS: ") + exc.what());
       }
     }()),
+    mode([&]() -> CachedProp<std::optional<std::string>> {
+      try {
+        const react::RawValue* rawValue = rawProps.at("mode", nullptr, nullptr);
+        if (rawValue == nullptr) return sourceProps.mode;
+        const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
+        return CachedProp<std::optional<std::string>>::fromRawValue(*runtime, value, sourceProps.mode);
+      } catch (const std::exception& exc) {
+        throw std::runtime_error(std::string("NitroVtoView.mode: ") + exc.what());
+      }
+    }()),
+    previewBackgroundColor([&]() -> CachedProp<std::optional<std::string>> {
+      try {
+        const react::RawValue* rawValue = rawProps.at("previewBackgroundColor", nullptr, nullptr);
+        if (rawValue == nullptr) return sourceProps.previewBackgroundColor;
+        const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
+        return CachedProp<std::optional<std::string>>::fromRawValue(*runtime, value, sourceProps.previewBackgroundColor);
+      } catch (const std::exception& exc) {
+        throw std::runtime_error(std::string("NitroVtoView.previewBackgroundColor: ") + exc.what());
+      }
+    }()),
     isClipOn([&]() -> CachedProp<bool> {
       try {
         const react::RawValue* rawValue = rawProps.at("isClipOn", nullptr, nullptr);
@@ -136,6 +156,8 @@ namespace margelo::nitro::nitrovto::views {
     forwardOffset(other.forwardOffset),
     debug(other.debug),
     showNativeFPS(other.showNativeFPS),
+    mode(other.mode),
+    previewBackgroundColor(other.previewBackgroundColor),
     isClipOn(other.isClipOn),
     hybridRef(other.hybridRef) { }
 
@@ -149,6 +171,8 @@ namespace margelo::nitro::nitrovto::views {
       case hashString("forwardOffset"): return true;
       case hashString("debug"): return true;
       case hashString("showNativeFPS"): return true;
+      case hashString("mode"): return true;
+      case hashString("previewBackgroundColor"): return true;
       case hashString("isClipOn"): return true;
       case hashString("hybridRef"): return true;
       default: return false;

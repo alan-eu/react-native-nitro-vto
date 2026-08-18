@@ -113,6 +113,20 @@ namespace margelo::nitro::nitrovto {
     inline void setShowNativeFPS(std::optional<bool> showNativeFPS) noexcept override {
       _swiftPart.setShowNativeFPS(showNativeFPS);
     }
+    inline std::optional<std::string> getMode() noexcept override {
+      auto __result = _swiftPart.getMode();
+      return __result;
+    }
+    inline void setMode(const std::optional<std::string>& mode) noexcept override {
+      _swiftPart.setMode(mode);
+    }
+    inline std::optional<std::string> getPreviewBackgroundColor() noexcept override {
+      auto __result = _swiftPart.getPreviewBackgroundColor();
+      return __result;
+    }
+    inline void setPreviewBackgroundColor(const std::optional<std::string>& previewBackgroundColor) noexcept override {
+      _swiftPart.setPreviewBackgroundColor(previewBackgroundColor);
+    }
     inline bool getIsClipOn() noexcept override {
       return _swiftPart.isClipOn();
     }

@@ -87,9 +87,11 @@ vtoRef.current?.showGlasses();
 | `isActive` | `boolean` | — | Whether the AR session is running |
 | `forwardOffset` | `number` | `0.005` | Forward offset (meters) for fine-tuning glasses position |
 | `debug` | `boolean` | `false` | Debug visualization (red=face mesh, green/blue=planes) |
+| `mode` | `"ar" \| "preview"` | `"ar"` | `"preview"` drops the camera and the AR session and shows the model on a flat background, with drag-to-orbit and pinch-to-zoom. Needs no camera permission. Also entered automatically where face tracking is unavailable. |
+| `previewBackgroundColor` | `string` | near-black | Background behind the glasses in preview mode: `#RGB`, `#RRGGBB` or `#RRGGBBAA` (alpha ignored). Ignored in AR mode. |
 | `onModelLoaded` | `(url: string) => void` | — | Fires once per model load (wrap with `callback()`) |
 | `onFaceTracked` | `() => void` | — | Fires on first face-tracked frame per session (wrap with `callback()`) |
-| `onGlassesDisplayed` | `(url: string) => void` | — | Fires once glasses are rendered on the tracked face (wrap with `callback()`) |
+| `onGlassesDisplayed` | `(url: string) => void` | — | Fires once glasses are rendered on the tracked face — or, in preview mode, on the first rendered frame (wrap with `callback()`) |
 | `style` | `ViewStyle` | — | Standard React Native view styles |
 
 ## Methods

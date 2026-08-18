@@ -62,6 +62,15 @@ class GlassesRenderer(private val context: Context) {
     // Fires onGlassesDisplayed once per loaded model — reset on every successful load.
     private var hasDisplayedCurrentModel = false
 
+    // Preview mode parks the model at the origin; reused to avoid allocating a
+    // matrix per frame.
+    private val identityTransform = floatArrayOf(
+        1f, 0f, 0f, 0f,
+        0f, 1f, 0f, 0f,
+        0f, 0f, 1f, 0f,
+        0f, 0f, 0f, 1f
+    )
+
     // Reusable arrays to avoid per-frame allocations
     private val tempVec4 = FloatArray(4)
     private val tempMatrix16 = FloatArray(16)
@@ -539,6 +548,37 @@ class GlassesRenderer(private val context: Context) {
             val instance = engine.transformManager.getInstance(asset.root)
             engine.transformManager.setTransform(instance, MatrixUtils.createHideMatrix())
         }
+    }
+
+    /**
+     * Preview mode: the glasses sit at the origin in their authored pose and the
+     * orbit camera does the framing (PreviewCameraController), so the transform
+     * is identity. Also arms onGlassesDisplayed, which in AR fires off the first
+     * tracked-face frame.
+     */
+    fun setPreviewTransform() {
+        val asset = glassesAsset ?: return
+
+        if (!hasDisplayedCurrentModel) {
+            hasDisplayedCurrentModel = true
+            onGlassesDisplayed?.invoke(currentModelUrl)
+        }
+
+        val instance = engine.transformManager.getInstance(asset.root)
+        engine.transformManager.setTransform(instance, identityTransform)
+    }
+
+    /**
+     * Bounding sphere of the loaded model as `[centerX, centerY, centerZ,
+     * radius]`, for framing the preview camera. Null when no model is loaded.
+     */
+    fun getModelBoundingSphere(): FloatArray? {
+        val asset = glassesAsset ?: return null
+        val box = asset.boundingBox
+        val center = box.center
+        val half = box.halfExtent
+        val radius = kotlin.math.sqrt(half[0] * half[0] + half[1] * half[1] + half[2] * half[2])
+        return floatArrayOf(center[0], center[1], center[2], radius)
     }
 
     /**

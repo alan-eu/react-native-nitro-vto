@@ -141,6 +141,24 @@ namespace margelo::nitro::nitrovto {
     static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JBoolean> /* showNativeFPS */)>("setShowNativeFPS");
     method(_javaPart, showNativeFPS.has_value() ? jni::JBoolean::valueOf(showNativeFPS.value()) : nullptr);
   }
+  std::optional<std::string> JHybridNitroVtoViewSpec::getMode() {
+    static const auto method = javaClassStatic()->getMethod<jni::local_ref<jni::JString>()>("getMode");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional(__result->toStdString()) : std::nullopt;
+  }
+  void JHybridNitroVtoViewSpec::setMode(const std::optional<std::string>& mode) {
+    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* mode */)>("setMode");
+    method(_javaPart, mode.has_value() ? jni::make_jstring(mode.value()) : nullptr);
+  }
+  std::optional<std::string> JHybridNitroVtoViewSpec::getPreviewBackgroundColor() {
+    static const auto method = javaClassStatic()->getMethod<jni::local_ref<jni::JString>()>("getPreviewBackgroundColor");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional(__result->toStdString()) : std::nullopt;
+  }
+  void JHybridNitroVtoViewSpec::setPreviewBackgroundColor(const std::optional<std::string>& previewBackgroundColor) {
+    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<jni::JString> /* previewBackgroundColor */)>("setPreviewBackgroundColor");
+    method(_javaPart, previewBackgroundColor.has_value() ? jni::make_jstring(previewBackgroundColor.value()) : nullptr);
+  }
   bool JHybridNitroVtoViewSpec::getIsClipOn() {
     static const auto method = javaClassStatic()->getMethod<jboolean()>("isClipOn");
     auto __result = method(_javaPart);

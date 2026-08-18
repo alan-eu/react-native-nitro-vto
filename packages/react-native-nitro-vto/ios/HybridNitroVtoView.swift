@@ -79,6 +79,18 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
         }
     }
 
+    public var mode: String? = nil {
+        didSet {
+            nitroVtoView.setMode(mode)
+        }
+    }
+
+    public var previewBackgroundColor: String? = nil {
+        didSet {
+            nitroVtoView.setPreviewBackgroundColor(previewBackgroundColor)
+        }
+    }
+
     // MARK: - Methods implementation
 
     public func hideGlasses() throws {

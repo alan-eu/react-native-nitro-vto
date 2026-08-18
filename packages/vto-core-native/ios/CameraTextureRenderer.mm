@@ -15,6 +15,7 @@
 #include <utils/EntityManager.h>
 #include <math/mat3.h>
 #include <math/mat4.h>
+#include <math/vec4.h>
 #include <math/half.h>
 
 using namespace filament;
@@ -50,6 +51,10 @@ static constexpr uint16_t kIndices[6] = { 0, 1, 2, 2, 1, 3 };
 // Background triangle
 @property (nonatomic, assign) Material *cameraMaterial;
 @property (nonatomic, assign) MaterialInstance *cameraMaterialInstance;
+
+// Flat-color background for preview mode, swapped onto the same quad.
+@property (nonatomic, assign) Material *solidMaterial;
+@property (nonatomic, assign) MaterialInstance *solidMaterialInstance;
 @property (nonatomic, assign) Entity cameraFeedTriangle;
 @property (nonatomic, assign) VertexBuffer *vertexBuffer;
 @property (nonatomic, assign) IndexBuffer *indexBuffer;
@@ -89,6 +94,21 @@ static constexpr uint16_t kIndices[6] = { 0, 1, 2, 2, 1, 3 };
         .sampler(Texture::Sampler::SAMPLER_EXTERNAL)
         .build(*engine);
 
+    // Flat-color background material for preview mode. Optional: without it
+    // preview mode still renders, on the camera feed's last contents.
+    NSData *solidData = [LoaderUtils loadAssetNamed:@"materials/background_solid.filamat"];
+    if (solidData) {
+        _solidMaterial = Material::Builder()
+            .package(solidData.bytes, solidData.length)
+            .build(*engine);
+        if (_solidMaterial) {
+            _solidMaterialInstance = _solidMaterial->createInstance();
+        }
+    }
+    if (!_solidMaterialInstance) {
+        NSLog(@"%@: Failed to load solid background material; preview background disabled", TAG);
+    }
+
     // Create full-screen triangle renderable
     [self createCameraFeedTriangle];
 
@@ -112,38 +132,26 @@ static constexpr uint16_t kIndices[6] = { 0, 1, 2, 2, 1, 3 };
     _viewportSize = size;
 }
 
-// HARNESS (dev/simulator only). Builds a recognizable test pattern (grid +
-// diagonal + distinctly-colored corners) and binds it as the camera feed with
-// an identity UV transform, so render order can be inspected without live AR.
-- (void)useStaticTestPattern {
-    if (!_engine || !_cameraMaterialInstance) return;
-    const uint32_t S = 256;
-    uint8_t *px = (uint8_t *)malloc(S * S * 4);
-    for (uint32_t y = 0; y < S; y++) {
-        for (uint32_t x = 0; x < S; x++) {
-            uint8_t r = 30, g = 40, b = 70;                  // base: dark blue
-            if (x % 32 == 0 || y % 32 == 0) { r = 190; g = 190; b = 190; } // grid
-            if ((int)x - (int)y < 6 && (int)x - (int)y > -6) { r = 40; g = 200; b = 60; } // diagonal
-            if (x < 28 && y < 28) { r = 255; g = 0; b = 0; }          // TL red
-            else if (x >= S-28 && y < 28) { r = 255; g = 230; b = 0; } // TR yellow
-            else if (x < 28 && y >= S-28) { r = 0; g = 220; b = 255; } // BL cyan
-            else if (x >= S-28 && y >= S-28) { r = 255; g = 0; b = 230; } // BR magenta
-            uint8_t *p = &px[(y * S + x) * 4];
-            p[0] = r; p[1] = g; p[2] = b; p[3] = 255;
-        }
-    }
-    Texture *tex = Texture::Builder()
-        .width(S).height(S).levels(1)
-        .format(Texture::InternalFormat::RGBA8)
-        .sampler(Texture::Sampler::SAMPLER_2D)
-        .build(*_engine);
-    Texture::PixelBufferDescriptor pb(px, S * S * 4,
-        Texture::Format::RGBA, Texture::Type::UBYTE,
-        [](void *buf, size_t, void *) { free(buf); }, nullptr);
-    tex->setImage(*_engine, 0, std::move(pb));
-    _cameraMaterialInstance->setParameter("cameraFeed", tex, TextureSampler());
-    _cameraMaterialInstance->setParameter("textureTransform", math::mat3f()); // identity
-    NSLog(@"%@: HARNESS static test pattern bound", TAG);
+- (void)useSolidBackgroundWithRed:(float)red green:(float)green blue:(float)blue {
+    if (!_solidMaterialInstance) return;
+    // Raw sRGB components: the material does its own sRGB→linear step (it has
+    // to, to pre-invert the view's tonemap), so Filament must not convert here.
+    _solidMaterialInstance->setParameter("color", float4{red, green, blue, 1.0f});
+    [self bindBackgroundMaterial:_solidMaterialInstance];
+}
+
+- (void)useCameraFeed {
+    [self bindBackgroundMaterial:_cameraMaterialInstance];
+}
+
+// Swap which material draws the background quad. The quad, its geometry and its
+// render priority stay put — only the shader bound to it changes.
+- (void)bindBackgroundMaterial:(MaterialInstance *)instance {
+    if (!_engine || !instance || _cameraFeedTriangle.isNull()) return;
+    RenderableManager &rm = _engine->getRenderableManager();
+    RenderableManager::Instance ri = rm.getInstance(_cameraFeedTriangle);
+    if (!ri.isValid()) return;
+    rm.setMaterialInstanceAt(ri, 0, instance);
 }
 
 - (void)updateTextureTransformWithFrame:(ARFrame *)frame {
@@ -275,6 +283,16 @@ static constexpr uint16_t kIndices[6] = { 0, 1, 2, 2, 1, 3 };
     }
     if (_cameraMaterial) {
         _engine->destroy(_cameraMaterial);
+    }
+    // Instance before material: Filament asserts if a material is destroyed
+    // while instances of it are still alive.
+    if (_solidMaterialInstance) {
+        _engine->destroy(_solidMaterialInstance);
+        _solidMaterialInstance = nullptr;
+    }
+    if (_solidMaterial) {
+        _engine->destroy(_solidMaterial);
+        _solidMaterial = nullptr;
     }
 }
 

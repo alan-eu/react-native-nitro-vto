@@ -30,6 +30,7 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [debugEnabled, setDebugEnabled] = useState(false);
   const [glassesHidden, setGlassesHidden] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
 
   const vtoRef = useRef<VtoRef | null>(null);
 
@@ -104,6 +105,10 @@ const App = () => {
     );
   }, []);
 
+  const handleTogglePreview = useCallback(() => {
+    setPreviewMode((prev) => !prev);
+  }, []);
+
   const handleDebug = useCallback(() => {
     setDebugEnabled((prev) => !prev);
   }, []);
@@ -142,6 +147,9 @@ const App = () => {
         style={styles.vtoView}
         modelUrl={currentModel}
         isActive={true}
+        isClipOn={false}
+        mode={previewMode ? "preview" : "ar"}
+        previewBackgroundColor="#FBF3E4"
         forwardOffset={0.005}
         debug={debugEnabled}
         showNativeFPS={true}
@@ -167,6 +175,17 @@ const App = () => {
             <Text style={styles.buttonText}>Next Model</Text>
           </TouchableOpacity>
         )}
+        <TouchableOpacity
+          style={[
+            styles.button,
+            previewMode ? styles.buttonEnabled : styles.buttonDisabled,
+          ]}
+          onPress={handleTogglePreview}
+        >
+          <Text style={styles.buttonText}>
+            Mode: {previewMode ? "Preview" : "AR"}
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[
             styles.button,

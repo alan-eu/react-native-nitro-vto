@@ -66,6 +66,24 @@ export interface NitroVtoViewProps extends HybridViewProps {
   showNativeFPS?: boolean;
 
   /**
+   * `"ar"` (default) tries the glasses on a tracked face through the camera.
+   * `"preview"` drops the camera and the AR session entirely and shows the
+   * model on a flat background (`previewBackgroundColor`), which the user can
+   * drag to orbit and pinch to zoom. Preview mode needs no camera permission.
+   *
+   * The view also falls back to preview on its own where face tracking is
+   * unavailable (simulator, emulator, device without the required camera).
+   */
+  mode?: string;
+
+  /**
+   * Background behind the glasses in preview mode, as `#RGB`, `#RRGGBB` or
+   * `#RRGGBBAA` (alpha ignored — the background is opaque). Ignored in AR mode.
+   * Default: near-black.
+   */
+  previewBackgroundColor?: string;
+
+  /**
    * Marks the model as a clip-on / solar (tinted sunglass) frame, so the engine
    * renders the lens as a tinted sunglass (its own glass material, no IBL chrome)
    * instead of a clear lens. Pass `false` for clear lenses. Required (not
