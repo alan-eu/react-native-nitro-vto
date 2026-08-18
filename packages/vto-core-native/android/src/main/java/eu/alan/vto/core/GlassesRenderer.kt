@@ -22,6 +22,7 @@ import com.google.ar.core.Frame
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicLong
 import org.json.JSONObject
 
 /**
@@ -44,8 +45,12 @@ class GlassesRenderer(private val context: Context) {
     private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    // Loading state
-    private var isLoading = false
+    // Monotonic load-request counter. Every load request takes the next
+    // generation; when a download lands whose generation is no longer current it
+    // has been superseded and its bytes are dropped, so the last requested model
+    // is always the one installed and an older download can never paint over a
+    // newer one.
+    private val loadGeneration = AtomicLong(0)
 
     // Current model info
     private var currentModelUrl: String = ""
@@ -132,7 +137,6 @@ class GlassesRenderer(private val context: Context) {
     fun setup(engine: Engine, scene: Scene, modelUrl: String) {
         this.engine = engine
         this.scene = scene
-        this.currentModelUrl = modelUrl
 
         // Setup GLTF loader
         val materialProvider = UbershaderProvider(engine)
@@ -160,12 +164,7 @@ class GlassesRenderer(private val context: Context) {
             return
         }
 
-        if (isLoading) {
-            Log.d(TAG, "Already loading a model, skipping request for: $url")
-            return
-        }
-
-        isLoading = true
+        val generation = loadGeneration.incrementAndGet()
         Log.d(TAG, "Starting download from URL: $url")
 
         executor.execute {
@@ -173,48 +172,71 @@ class GlassesRenderer(private val context: Context) {
                 val modelBuffer = LoaderUtils.loadFromUrl(context, url)
 
                 mainHandler.post {
+                    if (generation != loadGeneration.get()) {
+                        Log.d(TAG, "Load superseded by a newer request, discarding: $url")
+                        return@post
+                    }
                     try {
-                        loadModelBuffer(modelBuffer)
+                        loadModelBuffer(modelBuffer, url)
                         onModelLoaded?.invoke(url)
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to load model buffer on main thread: ${e.message}")
                         e.printStackTrace()
-                    } finally {
-                        isLoading = false
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to download GLB from URL: ${e.message}")
                 e.printStackTrace()
-                mainHandler.post {
-                    isLoading = false
-                }
             }
         }
     }
 
-    private fun loadModelBuffer(modelBuffer: ByteBuffer) {
+    private fun loadModelBuffer(modelBuffer: ByteBuffer, url: String) {
         // Parse the lens baseColor RGB before createAsset (which advances the
         // buffer / releases source data). Used by the clip-on opacity override.
-        lensBaseColorRgb = parseLensBaseColorRgb(modelBuffer.duplicate())
-        glassesAsset = assetLoader.createAsset(modelBuffer)
-
-        glassesAsset?.let { asset ->
-            resourceLoader.loadResources(asset)
-            asset.releaseSourceData()
-
-            scene.addEntities(asset.entities)
-            Log.d(TAG, "Glasses model loaded: ${asset.entities.size} entities")
-            // Reset the "already displayed" flag so onGlassesDisplayed fires again
-            // the next time updateTransform runs for this freshly-loaded model.
-            hasDisplayedCurrentModel = false
-            cacheTempleArticulationState(asset)
-            configureLensMaterial(asset)
-            cacheLensVerticalOffset(asset)
-            hide()
-        } ?: run {
+        val rgb = parseLensBaseColorRgb(modelBuffer.duplicate())
+        val asset = assetLoader.createAsset(modelBuffer)
+        if (asset == null) {
             Log.e(TAG, "Failed to create glasses asset")
+            return
         }
+
+        resourceLoader.loadResources(asset)
+        asset.releaseSourceData()
+
+        // The model on screen is only swapped out once its replacement is ready,
+        // so a switch never leaves an empty scene while the new glb downloads,
+        // and a download or parse failure keeps the current frame instead of
+        // nothing.
+        removeCurrentModel()
+
+        lensBaseColorRgb = rgb
+        glassesAsset = asset
+        currentModelUrl = url
+
+        scene.addEntities(asset.entities)
+        Log.d(TAG, "Glasses model loaded: ${asset.entities.size} entities")
+        // Reset the "already displayed" flag so onGlassesDisplayed fires again
+        // the next time updateTransform runs for this freshly-loaded model.
+        hasDisplayedCurrentModel = false
+        cacheTempleArticulationState(asset)
+        configureLensMaterial(asset)
+        cacheLensVerticalOffset(asset)
+        hide()
+    }
+
+    /**
+     * Detach the loaded asset from the scene and destroy it. Articulation is
+     * turned off first: the cached hinge entities belong to this asset, and
+     * cacheTempleArticulationState reruns when the next asset is installed.
+     */
+    private fun removeCurrentModel() {
+        val asset = glassesAsset ?: return
+
+        articulationEnabled = false
+        scene.removeEntities(asset.entities)
+        assetLoader.destroyAsset(asset)
+        glassesAsset = null
     }
 
     // Configure the lens material on the loaded asset.
@@ -633,24 +655,8 @@ class GlassesRenderer(private val context: Context) {
      * @param modelUrl URL to the new model (GLB format)
      */
     fun switchModel(modelUrl: String) {
-        // Disable articulation immediately — the cached hinge entities belong
-        // to the asset we're about to destroy. cacheTempleArticulationState
-        // reruns when the new asset finishes loading.
-        articulationEnabled = false
-
-        // Remove current model from scene
-        glassesAsset?.let { asset ->
-            scene.removeEntities(asset.entities)
-            assetLoader.destroyAsset(asset)
-        }
-        glassesAsset = null
-
-        // Update current model info
-        currentModelUrl = modelUrl
-
-        // Load new model
+        // The swap happens in loadModelBuffer once the new glb is ready.
         loadModel(modelUrl)
-        Log.d(TAG, "Switched to model: $modelUrl")
     }
 
     /**
@@ -658,10 +664,10 @@ class GlassesRenderer(private val context: Context) {
      */
     fun destroy() {
         executor.shutdown()
-        glassesAsset?.let {
-            scene.removeEntities(it.entities)
-            assetLoader.destroyAsset(it)
-        }
+        // Invalidate any in-flight load so its completion can't touch the
+        // Filament objects torn down below.
+        loadGeneration.incrementAndGet()
+        removeCurrentModel()
         resourceLoader.destroy()
         assetLoader.destroy()
         // Our own clip-on lens material/instance (not owned by gltfio).
