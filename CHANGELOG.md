@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.15.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.14.0...v0.15.0) (2026-08-18)
+
+### ✨ Features
+
+* **ios, android:** preview mode to inspect the glasses without AR ([#84](https://github.com/alan-eu/react-native-nitro-vto/issues/84)) ([b5bf6eb](https://github.com/alan-eu/react-native-nitro-vto/commit/b5bf6eba47a72292d2111ddeb100325e3af429ce))
+
+### 🐛 Bug Fixes
+
+* **ios/android:** race condition on multiple downloads ([#82](https://github.com/alan-eu/react-native-nitro-vto/issues/82)) ([b43fd44](https://github.com/alan-eu/react-native-nitro-vto/commit/b43fd444be70ba19964c13782b6e0677a71138ac))
+
 ## [0.14.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.13.1...v0.14.0) (2026-06-22)
 
 ### ✨ Features
