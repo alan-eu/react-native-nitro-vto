@@ -158,13 +158,15 @@ const App = () => {
         </View>
       )}
       <View style={styles.controls}>
-        <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonLoading]}
-          onPress={handleNextModel}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>Next Model</Text>
-        </TouchableOpacity>
+        {MODELS.length > 1 && (
+          <TouchableOpacity
+            style={[styles.button, isLoading && styles.buttonLoading]}
+            onPress={handleNextModel}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>Next Model</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={[
             styles.button,

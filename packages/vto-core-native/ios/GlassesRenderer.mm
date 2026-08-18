@@ -75,8 +75,11 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
 // Thread management
 @property (nonatomic, strong) dispatch_queue_t loadQueue;
 
-// Loading state
-@property (nonatomic, assign) BOOL isLoading;
+// Monotonic load-request counter. Every load request takes the next
+// generation; when a download lands whose generation is no longer current it
+// has been superseded and its bytes are dropped, so the last requested model is
+// always the one installed and an older download can never paint over a newer.
+@property (nonatomic, assign) uint64_t loadGeneration;
 
 // Current model info
 @property (nonatomic, copy) NSString *currentModelUrl;
@@ -146,7 +149,7 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
     self = [super init];
     if (self) {
         _loadQueue = dispatch_queue_create("com.nitrovto.glassesloader", DISPATCH_QUEUE_SERIAL);
-        _isLoading = NO;
+        _loadGeneration = 0;
         _forwardOffset = kForwardOffset;
     }
     return self;
@@ -157,7 +160,6 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
                modelUrl:(NSString *)modelUrl {
     _engine = engine;
     _scene = scene;
-    _currentModelUrl = modelUrl;
 
     // Setup GLTF loader
     _materialProvider = createUbershaderProvider(engine, UBERARCHIVE_DEFAULT_DATA, UBERARCHIVE_DEFAULT_SIZE);
@@ -200,12 +202,7 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
         return;
     }
 
-    if (_isLoading) {
-        NSLog(@"%@: Already loading a model, skipping request for: %@", TAG, url);
-        return;
-    }
-
-    _isLoading = YES;
+    uint64_t generation = ++_loadGeneration;
     NSLog(@"%@: Starting download from URL: %@", TAG, url);
 
     __weak __typeof__(self) weakSelf = self;
@@ -217,55 +214,84 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
         NSData *modelData = [LoaderUtils loadFromUrl:url error:&error];
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (error) {
-                NSLog(@"%@: Failed to download GLB from URL: %@", TAG, error.localizedDescription);
-                strongSelf.isLoading = NO;
+            if (generation != strongSelf.loadGeneration) {
+                NSLog(@"%@: Load superseded by a newer request, discarding: %@", TAG, url);
                 return;
             }
 
-            [strongSelf loadModelFromData:modelData];
+            if (error) {
+                NSLog(@"%@: Failed to download GLB from URL: %@", TAG, error.localizedDescription);
+                return;
+            }
+
+            [strongSelf loadModelFromData:modelData url:url];
 
             if (strongSelf.onModelLoaded) {
                 strongSelf.onModelLoaded(url);
             }
-            strongSelf.isLoading = NO;
         });
     });
 }
 
-- (void)loadModelFromData:(NSData *)data {
+- (void)loadModelFromData:(NSData *)data url:(NSString *)url {
     if (!_assetLoader || !_resourceLoader || !_scene) return;
 
-    _glassesAsset = _assetLoader->createAsset((const uint8_t *)data.bytes, (uint32_t)data.length);
+    FilamentAsset *asset = _assetLoader->createAsset((const uint8_t *)data.bytes, (uint32_t)data.length);
+    if (!asset) {
+        NSLog(@"%@: Failed to create glasses asset", TAG);
+        return;
+    }
 
-    if (_glassesAsset) {
-        _resourceLoader->loadResources(_glassesAsset);
-        _glassesAsset->releaseSourceData();
+    _resourceLoader->loadResources(asset);
+    asset->releaseSourceData();
 
-        // Add all entities to scene
+    // The model on screen is only swapped out once its replacement is ready, so
+    // a switch never leaves an empty scene while the new glb downloads, and a
+    // download or parse failure keeps the current frame instead of nothing.
+    [self removeCurrentModel];
+
+    _glassesAsset = asset;
+    _currentModelUrl = url;
+
+    // Add all entities to scene
+    const Entity *entities = _glassesAsset->getEntities();
+    size_t entityCount = _glassesAsset->getEntityCount();
+    for (size_t i = 0; i < entityCount; i++) {
+        _scene->addEntity(entities[i]);
+    }
+
+    NSLog(@"%@: Glasses model loaded: %zu entities", TAG, entityCount);
+    // Re-arm onGlassesDisplayed for this freshly-loaded model. Next successful
+    // updateTransformWithFace will fire the callback.
+    _hasDisplayedCurrentModel = NO;
+    [self cacheTempleArticulationState];
+    // Reset the cached lens tint to a neutral default before configuring.
+    // configureLensMaterial only overwrites it when a lens prim exposes
+    // baseColorFactor; without this reset a lens that lacks one would inherit
+    // the previous model's tint (or black on first load). White caps to a
+    // neutral grey, never black/stale.
+    _lensBaseColorRgb = filament::math::float3{1.0f, 1.0f, 1.0f};
+    [self configureLensMaterial];
+    [self cacheLensVerticalOffset];
+    [self hide];
+}
+
+// Detach the loaded asset from the scene and destroy it. Articulation is turned
+// off first: the cached hinge entities belong to this asset, and
+// cacheTempleArticulationState reruns when the next asset is installed.
+- (void)removeCurrentModel {
+    if (!_glassesAsset) return;
+
+    _articulationEnabled = NO;
+    if (_scene) {
         const Entity *entities = _glassesAsset->getEntities();
         size_t entityCount = _glassesAsset->getEntityCount();
         for (size_t i = 0; i < entityCount; i++) {
-            _scene->addEntity(entities[i]);
+            _scene->remove(entities[i]);
         }
-
-        NSLog(@"%@: Glasses model loaded: %zu entities", TAG, entityCount);
-        // Re-arm onGlassesDisplayed for this freshly-loaded model. Next successful
-        // updateTransformWithFace will fire the callback.
-        _hasDisplayedCurrentModel = NO;
-        [self cacheTempleArticulationState];
-        // Reset the cached lens tint to a neutral default before configuring.
-        // configureLensMaterial only overwrites it when a lens prim exposes
-        // baseColorFactor; without this reset a lens that lacks one would inherit
-        // the previous model's tint (or black on first load). White caps to a
-        // neutral grey, never black/stale.
-        _lensBaseColorRgb = filament::math::float3{1.0f, 1.0f, 1.0f};
-        [self configureLensMaterial];
-        [self cacheLensVerticalOffset];
-        [self hide];
-    } else {
-        NSLog(@"%@: Failed to create glasses asset", TAG);
     }
+    _assetLoader->destroyAsset(_glassesAsset);
+    _glassesAsset = nullptr;
 }
 
 // Configure the lens material instances on the loaded asset.
@@ -593,43 +619,18 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
 - (void)switchModelWithUrl:(NSString *)modelUrl {
     if (!_scene || !_assetLoader) return;
 
-    // Disable articulation immediately — the cached hinge entities belong to
-    // the asset we're about to destroy. cacheTempleArticulationState reruns
-    // when the new asset finishes loading.
-    _articulationEnabled = NO;
-
-    // Remove current model from scene
-    if (_glassesAsset) {
-        const Entity *entities = _glassesAsset->getEntities();
-        size_t entityCount = _glassesAsset->getEntityCount();
-        for (size_t i = 0; i < entityCount; i++) {
-            _scene->remove(entities[i]);
-        }
-        _assetLoader->destroyAsset(_glassesAsset);
-        _glassesAsset = nullptr;
-    }
-
-    // Update current model info
-    _currentModelUrl = modelUrl;
-
-    // Load new model
+    // The swap happens in loadModelFromData:url: once the new glb is ready.
     [self loadModelFromUrl:modelUrl];
-    NSLog(@"%@: Switched to model: %@", TAG, modelUrl);
 }
 
 - (void)destroy {
     if (!_assetLoader) return;
 
-    if (_glassesAsset) {
-        if (_scene) {
-            const Entity *entities = _glassesAsset->getEntities();
-            size_t entityCount = _glassesAsset->getEntityCount();
-            for (size_t i = 0; i < entityCount; i++) {
-                _scene->remove(entities[i]);
-            }
-        }
-        _assetLoader->destroyAsset(_glassesAsset);
-    }
+    // Invalidate any in-flight load so its completion can't touch the engine
+    // objects torn down below.
+    _loadGeneration++;
+
+    [self removeCurrentModel];
 
     // ResourceLoader must be destroyed before TextureProvider
     if (_resourceLoader) {

@@ -48,7 +48,8 @@
       "Bash(gh pr *)",
       "Bash(gh issue *)",
       "Bash(python3 -c ' *)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(npx tsx *)"
     ]
   },
   "enabledMcpjsonServers": [
