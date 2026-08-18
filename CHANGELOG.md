@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.15.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.15.0...v0.15.1) (2026-08-18)
+
+### 🐛 Bug Fixes
+
+* **android:** gate AR on checkAvailability so an unsupported device stops looping to the Play Store ([#85](https://github.com/alan-eu/react-native-nitro-vto/issues/85)) ([818c3a8](https://github.com/alan-eu/react-native-nitro-vto/commit/818c3a8e95984a985e876d9ab1168d2b1a644710))
+
 ## [0.15.0](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.14.0...v0.15.0) (2026-08-18)
 
 ### ✨ Features
