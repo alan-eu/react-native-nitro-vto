@@ -52,6 +52,12 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.onGlassesDisplayed = value
         }
 
+    override var onArUnavailable: ((reason: String) -> Unit)? = null
+        set(value) {
+            field = value
+            nitroVtoView.onArUnavailable = value
+        }
+
     override var forwardOffset: Double? = null
         set(value) {
             field = value

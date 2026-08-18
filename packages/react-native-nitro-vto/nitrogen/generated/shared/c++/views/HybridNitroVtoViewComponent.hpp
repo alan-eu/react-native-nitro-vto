@@ -47,6 +47,7 @@ namespace margelo::nitro::nitrovto::views {
     CachedProp<bool> isActive;
     CachedProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>> onModelLoaded;
     CachedProp<std::optional<std::function<void()>>> onFaceTracked;
+    CachedProp<std::optional<std::function<void(const std::string& /* reason */)>>> onArUnavailable;
     CachedProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>> onGlassesDisplayed;
     CachedProp<std::optional<double>> forwardOffset;
     CachedProp<std::optional<bool>> debug;

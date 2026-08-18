@@ -200,6 +200,38 @@ open class HybridNitroVtoViewSpec_cxx {
     }
   }
   
+  public final var onArUnavailable: bridge.std__optional_std__function_void_const_std__string_____reason______ {
+    @inline(__always)
+    get {
+      return { () -> bridge.std__optional_std__function_void_const_std__string_____reason______ in
+        if let __unwrappedValue = self.__implementation.onArUnavailable {
+          return bridge.create_std__optional_std__function_void_const_std__string_____reason______({ () -> bridge.Func_void_std__string in
+            let __closureWrapper = Func_void_std__string(__unwrappedValue)
+            return bridge.create_Func_void_std__string(__closureWrapper.toUnsafe())
+          }())
+        } else {
+          return .init()
+        }
+      }()
+    }
+    @inline(__always)
+    set {
+      self.__implementation.onArUnavailable = { () -> ((_ reason: String) -> Void)? in
+        if bridge.has_value_std__optional_std__function_void_const_std__string_____reason______(newValue) {
+          let __unwrapped = bridge.get_std__optional_std__function_void_const_std__string_____reason______(newValue)
+          return { () -> (String) -> Void in
+            let __wrappedFunction = bridge.wrap_Func_void_std__string(__unwrapped)
+            return { (__reason: String) -> Void in
+              __wrappedFunction.call(std.string(__reason))
+            }
+          }()
+        } else {
+          return nil
+        }
+      }()
+    }
+  }
+  
   public final var onGlassesDisplayed: bridge.std__optional_std__function_void_const_std__string_____modelUrl______ {
     @inline(__always)
     get {

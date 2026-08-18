@@ -82,6 +82,20 @@ abstract class HybridNitroVtoViewSpec: HybridView() {
       onFaceTracked = value?.let { it }
     }
   
+  abstract var onArUnavailable: ((reason: String) -> Unit)?
+  
+  private var onArUnavailable_cxx: Func_void_std__string?
+    @Keep
+    @DoNotStrip
+    get() {
+      return onArUnavailable?.let { Func_void_std__string_java(it) }
+    }
+    @Keep
+    @DoNotStrip
+    set(value) {
+      onArUnavailable = value?.let { it }
+    }
+  
   abstract var onGlassesDisplayed: ((modelUrl: String) -> Unit)?
   
   private var onGlassesDisplayed_cxx: Func_void_std__string?

@@ -65,6 +65,16 @@ namespace margelo::nitro::nitrovto::views {
         throw std::runtime_error(std::string("NitroVtoView.onFaceTracked: ") + exc.what());
       }
     }()),
+    onArUnavailable([&]() -> CachedProp<std::optional<std::function<void(const std::string& /* reason */)>>> {
+      try {
+        const react::RawValue* rawValue = rawProps.at("onArUnavailable", nullptr, nullptr);
+        if (rawValue == nullptr) return sourceProps.onArUnavailable;
+        const auto& [runtime, value] = (std::pair<jsi::Runtime*, jsi::Value>)*rawValue;
+        return CachedProp<std::optional<std::function<void(const std::string& /* reason */)>>>::fromRawValue(*runtime, value.asObject(*runtime).getProperty(*runtime, "f"), sourceProps.onArUnavailable);
+      } catch (const std::exception& exc) {
+        throw std::runtime_error(std::string("NitroVtoView.onArUnavailable: ") + exc.what());
+      }
+    }()),
     onGlassesDisplayed([&]() -> CachedProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>> {
       try {
         const react::RawValue* rawValue = rawProps.at("onGlassesDisplayed", nullptr, nullptr);
@@ -152,6 +162,7 @@ namespace margelo::nitro::nitrovto::views {
     isActive(other.isActive),
     onModelLoaded(other.onModelLoaded),
     onFaceTracked(other.onFaceTracked),
+    onArUnavailable(other.onArUnavailable),
     onGlassesDisplayed(other.onGlassesDisplayed),
     forwardOffset(other.forwardOffset),
     debug(other.debug),
@@ -167,6 +178,7 @@ namespace margelo::nitro::nitrovto::views {
       case hashString("isActive"): return true;
       case hashString("onModelLoaded"): return true;
       case hashString("onFaceTracked"): return true;
+      case hashString("onArUnavailable"): return true;
       case hashString("onGlassesDisplayed"): return true;
       case hashString("forwardOffset"): return true;
       case hashString("debug"): return true;

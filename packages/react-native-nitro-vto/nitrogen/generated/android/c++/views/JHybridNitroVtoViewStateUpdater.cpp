@@ -52,6 +52,10 @@ void JHybridNitroVtoViewStateUpdater::updateViewProps(jni::alias_ref<jni::JClass
     view->setOnFaceTracked(props.onFaceTracked.value);
     // TODO: Set isDirty = false
   }
+  if (props.onArUnavailable.isDirty) {
+    view->setOnArUnavailable(props.onArUnavailable.value);
+    // TODO: Set isDirty = false
+  }
   if (props.onGlassesDisplayed.isDirty) {
     view->setOnGlassesDisplayed(props.onGlassesDisplayed.value);
     // TODO: Set isDirty = false

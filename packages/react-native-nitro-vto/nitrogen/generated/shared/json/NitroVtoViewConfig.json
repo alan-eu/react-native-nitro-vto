@@ -8,6 +8,7 @@
     "isActive": true,
     "onModelLoaded": true,
     "onFaceTracked": true,
+    "onArUnavailable": true,
     "onGlassesDisplayed": true,
     "forwardOffset": true,
     "debug": true,
