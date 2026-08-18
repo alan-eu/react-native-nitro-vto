@@ -39,6 +39,25 @@ export interface VtoCommonProps {
   showNativeFPS?: boolean;
 
   /**
+   * `"ar"` (default) tries the glasses on a tracked face through the camera.
+   * `"preview"` drops the camera and the AR session entirely and shows the
+   * model on a flat background (`previewBackgroundColor`), which the user can
+   * drag to orbit and pinch to zoom. Preview mode needs no camera permission.
+   *
+   * The view also falls back to preview on its own where face tracking is
+   * unavailable (simulator, emulator, device without the required camera).
+   */
+  mode?: "ar" | "preview";
+
+  /**
+   * Background behind the glasses in preview mode, as `#RGB`, `#RRGGBB` or
+   * `#RRGGBBAA` (alpha ignored — the background is opaque). Ignored in AR mode,
+   * where the camera feed is the background.
+   * Default: near-black.
+   */
+  previewBackgroundColor?: string;
+
+  /**
    * Marks the model as a clip-on / solar (tinted sunglass) frame. When true, the
    * engine renders the lens as a tinted sunglass (its own glass material, no IBL
    * chrome) instead of the glb's clear lens. Pass `false` for clear prescription
@@ -61,8 +80,9 @@ export interface VtoCommonProps {
   /**
    * Fires the first time the glasses model is rendered on the tracked face —
    * i.e. the first frame whose transform is driven by a valid face pose after
-   * the model was loaded. Re-fires whenever `modelUrl` changes to a different
-   * model.
+   * the model was loaded. In preview mode there is no face, so it fires on the
+   * first frame the model is rendered. Re-fires whenever `modelUrl` changes to
+   * a different model.
    */
   onGlassesDisplayed?: (modelUrl: string) => void;
 }

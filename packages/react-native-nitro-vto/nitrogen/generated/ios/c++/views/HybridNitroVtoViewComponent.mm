@@ -111,6 +111,16 @@ using namespace margelo::nitro::nitrovto::views;
     swiftPart.setShowNativeFPS(newViewProps.showNativeFPS.value);
     newViewProps.showNativeFPS.isDirty = false;
   }
+  // mode: optional
+  if (newViewProps.mode.isDirty) {
+    swiftPart.setMode(newViewProps.mode.value);
+    newViewProps.mode.isDirty = false;
+  }
+  // previewBackgroundColor: optional
+  if (newViewProps.previewBackgroundColor.isDirty) {
+    swiftPart.setPreviewBackgroundColor(newViewProps.previewBackgroundColor.value);
+    newViewProps.previewBackgroundColor.isDirty = false;
+  }
   // isClipOn: boolean
   if (newViewProps.isClipOn.isDirty) {
     swiftPart.setIsClipOn(newViewProps.isClipOn.value);

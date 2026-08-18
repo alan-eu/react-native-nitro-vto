@@ -19,7 +19,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// Callback fired the first time the newly loaded model's transform is driven
 /// by a tracked face (i.e. the first frame the glasses actually become visible).
-/// Re-armed on every successful load (initial load + switchModelWithUrl:).
+/// Re-armed on every successful load (initial load + switchModelWithUrl:). In
+/// preview mode there is no face, so it fires on the first rendered frame.
 @property (nonatomic, copy, nullable) void (^onGlassesDisplayed)(NSString *url);
 
 /// Setup the glasses renderer with Filament engine and scene
@@ -38,10 +39,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// Hide glasses by moving off-screen
 - (void)hide;
 
-/// HARNESS (dev/simulator only): place the loaded glasses at a fixed pose in
-/// front of the camera (no face tracking), so render order can be inspected.
-/// No-op until the model has loaded.
-- (void)setStaticPreviewTransform;
+/// Preview mode: park the loaded glasses at the world origin, where the orbit
+/// camera frames them. No-op until the model has loaded.
+- (void)setPreviewTransform;
+
+/// Bounding sphere of the loaded model, for framing the preview camera.
+/// `center` must point at 3 floats. Returns NO when no model is loaded.
+- (BOOL)getModelBoundingSphere:(float *)center radius:(float *)radius;
 
 /// Switch to a different glasses model
 - (void)switchModelWithUrl:(NSString *)modelUrl;

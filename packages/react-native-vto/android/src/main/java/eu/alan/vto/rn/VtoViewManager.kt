@@ -76,6 +76,16 @@ class VtoViewManager : SimpleViewManager<VtoView>() {
         view.setIsClipOn(enabled)
     }
 
+    @ReactProp(name = "mode")
+    fun setMode(view: VtoView, mode: String?) {
+        view.setMode(mode)
+    }
+
+    @ReactProp(name = "previewBackgroundColor")
+    fun setPreviewBackgroundColor(view: VtoView, hex: String?) {
+        view.setPreviewBackgroundColor(hex)
+    }
+
     // --- Commands --------------------------------------------------------
 
     override fun receiveCommand(view: VtoView, commandId: String, args: ReadableArray?) {

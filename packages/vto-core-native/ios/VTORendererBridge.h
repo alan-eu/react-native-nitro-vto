@@ -63,10 +63,25 @@ NS_ASSUME_NONNULL_BEGIN
 /// Set the AR session reference
 - (void)setARSession:(ARSession *)session;
 
-/// HARNESS (dev/simulator only): render the scene with a static camera-feed
-/// pattern, a fixed perspective camera, and the glasses at a fixed pose — no
-/// AR session required. Used to inspect render order in the simulator.
-- (void)renderStaticPreview;
+/// Preview mode: render the glasses on a flat background with the orbit camera,
+/// no AR session and no face. Drive one call per display-link tick, the way
+/// -renderWithFrame:faces: is driven in AR mode.
+- (void)renderPreview;
+
+/// Enter or leave preview mode. Entering swaps the camera feed for the flat
+/// background; leaving binds the camera feed back.
+- (void)setPreviewModeEnabled:(BOOL)enabled;
+
+/// Preview background color, sRGB components in [0,1]. Applied immediately when
+/// preview mode is on, otherwise stored for the next time it turns on.
+- (void)setPreviewBackgroundColorRed:(float)red green:(float)green blue:(float)blue;
+
+/// Preview mode: orbit the camera around the glasses by a screen-space finger
+/// delta, in points.
+- (void)orbitPreviewCameraByDx:(float)dx dy:(float)dy;
+
+/// Preview mode: dolly the camera by a pinch scale (>1 = fingers apart = closer).
+- (void)zoomPreviewCameraByScale:(float)scale;
 
 /// Cleanup and destroy resources
 - (void)destroy;

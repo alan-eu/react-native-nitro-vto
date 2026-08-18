@@ -112,6 +112,15 @@ class VTORenderer(private val context: Context) {
     // across frames — cleared only by showGlasses().
     private var isHidden = false
 
+    // Preview mode (no ARCore session): orbit camera over a flat background.
+    private var previewMode = false
+    private val previewCamera = PreviewCameraController()
+    private var backgroundColor = floatArrayOf(
+        PreviewConstants.DEFAULT_BACKGROUND,
+        PreviewConstants.DEFAULT_BACKGROUND,
+        PreviewConstants.DEFAULT_BACKGROUND
+    )
+
     // FPS tracking — VtoView reads `lastFps` periodically to update the
     // overlay label.
     private var fpsFrameCount = 0
@@ -225,7 +234,12 @@ class VTORenderer(private val context: Context) {
 
         // Setup glasses renderer
         glassesRenderer = GlassesRenderer(context)
-        glassesRenderer.onModelLoaded = onModelLoaded
+        glassesRenderer.onModelLoaded = { url ->
+            // Re-frame first: the new model may be a different size, and preview
+            // mode is already rendering by the time the app hears about the load.
+            framePreviewCamera()
+            onModelLoaded?.invoke(url)
+        }
         glassesRenderer.onGlassesDisplayed = onGlassesDisplayed
         glassesRenderer.setup(engine, scene, modelUrl)
 
@@ -281,6 +295,56 @@ class VTORenderer(private val context: Context) {
 
     fun pause() {
         choreographer.removeFrameCallback(frameCallback)
+    }
+
+    /**
+     * Enter or leave preview mode. Entering swaps the camera feed for the flat
+     * background; leaving binds the camera feed back.
+     */
+    fun setPreviewMode(enabled: Boolean) {
+        if (previewMode == enabled) return
+        previewMode = enabled
+
+        if (enabled) {
+            cameraTextureRenderer.useSolidBackground(backgroundColor[0], backgroundColor[1], backgroundColor[2])
+            framePreviewCamera()
+        } else {
+            cameraTextureRenderer.useCameraFeed()
+        }
+    }
+
+    /**
+     * Preview background color, sRGB components in [0,1]. Applied immediately
+     * when preview mode is on, otherwise stored for the next time it turns on.
+     */
+    fun setPreviewBackgroundColor(red: Float, green: Float, blue: Float) {
+        backgroundColor = floatArrayOf(red, green, blue)
+        if (previewMode) {
+            cameraTextureRenderer.useSolidBackground(red, green, blue)
+        }
+    }
+
+    /**
+     * Preview mode: orbit the camera around the glasses by a screen-space finger
+     * delta, in dp.
+     */
+    fun orbitPreviewCamera(dx: Float, dy: Float) {
+        previewCamera.orbitBy(dx, dy)
+    }
+
+    /** Preview mode: dolly the camera by a pinch scale (>1 = fingers apart = closer). */
+    fun zoomPreviewCamera(scale: Float) {
+        previewCamera.zoomBy(scale)
+    }
+
+    /**
+     * Point the orbit camera at the loaded model's bounding sphere. No-op until
+     * a model is loaded — the next load re-frames.
+     */
+    private fun framePreviewCamera() {
+        if (!initialized) return
+        val sphere = glassesRenderer.getModelBoundingSphere() ?: return
+        previewCamera.frameBounds(sphere[0], sphere[1], sphere[2], sphere[3])
     }
 
     /**
@@ -341,6 +405,11 @@ class VTORenderer(private val context: Context) {
 
     private fun doFrame() {
         if (!initialized) return
+
+        if (previewMode) {
+            renderPreview()
+            return
+        }
 
         val session = session ?: return
         val swap = swapChain ?: return
@@ -419,19 +488,63 @@ class VTORenderer(private val context: Context) {
                 renderer.endFrame()
             }
 
-            // FPS bookkeeping — refresh the public lastFps every 500ms.
-            fpsFrameCount++
-            val now = System.nanoTime()
-            if (fpsLastUpdateNs == 0L) fpsLastUpdateNs = now
-            val dtNs = now - fpsLastUpdateNs
-            if (dtNs >= 500_000_000L) {
-                lastFps = (fpsFrameCount * 1_000_000_000f) / dtNs
-                fpsFrameCount = 0
-                fpsLastUpdateNs = now
-            }
+            updateFps()
 
         } catch (e: Exception) {
             Log.e(TAG, "Render error: ${e.message}")
+        }
+    }
+
+    /**
+     * Preview mode: no ARCore session, no face. The glasses sit at the origin
+     * and the orbit camera (driven by the view's touch handling) frames them
+     * over a flat background.
+     */
+    private fun renderPreview() {
+        val swap = swapChain ?: return
+        if (!uiHelper.isReadyToRender) return
+
+        try {
+            cameraTextureRenderer.makeEglContextCurrent()
+
+            val aspect = if (height > 0) width.toDouble() / height.toDouble() else 1.0
+            previewCamera.applyTo(filamentCamera, aspect)
+
+            // No face: the occluder and the debug overlays have nothing to track.
+            faceOcclusionRenderer.hide()
+            debugRenderer.hide()
+
+            if (isHidden) {
+                glassesRenderer.hide()
+            } else {
+                glassesRenderer.setPreviewTransform()
+                // Drive temple articulation with a representative ear half-width
+                // (face-local meters) so the temples read as worn, not folded.
+                glassesRenderer.updateTempleArticulation(PreviewConstants.EAR_HALF_WIDTH)
+            }
+
+            if (renderer.beginFrame(swap, System.nanoTime())) {
+                renderer.render(view)
+                renderer.endFrame()
+            }
+
+            updateFps()
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Preview render error: ${e.message}")
+        }
+    }
+
+    /** Refresh the public lastFps every 500ms; VtoView polls it for the overlay. */
+    private fun updateFps() {
+        fpsFrameCount++
+        val now = System.nanoTime()
+        if (fpsLastUpdateNs == 0L) fpsLastUpdateNs = now
+        val dtNs = now - fpsLastUpdateNs
+        if (dtNs >= 500_000_000L) {
+            lastFps = (fpsFrameCount * 1_000_000_000f) / dtNs
+            fpsFrameCount = 0
+            fpsLastUpdateNs = now
         }
     }
 

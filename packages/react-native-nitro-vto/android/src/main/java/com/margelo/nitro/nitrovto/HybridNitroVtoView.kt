@@ -76,6 +76,18 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.setIsClipOn(value)
         }
 
+    override var mode: String? = null
+        set(value) {
+            field = value
+            nitroVtoView.setMode(value)
+        }
+
+    override var previewBackgroundColor: String? = null
+        set(value) {
+            field = value
+            nitroVtoView.setPreviewBackgroundColor(value)
+        }
+
     // Methods implementation
     override fun hideGlasses() {
         nitroVtoView.hideGlasses()

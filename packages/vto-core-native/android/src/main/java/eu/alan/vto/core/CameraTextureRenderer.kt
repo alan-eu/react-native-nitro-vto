@@ -52,6 +52,10 @@ class CameraTextureRenderer(private val context: Context) {
     private var backgroundQuadIndexBuffer: IndexBuffer? = null
     private var uvTransformSet = false
 
+    // Flat-color background for preview mode, swapped onto the same quad.
+    private var solidMaterial: Material? = null
+    private var solidMaterialInstance: MaterialInstance? = null
+
     // Reference to engine and scene (set during setup)
     private lateinit var engine: Engine
     private lateinit var scene: Scene
@@ -117,8 +121,54 @@ class CameraTextureRenderer(private val context: Context) {
 
         Log.d(TAG, "Camera textures imported, IDs: ${cameraTextureIds.contentToString()}")
 
+        // Flat-color background material for preview mode. Optional: without it
+        // preview mode still renders, on the camera feed's last contents.
+        try {
+            val solidBuffer = LoaderUtils.loadAsset(context, "materials/background_solid.filamat")
+            solidMaterial = Material.Builder()
+                .payload(solidBuffer, solidBuffer.remaining())
+                .build(engine)
+            solidMaterialInstance = solidMaterial?.createInstance()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load solid background material; preview background disabled: ${e.message}")
+        }
+
         // Create fullscreen quad geometry
         createBackgroundQuad()
+    }
+
+    /**
+     * Preview mode: paint the background quad with a flat color instead of the
+     * camera feed. Components are sRGB in [0,1]; the material undoes the view's
+     * tonemap so the pixel on screen is exactly this color. Idempotent.
+     */
+    fun useSolidBackground(red: Float, green: Float, blue: Float) {
+        val instance = solidMaterialInstance ?: return
+        // Raw sRGB components: the material does its own sRGB→linear step (it
+        // has to, to pre-invert the view's tonemap), so Filament must not
+        // convert here.
+        instance.setParameter("color", red, green, blue, 1f)
+        bindBackgroundMaterial(instance)
+    }
+
+    /**
+     * Bind the camera feed back onto the background quad after
+     * [useSolidBackground]. Idempotent.
+     */
+    fun useCameraFeed() {
+        bindBackgroundMaterial(cameraMaterialInstance)
+    }
+
+    /**
+     * Swap which material draws the background quad. The quad, its geometry and
+     * its render priority stay put — only the shader bound to it changes.
+     */
+    private fun bindBackgroundMaterial(instance: MaterialInstance) {
+        if (backgroundQuadEntity == 0) return
+        val rm = engine.renderableManager
+        val ri = rm.getInstance(backgroundQuadEntity)
+        if (ri == 0) return
+        rm.setMaterialInstanceAt(ri, 0, instance)
     }
 
     /**
@@ -220,6 +270,10 @@ class CameraTextureRenderer(private val context: Context) {
 
         engine.destroyMaterialInstance(cameraMaterialInstance)
         engine.destroyMaterial(cameraMaterial)
+        solidMaterialInstance?.let { engine.destroyMaterialInstance(it) }
+        solidMaterialInstance = null
+        solidMaterial?.let { engine.destroyMaterial(it) }
+        solidMaterial = null
 
         // Destroy all camera textures
         for (texture in cameraTextures) {

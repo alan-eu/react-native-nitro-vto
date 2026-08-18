@@ -19,6 +19,7 @@
 #include <utils/EntityManager.h>
 #include <math/mat4.h>
 #include <math/vec3.h>
+#include <cmath>
 
 using namespace filament;
 using namespace filament::gltfio;
@@ -510,20 +511,34 @@ static filament::math::float3 templeTipRootLocal(filament::TransformManager &tm,
     return simd_make_float3(worldPos.x, worldPos.y, worldPos.z);
 }
 
-// HARNESS (dev/simulator only). Park the glasses ~0.4 m in front of the camera
-// (which looks down -Z) so they're visible without a tracked face. Rotated 180°
-// about Y so the front of the frame faces the camera.
-- (void)setStaticPreviewTransform {
+// Preview mode: the glasses sit at the origin in their authored pose and the
+// orbit camera does the framing (PreviewCameraController), so the transform is
+// identity. Also arms onGlassesDisplayed, which in AR fires off the first
+// tracked-face frame.
+- (void)setPreviewTransform {
     if (!_glassesAsset || !_engine) return;
-    using namespace filament::math;
+
+    if (!_hasDisplayedCurrentModel) {
+        _hasDisplayedCurrentModel = YES;
+        if (self.onGlassesDisplayed) {
+            self.onGlassesDisplayed(_currentModelUrl);
+        }
+    }
+
     TransformManager &tm = _engine->getTransformManager();
-    auto inst = tm.getInstance(_glassesAsset->getRoot());
-    // Angled 3/4 + slightly-top view so the temples (which extend back from the
-    // hinges) are visible — needed to inspect temple articulation/splay (#3).
-    mat4f t = mat4f::translation(float3{0.0f, 0.0f, -0.42f}) *
-              mat4f::rotation(0.45f, float3{1.0f, 0.0f, 0.0f}) *           // tilt top toward camera
-              mat4f::rotation((float)M_PI + 0.6f, float3{0.0f, 1.0f, 0.0f}); // face camera + 3/4 yaw
-    tm.setTransform(inst, t);
+    tm.setTransform(tm.getInstance(_glassesAsset->getRoot()), filament::math::mat4f());
+}
+
+- (BOOL)getModelBoundingSphere:(float *)center radius:(float *)radius {
+    if (!_glassesAsset || !center || !radius) return NO;
+
+    filament::Aabb aabb = _glassesAsset->getBoundingBox();
+    center[0] = (aabb.min.x + aabb.max.x) * 0.5f;
+    center[1] = (aabb.min.y + aabb.max.y) * 0.5f;
+    center[2] = (aabb.min.z + aabb.max.z) * 0.5f;
+    filament::math::float3 extent = aabb.max - aabb.min;
+    *radius = std::sqrt(dot(extent, extent)) * 0.5f;
+    return YES;
 }
 
 - (void)hide {

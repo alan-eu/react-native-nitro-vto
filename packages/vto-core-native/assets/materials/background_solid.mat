@@ -1,0 +1,31 @@
+material {
+    name : background_solid,
+    shadingModel : unlit,
+    vertexDomain : device,
+    depthWrite : false,
+    depthCulling : false,
+    parameters : [
+        {
+            type : float4,
+            name : color
+        }
+    ]
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+        vec4 color = materialParams.color;
+        // The caller gives us a display-encoded (sRGB) color, so pre-invert the
+        // view's (Filmic tonemap + sRGB encoder) exactly as camera_background
+        // does — otherwise the pixel on screen is not the color that was asked
+        // for. Real piecewise sRGB→linear, then the analytical Filmic inverse.
+        vec3 sRGBToLinear = mix(
+            color.rgb / 12.92,
+            pow((color.rgb + 0.055) / 1.055, vec3(2.4)),
+            step(0.04045, color.rgb)
+        );
+        color.rgb = inverseTonemap(sRGBToLinear);
+        material.baseColor = color;
+    }
+}

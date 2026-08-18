@@ -68,6 +68,14 @@ void JHybridNitroVtoViewStateUpdater::updateViewProps(jni::alias_ref<jni::JClass
     view->setShowNativeFPS(props.showNativeFPS.value);
     // TODO: Set isDirty = false
   }
+  if (props.mode.isDirty) {
+    view->setMode(props.mode.value);
+    // TODO: Set isDirty = false
+  }
+  if (props.previewBackgroundColor.isDirty) {
+    view->setPreviewBackgroundColor(props.previewBackgroundColor.value);
+    // TODO: Set isDirty = false
+  }
   if (props.isClipOn.isDirty) {
     view->setIsClipOn(props.isClipOn.value);
     // TODO: Set isDirty = false

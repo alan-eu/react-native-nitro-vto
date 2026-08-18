@@ -11,6 +11,8 @@ import android.os.Looper
 import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
@@ -100,6 +102,28 @@ class VtoView(context: Context) : FrameLayout(context) {
     private var modelUrl: String = ""
     private var isActive: Boolean = true
     private var isClipOnState: Boolean = false
+    private var backgroundColorState: FloatArray? = null
+
+    // Preview mode: no AR session — the glasses sit on a flat background and the
+    // user orbits/zooms them. Either asked for through the `mode` prop, or
+    // forced when ARCore can't run here (emulator, unsupported device), which
+    // would otherwise render nothing.
+    private var previewRequested = false
+    private var arUnavailable = false
+    private val isPreviewMode: Boolean get() = previewRequested || arUnavailable
+
+    // Orbit/zoom touch state, live only while preview mode is on.
+    private var lastTouchX = 0f
+    private var lastTouchY = 0f
+    private val previewScaleDetector = ScaleGestureDetector(
+        context,
+        object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                vtoRenderer?.zoomPreviewCamera(detector.scaleFactor)
+                return true
+            }
+        }
+    )
 
     // Callbacks
     var onModelLoaded: ((modelUrl: String) -> Unit)? = null
@@ -271,6 +295,107 @@ class VtoView(context: Context) : FrameLayout(context) {
     }
 
     /**
+     * Render mode: `"preview"` for the no-AR orbit viewer, anything else (the
+     * default) for AR try-on.
+     */
+    fun setMode(mode: String?) {
+        val requested = mode == "preview"
+        if (requested == previewRequested) return
+        previewRequested = requested
+        applyPreviewMode()
+    }
+
+    /**
+     * Preview background, as `#RGB`, `#RRGGBB` or `#RRGGBBAA` (alpha ignored —
+     * the background is opaque), with or without the leading `#`. An unparseable
+     * value leaves the engine's default in place.
+     */
+    fun setPreviewBackgroundColor(hex: String?) {
+        backgroundColorState = hex?.let { parseColor(it) }
+        val color = backgroundColorState ?: return
+        vtoRenderer?.setPreviewBackgroundColor(color[0], color[1], color[2])
+    }
+
+    private fun parseColor(hex: String): FloatArray? {
+        var digits = hex.trim().removePrefix("#")
+        if (digits.length == 3) {
+            digits = digits.map { "$it$it" }.joinToString("")
+        }
+        if (digits.length != 6 && digits.length != 8) return null
+        val value = digits.substring(0, 6).toLongOrNull(16) ?: return null
+        return floatArrayOf(
+            ((value shr 16) and 0xFF) / 255f,
+            ((value shr 8) and 0xFF) / 255f,
+            (value and 0xFF) / 255f
+        )
+    }
+
+    /**
+     * Keeps the renderer, the AR session and touch handling in step with the
+     * current mode. Idempotent — called on prop changes and on resume.
+     */
+    private fun applyPreviewMode() {
+        if (!isInitialized) return
+        val preview = isPreviewMode
+
+        vtoRenderer?.setPreviewMode(preview)
+
+        if (preview) {
+            // Preview needs no camera, so stop the capture rather than leaving
+            // it running behind an opaque background.
+            arSession?.pause()
+        } else if (isResumed && isActive) {
+            setupArSession()
+        }
+    }
+
+    /**
+     * ARCore can't run here (as opposed to a transient camera hand-back):
+     * render the glasses in preview mode rather than nothing.
+     */
+    private fun fallBackToPreview(reason: String) {
+        if (arUnavailable) return
+        arUnavailable = true
+        Log.w(TAG, "$reason — falling back to preview mode")
+        applyPreviewMode()
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (!isPreviewMode) return super.onTouchEvent(event)
+
+        previewScaleDetector.onTouchEvent(event)
+
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                // Don't let a parent scroll container steal the orbit drag.
+                parent?.requestDisallowInterceptTouchEvent(true)
+                lastTouchX = event.x
+                lastTouchY = event.y
+            }
+            MotionEvent.ACTION_MOVE -> {
+                // One finger orbits; a second finger means a pinch, which the
+                // scale detector owns.
+                if (event.pointerCount == 1 && !previewScaleDetector.isInProgress) {
+                    val density = resources.displayMetrics.density
+                    vtoRenderer?.orbitPreviewCamera(
+                        (event.x - lastTouchX) / density,
+                        (event.y - lastTouchY) / density
+                    )
+                }
+                lastTouchX = event.x
+                lastTouchY = event.y
+            }
+            MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_POINTER_UP -> {
+                // event.x/y average the active pointers, so they jump when the
+                // pointer count changes — re-baseline instead of orbiting.
+                lastTouchX = event.x
+                lastTouchY = event.y
+            }
+        }
+        return true
+    }
+
+    /**
      * Initialize the view. Should be called after the view is attached.
      */
     private fun initialize() {
@@ -288,6 +413,7 @@ class VtoView(context: Context) : FrameLayout(context) {
         // exists and be dropped — set it here so the first model loads with the
         // correct lens treatment. Mirrors VtoView.swift's post-init apply.
         vtoRenderer?.setIsClipOn(isClipOnState)
+        backgroundColorState?.let { vtoRenderer?.setPreviewBackgroundColor(it[0], it[1], it[2]) }
 
         isInitialized = true
         Log.d(TAG, "VtoView initialized")
@@ -306,8 +432,9 @@ class VtoView(context: Context) : FrameLayout(context) {
             initialize()
         }
 
-        // Setup AR session if needed
-        setupArSession()
+        // Starts the AR session, or tears it down for preview — which runs
+        // without one, and without the camera permission it would require.
+        applyPreviewMode()
 
         // Resume renderer
         vtoRenderer?.resume()
@@ -427,17 +554,20 @@ class VtoView(context: Context) : FrameLayout(context) {
             Log.d(TAG, "ARCore session created successfully")
 
         } catch (e: UnavailableArcoreNotInstalledException) {
-            Log.e(TAG, "ARCore is not installed")
+            fallBackToPreview("ARCore is not installed")
         } catch (e: UnavailableDeviceNotCompatibleException) {
-            Log.e(TAG, "This device does not support AR")
+            fallBackToPreview("This device does not support AR")
         } catch (e: UnavailableSdkTooOldException) {
-            Log.e(TAG, "Please update ARCore")
+            fallBackToPreview("Please update ARCore")
         } catch (e: UnavailableApkTooOldException) {
-            Log.e(TAG, "Please update this app")
+            fallBackToPreview("Please update this app")
         } catch (e: CameraNotAvailableException) {
             Log.e(TAG, "Camera not available")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to create AR session: ${e.message}")
+            // Session creation failed outright (front-camera AR unsupported,
+            // emulator, …) — as opposed to the transient camera hand-back
+            // handled above, so there is nothing to retry.
+            fallBackToPreview("Failed to create AR session: ${e.message}")
         }
     }
 

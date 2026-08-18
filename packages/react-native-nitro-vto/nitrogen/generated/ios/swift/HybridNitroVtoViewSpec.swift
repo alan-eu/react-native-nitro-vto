@@ -19,6 +19,8 @@ public protocol HybridNitroVtoViewSpec_protocol: HybridObject, HybridView {
   var forwardOffset: Double? { get set }
   var debug: Bool? { get set }
   var showNativeFPS: Bool? { get set }
+  var mode: String? { get set }
+  var previewBackgroundColor: String? { get set }
   var isClipOn: Bool { get set }
 
   // Methods

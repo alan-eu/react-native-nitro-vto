@@ -37,6 +37,7 @@ public class VtoView: UIView {
     private var forwardOffsetState: Float = kForwardOffset
     private var debugState: Bool = false
     private var isClipOnState: Bool = false
+    private var backgroundColorState: (r: Float, g: Float, b: Float)?
 
     // Callbacks
     var onModelLoaded: ((String) -> Void)?
@@ -50,10 +51,17 @@ public class VtoView: UIView {
     // Display link for rendering
     private var displayLink: CADisplayLink?
 
-    // HARNESS (dev/simulator only): true when face tracking is unavailable
-    // (e.g. running in the simulator). Renders a static preview so render order
-    // can be inspected without a live AR camera.
-    private var harnessMode = false
+    // Preview mode: no AR session — the glasses sit on a flat background and the
+    // user orbits/zooms them. Either asked for through the `mode` prop, or
+    // forced when face tracking is unavailable (simulator, device without a
+    // TrueDepth camera), which would otherwise render nothing.
+    private var previewRequested = false
+    private var faceTrackingUnavailable = false
+    private var isPreviewMode: Bool { previewRequested || faceTrackingUnavailable }
+
+    // Orbit/zoom recognizers, attached only while preview mode is on.
+    private var panRecognizer: UIPanGestureRecognizer?
+    private var pinchRecognizer: UIPinchGestureRecognizer?
 
     // FPS counter overlay (visible when debug=true).
     private var fpsLabel: UILabel?
@@ -195,6 +203,93 @@ public class VtoView: UIView {
         vtoRenderer?.setIsClipOn(isClipOnState)
     }
 
+    func setMode(_ mode: String?) {
+        let requested = (mode == "preview")
+        guard requested != previewRequested else { return }
+        previewRequested = requested
+        applyPreviewMode()
+    }
+
+    func setPreviewBackgroundColor(_ hex: String?) {
+        backgroundColorState = hex.flatMap(VtoView.parseColor)
+        guard let color = backgroundColorState else { return }
+        vtoRenderer?.setPreviewBackgroundColorRed(color.r, green: color.g, blue: color.b)
+    }
+
+    /// `#RGB`, `#RRGGBB` or `#RRGGBBAA` (alpha ignored — the background is
+    /// opaque), with or without the leading `#`. Returns nil if unparseable,
+    /// which leaves the engine's default background in place.
+    private static func parseColor(_ hex: String) -> (r: Float, g: Float, b: Float)? {
+        var digits = hex.trimmingCharacters(in: .whitespaces)
+        if digits.hasPrefix("#") { digits.removeFirst() }
+        if digits.count == 3 {
+            digits = digits.map { "\($0)\($0)" }.joined()
+        }
+        guard digits.count == 6 || digits.count == 8,
+              let value = UInt32(digits.prefix(6), radix: 16) else { return nil }
+        return (
+            Float((value >> 16) & 0xFF) / 255.0,
+            Float((value >> 8) & 0xFF) / 255.0,
+            Float(value & 0xFF) / 255.0
+        )
+    }
+
+    // MARK: - Preview Mode
+
+    /// Keeps the renderer, the AR session and the gesture recognizers in step
+    /// with the current mode. Idempotent — called on prop changes and on resume.
+    private func applyPreviewMode() {
+        guard isInitialized else { return }
+        let preview = isPreviewMode
+
+        vtoRenderer?.setPreviewModeEnabled(preview)
+        updatePreviewGestures(enabled: preview)
+
+        if preview {
+            // Preview needs no camera, so stop the capture rather than leaving
+            // it running behind an opaque background.
+            arSession?.pause()
+        } else if isResumed, isActiveState, ARFaceTrackingConfiguration.isSupported {
+            setupARSession()
+        }
+    }
+
+    private func updatePreviewGestures(enabled: Bool) {
+        if enabled {
+            guard panRecognizer == nil else { return }
+
+            let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePreviewPan))
+            // One finger orbits, two fingers pinch: capping the pan at a single
+            // touch keeps the two gestures from fighting over the same fingers.
+            pan.maximumNumberOfTouches = 1
+            addGestureRecognizer(pan)
+            panRecognizer = pan
+
+            let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePreviewPinch))
+            addGestureRecognizer(pinch)
+            pinchRecognizer = pinch
+        } else {
+            if let pan = panRecognizer { removeGestureRecognizer(pan) }
+            if let pinch = pinchRecognizer { removeGestureRecognizer(pinch) }
+            panRecognizer = nil
+            pinchRecognizer = nil
+        }
+    }
+
+    @objc private func handlePreviewPan(_ recognizer: UIPanGestureRecognizer) {
+        let delta = recognizer.translation(in: self)
+        // Consume the translation so the next callback reports a delta, not a
+        // running total.
+        recognizer.setTranslation(.zero, in: self)
+        vtoRenderer?.orbitPreviewCamera(byDx: Float(delta.x), dy: Float(delta.y))
+    }
+
+    @objc private func handlePreviewPinch(_ recognizer: UIPinchGestureRecognizer) {
+        let scale = recognizer.scale
+        recognizer.scale = 1.0
+        vtoRenderer?.zoomPreviewCamera(byScale: Float(scale))
+    }
+
     // MARK: - Initialization
 
     private func initialize() {
@@ -226,6 +321,9 @@ public class VtoView: UIView {
         vtoRenderer?.setForwardOffset(forwardOffsetState)
         vtoRenderer?.setDebug(debugState)
         vtoRenderer?.setIsClipOn(isClipOnState)
+        if let color = backgroundColorState {
+            vtoRenderer?.setPreviewBackgroundColorRed(color.r, green: color.g, blue: color.b)
+        }
 
         // Sync viewport from current bounds. `layoutSubviews` may have already
         // fired before the renderer existed (happens on old-arch RN where the
@@ -266,14 +364,15 @@ public class VtoView: UIView {
             initialize()
         }
 
-        // Setup AR session if available; otherwise fall into the dev harness
-        // (e.g. simulator) so render order can be inspected without a camera.
-        if ARFaceTrackingConfiguration.isSupported {
-            setupARSession()
-        } else {
-            harnessMode = true
-            NSLog("VtoView: ARFaceTracking unsupported — entering static preview HARNESS")
+        // Fall back to preview mode where face tracking is unavailable (e.g. the
+        // simulator) rather than rendering nothing.
+        if !ARFaceTrackingConfiguration.isSupported, !faceTrackingUnavailable {
+            faceTrackingUnavailable = true
+            NSLog("VtoView: ARFaceTracking unsupported — falling back to preview mode")
         }
+
+        // Starts the AR session, or tears it down and arms the orbit gestures.
+        applyPreviewMode()
 
         // Start display link for rendering
         startDisplayLink()
@@ -291,6 +390,7 @@ public class VtoView: UIView {
 
     func destroy() {
         stopDisplayLink()
+        updatePreviewGestures(enabled: false)
         arSession?.pause()
         arSession = nil
         vtoRenderer?.destroy()
@@ -325,9 +425,9 @@ public class VtoView: UIView {
     @objc private func render() {
         guard isInitialized, isActiveState else { return }
 
-        // HARNESS: static preview path (no AR session) for the simulator.
-        if harnessMode {
-            vtoRenderer?.renderStaticPreview()
+        // Preview path: no AR session, the orbit camera drives the view.
+        if isPreviewMode {
+            vtoRenderer?.renderPreview()
             return
         }
 

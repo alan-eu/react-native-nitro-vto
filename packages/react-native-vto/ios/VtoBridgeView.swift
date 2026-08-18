@@ -76,6 +76,14 @@ public class VtoBridgeView: VtoView {
         super.setIsClipOn(enabled)
     }
 
+    @objc public func rnSetMode(_ mode: NSString?) {
+        super.setMode(mode as String?)
+    }
+
+    @objc public func rnSetPreviewBackgroundColor(_ hex: NSString?) {
+        super.setPreviewBackgroundColor(hex as String?)
+    }
+
     @objc public func rnHideGlasses() {
         super.hideGlasses()
     }

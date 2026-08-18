@@ -49,6 +49,14 @@ RCT_CUSTOM_VIEW_PROPERTY(isClipOn, BOOL, VtoBridgeView) {
   [view rnSetIsClipOn:(json ? [RCTConvert BOOL:json] : NO)];
 }
 
+RCT_CUSTOM_VIEW_PROPERTY(mode, NSString *, VtoBridgeView) {
+  [view rnSetMode:(json ? [RCTConvert NSString:json] : nil)];
+}
+
+RCT_CUSTOM_VIEW_PROPERTY(previewBackgroundColor, NSString *, VtoBridgeView) {
+  [view rnSetPreviewBackgroundColor:(json ? [RCTConvert NSString:json] : nil)];
+}
+
 // --- Callbacks (RN wires these via the event names) -------------------------
 // The JS-side prop names are onXxx; the Swift bridge view exposes them under
 // `onXxxEvent` to avoid clashing with the core closure properties of the same

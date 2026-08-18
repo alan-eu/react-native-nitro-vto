@@ -11,6 +11,7 @@
 #include <filament/ToneMapper.h>
 #include <utils/EntityManager.h>
 #include <math/mat4.h>
+#include <math/vec3.h>
 
 #import "CameraTextureRenderer.h"
 #import "EnvironmentLightingRenderer.h"
@@ -18,6 +19,8 @@
 #import "FaceOcclusionRenderer.h"
 #import "GlassesRenderer.h"
 #import "DebugRenderer.h"
+#import "PreviewCameraController.h"
+#import "PreviewConstants.h"
 
 using namespace filament;
 
@@ -66,8 +69,10 @@ static NSString *const TAG = @"VTORenderer";
 // Model configuration
 @property (nonatomic, copy) NSString *modelUrl;
 
-// HARNESS (dev/simulator only): one-time setup guard for the static preview.
-@property (nonatomic, assign) BOOL staticPreviewSetup;
+// Preview mode (no AR session): orbit camera over a flat background.
+@property (nonatomic, assign) BOOL previewMode;
+@property (nonatomic, strong) PreviewCameraController *previewCamera;
+@property (nonatomic, assign) filament::math::float3 backgroundColor;
 
 @end
 
@@ -82,6 +87,10 @@ static NSString *const TAG = @"VTORenderer";
         _initialized = NO;
         _width = 0;
         _height = 0;
+        _previewCamera = [[PreviewCameraController alloc] init];
+        _backgroundColor = filament::math::float3{kPreviewDefaultBackground,
+                                                  kPreviewDefaultBackground,
+                                                  kPreviewDefaultBackground};
     }
     return self;
 }
@@ -194,6 +203,9 @@ static NSString *const TAG = @"VTORenderer";
     _glassesRenderer = [[GlassesRenderer alloc] init];
     __weak __typeof__(self) weakSelf = self;
     _glassesRenderer.onModelLoaded = ^(NSString *url) {
+        // Re-frame first: the new model may be a different size, and preview
+        // mode is already rendering by the time the app hears about the load.
+        [weakSelf framePreviewCamera];
         if (weakSelf.onModelLoaded) {
             weakSelf.onModelLoaded(url);
         }
@@ -355,39 +367,70 @@ static NSString *const TAG = @"VTORenderer";
     _arSession = session;
 }
 
-// HARNESS (dev/simulator only). Renders with a fixed perspective camera, a
-// static camera-feed test pattern, and the glasses at a fixed pose — no AR
-// session. Lets render order (camera / occluder / glasses) be inspected in the
-// simulator via screenshots.
-- (void)renderStaticPreview {
+// Preview mode: no AR session, no face. The glasses sit at the origin and the
+// orbit camera (driven by the view's pan/pinch recognizers) frames them over a
+// flat background.
+- (void)renderPreview {
     if (!_initialized) return;
 
-    // Fixed camera at origin looking down -Z (Filament default), perspective.
     double aspect = (_height > 0) ? (double)_width / (double)_height : 1.0;
-    _camera->setProjection(60.0, aspect, 0.01, 100.0, Camera::Fov::VERTICAL);
-    _camera->setModelMatrix(filament::math::mat4f());  // identity → camera at origin
+    [_previewCamera applyToCamera:_camera aspect:aspect];
 
-    // Bind the static camera background once.
-    if (!_staticPreviewSetup) {
-        [_cameraTextureRenderer useStaticTestPattern];
-        _staticPreviewSetup = YES;
-    }
+    // No face: the occluder and the debug overlays have nothing to track.
+    [_faceOcclusionRenderer hide];
+    [_debugRenderer hide];
 
-    // Place the glasses at a fixed pose (no-op until the model finishes
-    // loading). Honors -hideGlasses like the real render path, so hide/show
-    // can be exercised in the simulator.
-    if (!_isHidden) {
-        [_glassesRenderer setStaticPreviewTransform];
+    if (_isHidden) {
+        [_glassesRenderer hide];
+    } else {
+        [_glassesRenderer setPreviewTransform];
         // Drive temple articulation with a representative ear half-width
-        // (face-local meters) so the harness shows the on-face temple swing
-        // (#3) without a face.
-        [_glassesRenderer updateTempleArticulationWithEarHalfWidth:0.07f];
+        // (face-local meters) so the temples read as worn rather than folded.
+        [_glassesRenderer updateTempleArticulationWithEarHalfWidth:kPreviewEarHalfWidth];
     }
 
     if (_renderer->beginFrame(_swapChain)) {
         _renderer->render(_filamentView);
         _renderer->endFrame();
     }
+}
+
+- (void)setPreviewModeEnabled:(BOOL)enabled {
+    if (_previewMode == enabled) return;
+    _previewMode = enabled;
+
+    if (enabled) {
+        [_cameraTextureRenderer useSolidBackgroundWithRed:_backgroundColor.r
+                                                   green:_backgroundColor.g
+                                                    blue:_backgroundColor.b];
+        [self framePreviewCamera];
+    } else {
+        [_cameraTextureRenderer useCameraFeed];
+    }
+}
+
+- (void)setPreviewBackgroundColorRed:(float)red green:(float)green blue:(float)blue {
+    _backgroundColor = filament::math::float3{red, green, blue};
+    if (_previewMode) {
+        [_cameraTextureRenderer useSolidBackgroundWithRed:red green:green blue:blue];
+    }
+}
+
+- (void)orbitPreviewCameraByDx:(float)dx dy:(float)dy {
+    [_previewCamera orbitByDx:dx dy:dy];
+}
+
+- (void)zoomPreviewCameraByScale:(float)scale {
+    [_previewCamera zoomByScale:scale];
+}
+
+// Point the orbit camera at the loaded model's bounding sphere. No-op until a
+// model is loaded — the next load re-frames.
+- (void)framePreviewCamera {
+    float center[3] = {0.0f, 0.0f, 0.0f};
+    float radius = 0.0f;
+    if (![_glassesRenderer getModelBoundingSphere:center radius:&radius]) return;
+    [_previewCamera frameBoundsWithCenterX:center[0] centerY:center[1] centerZ:center[2] radius:radius];
 }
 
 - (void)destroy {
