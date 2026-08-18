@@ -91,6 +91,7 @@ vtoRef.current?.showGlasses();
 | `previewBackgroundColor` | `string` | near-black | Background behind the glasses in preview mode: `#RGB`, `#RRGGBB` or `#RRGGBBAA` (alpha ignored). Ignored in AR mode. |
 | `onModelLoaded` | `(url: string) => void` | — | Fires once per model load (wrap with `callback()`) |
 | `onFaceTracked` | `() => void` | — | Fires on first face-tracked frame per session (wrap with `callback()`) |
+| `onArUnavailable` | `(reason: string) => void` | — | Fires once when the view falls back to preview because AR can't run: `device-not-capable`, `arcore-not-installed`, `arcore-outdated`, `arcore-unavailable`, `face-tracking-unsupported` (wrap with `callback()`) |
 | `onGlassesDisplayed` | `(url: string) => void` | — | Fires once glasses are rendered on the tracked face — or, in preview mode, on the first rendered frame (wrap with `callback()`) |
 | `style` | `ViewStyle` | — | Standard React Native view styles |
 

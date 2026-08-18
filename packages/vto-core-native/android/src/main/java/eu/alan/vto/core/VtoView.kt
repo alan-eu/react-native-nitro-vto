@@ -26,6 +26,7 @@ import com.google.ar.core.exceptions.UnavailableApkTooOldException
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException
 import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException
+import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException
 import java.util.EnumSet
 
 /**
@@ -43,6 +44,23 @@ class VtoView(context: Context) : FrameLayout(context) {
 
     companion object {
         private const val TAG = "VtoView"
+
+        // Reasons handed to onArUnavailable — keep in sync with types.ts.
+        private const val REASON_DEVICE_NOT_CAPABLE = "device-not-capable"
+        private const val REASON_NOT_INSTALLED = "arcore-not-installed"
+        private const val REASON_OUTDATED = "arcore-outdated"
+        private const val REASON_UNAVAILABLE = "arcore-unavailable"
+        private const val REASON_FACE_TRACKING = "face-tracking-unsupported"
+
+        // Availability is queried asynchronously; poll this many times, 200ms
+        // apart, before giving up on an answer.
+        private const val MAX_AVAILABILITY_CHECKS = 5
+
+        // Whether ARCore reported this device as incapable. The verdict can't
+        // change while the process lives, so it is cached here: a remounted view
+        // must not re-check, and above all must not send the user to the Play
+        // Store again.
+        private var deviceNotCapable = false
     }
 
     // ARCore session
@@ -110,7 +128,17 @@ class VtoView(context: Context) : FrameLayout(context) {
     // would otherwise render nothing.
     private var previewRequested = false
     private var arUnavailable = false
-    private val isPreviewMode: Boolean get() = previewRequested || arUnavailable
+
+    // AR might still happen: the availability query hasn't resolved yet, or the
+    // user is in the ARCore install flow. Preview renders meanwhile so the view
+    // is never blank, and clears once the answer arrives.
+    private var arPending = false
+
+    // We spend at most one Play Store redirect per view. If we come back and
+    // ARCore still isn't there, the user declined and we stop asking.
+    private var installRequested = false
+
+    private val isPreviewMode: Boolean get() = previewRequested || arUnavailable || arPending
 
     // Orbit/zoom touch state, live only while preview mode is on.
     private var lastTouchX = 0f
@@ -129,6 +157,7 @@ class VtoView(context: Context) : FrameLayout(context) {
     var onModelLoaded: ((modelUrl: String) -> Unit)? = null
     var onFaceTracked: (() -> Unit)? = null
     var onGlassesDisplayed: ((modelUrl: String) -> Unit)? = null
+    var onArUnavailable: ((reason: String) -> Unit)? = null
 
     // State
     private var isInitialized = false
@@ -163,6 +192,16 @@ class VtoView(context: Context) : FrameLayout(context) {
     // camera back to us yet.
     private val resumeRetryHandler = Handler(Looper.getMainLooper())
     private var resumeRetryCount = 0
+
+    // ArCoreApk.checkAvailability() answers asynchronously the first time
+    // (UNKNOWN_CHECKING); poll it a few times rather than guessing.
+    private var availabilityCheckCount = 0
+    private val availabilityRunnable = Runnable {
+        if (isResumed && isActive && isAttachedToWindow) {
+            arPending = false
+            applyPreviewMode()
+        }
+    }
     private val resumeRetryRunnable = Runnable {
         if (isActive && isResumed && isAttachedToWindow) {
             resume()
@@ -356,8 +395,10 @@ class VtoView(context: Context) : FrameLayout(context) {
     private fun fallBackToPreview(reason: String) {
         if (arUnavailable) return
         arUnavailable = true
-        Log.w(TAG, "$reason — falling back to preview mode")
+        arPending = false
+        Log.w(TAG, "AR unavailable ($reason) — falling back to preview mode")
         applyPreviewMode()
+        onArUnavailable?.invoke(reason)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -432,6 +473,10 @@ class VtoView(context: Context) : FrameLayout(context) {
             initialize()
         }
 
+        // A resume is the moment to re-evaluate an in-flight verdict: this is
+        // where we land coming back from the ARCore installer.
+        arPending = false
+
         // Starts the AR session, or tears it down for preview — which runs
         // without one, and without the camera permission it would require.
         applyPreviewMode()
@@ -499,6 +544,7 @@ class VtoView(context: Context) : FrameLayout(context) {
     private fun cancelResumeRetry() {
         resumeRetryHandler.removeCallbacks(resumeRetryRunnable)
         resumeRetryCount = 0
+        resumeRetryHandler.removeCallbacks(availabilityRunnable)
     }
 
     /**
@@ -520,13 +566,12 @@ class VtoView(context: Context) : FrameLayout(context) {
             return
         }
 
-        try {
-            // Check ARCore availability
-            when (ArCoreApk.getInstance().requestInstall(getActivity(), true)) {
-                ArCoreApk.InstallStatus.INSTALL_REQUESTED -> return
-                ArCoreApk.InstallStatus.INSTALLED -> { /* Continue */ }
-            }
+        // Decide whether AR can run here *before* anything can send the user to
+        // the Play Store. Returns false when we should stay in preview — either
+        // for good, or until a pending check/install resolves.
+        if (!ensureArAvailable()) return
 
+        try {
             // Create AR session with front camera for face tracking
             arSession = Session(context, EnumSet.of(Session.Feature.FRONT_CAMERA))
 
@@ -554,21 +599,141 @@ class VtoView(context: Context) : FrameLayout(context) {
             Log.d(TAG, "ARCore session created successfully")
 
         } catch (e: UnavailableArcoreNotInstalledException) {
-            fallBackToPreview("ARCore is not installed")
+            fallBackToPreview(REASON_NOT_INSTALLED)
         } catch (e: UnavailableDeviceNotCompatibleException) {
-            fallBackToPreview("This device does not support AR")
+            deviceNotCapable = true
+            fallBackToPreview(REASON_DEVICE_NOT_CAPABLE)
         } catch (e: UnavailableSdkTooOldException) {
-            fallBackToPreview("Please update ARCore")
+            fallBackToPreview(REASON_OUTDATED)
         } catch (e: UnavailableApkTooOldException) {
-            fallBackToPreview("Please update this app")
+            fallBackToPreview(REASON_OUTDATED)
         } catch (e: CameraNotAvailableException) {
             Log.e(TAG, "Camera not available")
         } catch (e: Exception) {
-            // Session creation failed outright (front-camera AR unsupported,
-            // emulator, …) — as opposed to the transient camera hand-back
-            // handled above, so there is nothing to retry.
-            fallBackToPreview("Failed to create AR session: ${e.message}")
+            // Session creation failed outright — front-camera AR is the part
+            // checkAvailability() can't speak for, so an unsupported device
+            // surfaces here rather than above. Not the transient camera
+            // hand-back handled earlier, so there is nothing to retry.
+            Log.e(TAG, "Failed to create AR session: ${e.message}")
+            fallBackToPreview(REASON_FACE_TRACKING)
         }
+    }
+
+    /**
+     * Whether an ARCore session may be created right now.
+     *
+     * `checkAvailability()` is the only call that answers "can this device run
+     * ARCore at all", and it costs nothing — asking it first is what keeps an
+     * incapable device from being sent to the Play Store to install something it
+     * can never run. `requestInstall()` is reached only for a device that ARCore
+     * says it supports, and at most once per view.
+     *
+     * Returns false when the caller should stay in preview: either permanently
+     * (fallBackToPreview has fired) or until a pending check or install
+     * resolves, in which case `arPending` keeps the view in preview meanwhile.
+     */
+    private fun ensureArAvailable(): Boolean {
+        if (deviceNotCapable) {
+            fallBackToPreview(REASON_DEVICE_NOT_CAPABLE)
+            return false
+        }
+
+        return when (ArCoreApk.getInstance().checkAvailability(context)) {
+            ArCoreApk.Availability.SUPPORTED_INSTALLED -> {
+                arPending = false
+                true
+            }
+
+            ArCoreApk.Availability.SUPPORTED_NOT_INSTALLED,
+            ArCoreApk.Availability.SUPPORTED_APK_TOO_OLD -> requestArCoreInstall()
+
+            ArCoreApk.Availability.UNKNOWN_CHECKING -> {
+                scheduleAvailabilityCheck()
+                false
+            }
+
+            ArCoreApk.Availability.UNSUPPORTED_DEVICE_NOT_CAPABLE -> {
+                deviceNotCapable = true
+                fallBackToPreview(REASON_DEVICE_NOT_CAPABLE)
+                false
+            }
+
+            // UNKNOWN_ERROR / UNKNOWN_TIMED_OUT — no verdict is coming.
+            else -> {
+                fallBackToPreview(REASON_UNAVAILABLE)
+                false
+            }
+        }
+    }
+
+    /**
+     * One Play Store redirect, ever. A second pass through here means the user
+     * came back without ARCore. Why is not knowable — declined, cancelled, or
+     * the Play install failed all look identical from here — so we report it as
+     * "not installed" and settle into preview instead of bouncing them out
+     * again.
+     */
+    private fun requestArCoreInstall(): Boolean {
+        if (installRequested) {
+            fallBackToPreview(REASON_NOT_INSTALLED)
+            return false
+        }
+
+        val activity = getActivity()
+        if (activity == null) {
+            // requestInstall needs an Activity to launch the installer.
+            fallBackToPreview(REASON_NOT_INSTALLED)
+            return false
+        }
+
+        return try {
+            installRequested = true
+            when (ArCoreApk.getInstance().requestInstall(activity, true)) {
+                ArCoreApk.InstallStatus.INSTALLED -> {
+                    arPending = false
+                    true
+                }
+                // The installer is up; we resume again when the user returns.
+                else -> {
+                    enterPendingPreview()
+                    false
+                }
+            }
+        } catch (e: UnavailableUserDeclinedInstallationException) {
+            fallBackToPreview(REASON_NOT_INSTALLED)
+            false
+        } catch (e: UnavailableDeviceNotCompatibleException) {
+            deviceNotCapable = true
+            fallBackToPreview(REASON_DEVICE_NOT_CAPABLE)
+            false
+        } catch (e: Exception) {
+            Log.e(TAG, "ARCore install request failed: ${e.message}")
+            fallBackToPreview(REASON_UNAVAILABLE)
+            false
+        }
+    }
+
+    /**
+     * Render preview while an availability check or an install is in flight, so
+     * the view is never blank waiting on an answer. Re-entrant by design: the
+     * applyPreviewMode() below re-enters with isPreviewMode true, which takes
+     * the preview branch and stops there.
+     */
+    private fun enterPendingPreview() {
+        if (arPending) return
+        arPending = true
+        applyPreviewMode()
+    }
+
+    private fun scheduleAvailabilityCheck() {
+        if (availabilityCheckCount >= MAX_AVAILABILITY_CHECKS) {
+            fallBackToPreview(REASON_UNAVAILABLE)
+            return
+        }
+        availabilityCheckCount++
+        enterPendingPreview()
+        resumeRetryHandler.removeCallbacks(availabilityRunnable)
+        resumeRetryHandler.postDelayed(availabilityRunnable, 200)
     }
 
     /**

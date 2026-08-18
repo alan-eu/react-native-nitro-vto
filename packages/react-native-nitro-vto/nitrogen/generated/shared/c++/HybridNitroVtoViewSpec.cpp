@@ -22,6 +22,8 @@ namespace margelo::nitro::nitrovto {
       prototype.registerHybridSetter("onModelLoaded", &HybridNitroVtoViewSpec::setOnModelLoaded);
       prototype.registerHybridGetter("onFaceTracked", &HybridNitroVtoViewSpec::getOnFaceTracked);
       prototype.registerHybridSetter("onFaceTracked", &HybridNitroVtoViewSpec::setOnFaceTracked);
+      prototype.registerHybridGetter("onArUnavailable", &HybridNitroVtoViewSpec::getOnArUnavailable);
+      prototype.registerHybridSetter("onArUnavailable", &HybridNitroVtoViewSpec::setOnArUnavailable);
       prototype.registerHybridGetter("onGlassesDisplayed", &HybridNitroVtoViewSpec::getOnGlassesDisplayed);
       prototype.registerHybridSetter("onGlassesDisplayed", &HybridNitroVtoViewSpec::setOnGlassesDisplayed);
       prototype.registerHybridGetter("forwardOffset", &HybridNitroVtoViewSpec::getForwardOffset);

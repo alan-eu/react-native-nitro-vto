@@ -97,6 +97,23 @@ namespace margelo::nitro::nitrovto {
     static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<JFunc_void::javaobject> /* onFaceTracked */)>("setOnFaceTracked_cxx");
     method(_javaPart, onFaceTracked.has_value() ? JFunc_void_cxx::fromCpp(onFaceTracked.value()) : nullptr);
   }
+  std::optional<std::function<void(const std::string& /* reason */)>> JHybridNitroVtoViewSpec::getOnArUnavailable() {
+    static const auto method = javaClassStatic()->getMethod<jni::local_ref<JFunc_void_std__string::javaobject>()>("getOnArUnavailable_cxx");
+    auto __result = method(_javaPart);
+    return __result != nullptr ? std::make_optional([&]() -> std::function<void(const std::string& /* reason */)> {
+      if (__result->isInstanceOf(JFunc_void_std__string_cxx::javaClassStatic())) [[likely]] {
+        auto downcast = jni::static_ref_cast<JFunc_void_std__string_cxx::javaobject>(__result);
+        return downcast->cthis()->getFunction();
+      } else {
+        auto __resultRef = jni::make_global(__result);
+        return JNICallable<JFunc_void_std__string, void(std::string)>(std::move(__resultRef));
+      }
+    }()) : std::nullopt;
+  }
+  void JHybridNitroVtoViewSpec::setOnArUnavailable(const std::optional<std::function<void(const std::string& /* reason */)>>& onArUnavailable) {
+    static const auto method = javaClassStatic()->getMethod<void(jni::alias_ref<JFunc_void_std__string::javaobject> /* onArUnavailable */)>("setOnArUnavailable_cxx");
+    method(_javaPart, onArUnavailable.has_value() ? JFunc_void_std__string_cxx::fromCpp(onArUnavailable.value()) : nullptr);
+  }
   std::optional<std::function<void(const std::string& /* modelUrl */)>> JHybridNitroVtoViewSpec::getOnGlassesDisplayed() {
     static const auto method = javaClassStatic()->getMethod<jni::local_ref<JFunc_void_std__string::javaobject>()>("getOnGlassesDisplayed_cxx");
     auto __result = method(_javaPart);

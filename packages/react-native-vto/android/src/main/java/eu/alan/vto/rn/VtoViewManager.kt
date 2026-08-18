@@ -26,6 +26,7 @@ class VtoViewManager : SimpleViewManager<VtoView>() {
         const val EVENT_MODEL_LOADED = "onModelLoaded"
         const val EVENT_FACE_TRACKED = "onFaceTracked"
         const val EVENT_GLASSES_DISPLAYED = "onGlassesDisplayed"
+        const val EVENT_AR_UNAVAILABLE = "onArUnavailable"
     }
 
     override fun getName(): String = REACT_CLASS
@@ -109,6 +110,7 @@ class VtoViewManager : SimpleViewManager<VtoView>() {
             EVENT_MODEL_LOADED to mapOf("registrationName" to EVENT_MODEL_LOADED),
             EVENT_FACE_TRACKED to mapOf("registrationName" to EVENT_FACE_TRACKED),
             EVENT_GLASSES_DISPLAYED to mapOf("registrationName" to EVENT_GLASSES_DISPLAYED),
+            EVENT_AR_UNAVAILABLE to mapOf("registrationName" to EVENT_AR_UNAVAILABLE),
         )
     }
 
@@ -126,6 +128,11 @@ class VtoViewManager : SimpleViewManager<VtoView>() {
         view.onGlassesDisplayed = { url ->
             dispatch(reactContext, view, EVENT_GLASSES_DISPLAYED, Arguments.createMap().apply {
                 putString("modelUrl", url)
+            })
+        }
+        view.onArUnavailable = { reason ->
+            dispatch(reactContext, view, EVENT_AR_UNAVAILABLE, Arguments.createMap().apply {
+                putString("reason", reason)
             })
         }
     }

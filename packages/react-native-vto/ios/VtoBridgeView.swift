@@ -26,6 +26,7 @@ public class VtoBridgeView: VtoView {
     @objc public var onModelLoadedEvent: VtoRCTDirectEventBlock?
     @objc public var onFaceTrackedEvent: VtoRCTDirectEventBlock?
     @objc public var onGlassesDisplayedEvent: VtoRCTDirectEventBlock?
+    @objc public var onArUnavailableEvent: VtoRCTDirectEventBlock?
 
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -46,6 +47,9 @@ public class VtoBridgeView: VtoView {
         }
         self.onGlassesDisplayed = { [weak self] url in
             self?.onGlassesDisplayedEvent?(["modelUrl": url])
+        }
+        self.onArUnavailable = { [weak self] reason in
+            self?.onArUnavailableEvent?(["reason": reason])
         }
     }
 

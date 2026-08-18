@@ -55,6 +55,12 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
         }
     }
 
+    public var onArUnavailable: ((String) -> Void)? = nil {
+        didSet {
+            nitroVtoView.onArUnavailable = onArUnavailable
+        }
+    }
+
     public var forwardOffset: Double? = nil {
         didSet {
             nitroVtoView.setForwardOffset(forwardOffset)

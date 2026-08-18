@@ -39,6 +39,15 @@ export interface NitroVtoViewProps extends HybridViewProps {
   onFaceTracked?: () => void;
 
   /**
+   * Called once when the view gives up on AR and settles into preview mode.
+   * Reason is one of `device-not-capable`, `arcore-not-installed`,
+   * `arcore-outdated`, `arcore-unavailable`, `face-tracking-unsupported`. The view is showing the model in preview from
+   * then on, whatever the `mode` prop says.
+   * @param reason - Why AR is unavailable.
+   */
+  onArUnavailable?: (reason: string) => void;
+
+  /**
    * Called the first time the glasses model is rendered on the tracked face
    * — i.e. the first frame whose transform is driven by a valid face pose
    * after the model was loaded. Re-fires whenever `modelUrl` changes to a

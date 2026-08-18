@@ -43,6 +43,7 @@ public class VtoView: UIView {
     var onModelLoaded: ((String) -> Void)?
     var onFaceTracked: (() -> Void)?
     var onGlassesDisplayed: ((String) -> Void)?
+    var onArUnavailable: ((String) -> Void)?
 
     // State
     private var isInitialized = false
@@ -369,6 +370,7 @@ public class VtoView: UIView {
         if !ARFaceTrackingConfiguration.isSupported, !faceTrackingUnavailable {
             faceTrackingUnavailable = true
             NSLog("VtoView: ARFaceTracking unsupported — falling back to preview mode")
+            onArUnavailable?("face-tracking-unsupported")
         }
 
         // Starts the AR session, or tears it down and arms the orbit gestures.

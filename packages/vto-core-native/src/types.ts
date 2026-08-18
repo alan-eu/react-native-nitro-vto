@@ -4,6 +4,26 @@
  * each wrapper so their types stay in lockstep.
  */
 
+/**
+ * Why the view gave up on AR and settled into preview mode.
+ *
+ * - `"device-not-capable"` — ARCore says this device can't run AR at all.
+ * - `"arcore-not-installed"` — ARCore is missing and still missing after we sent
+ *   the user to install it once. Declined, cancelled and "the Play install
+ *   failed" are indistinguishable from the app's side, so they all report this.
+ *   We don't ask a second time.
+ * - `"arcore-outdated"` — ARCore or this app is too old for the other.
+ * - `"arcore-unavailable"` — ARCore couldn't give a verdict.
+ * - `"face-tracking-unsupported"` — the device runs AR but not front-camera face
+ *   tracking (also what the iOS simulator reports).
+ */
+export type ArUnavailableReason =
+  | "device-not-capable"
+  | "arcore-not-installed"
+  | "arcore-outdated"
+  | "arcore-unavailable"
+  | "face-tracking-unsupported";
+
 export interface VtoCommonProps {
   /**
    * URL to the glasses model file (GLB format). Models should be authored in
@@ -76,6 +96,15 @@ export interface VtoCommonProps {
    * view is re-mounted.
    */
   onFaceTracked?: () => void;
+
+  /**
+   * Fires once when the view gives up on AR and settles into preview mode. Use
+   * it to stop offering try-on, or to label the screen: the view is showing the
+   * model in preview from then on, regardless of the `mode` prop.
+   *
+   * See {@link ArUnavailableReason} for what each reason means.
+   */
+  onArUnavailable?: (reason: ArUnavailableReason) => void;
 
   /**
    * Fires the first time the glasses model is rendered on the tracked face —

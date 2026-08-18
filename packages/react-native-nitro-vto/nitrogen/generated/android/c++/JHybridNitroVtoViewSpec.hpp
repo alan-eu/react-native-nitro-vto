@@ -58,6 +58,8 @@ namespace margelo::nitro::nitrovto {
     void setOnModelLoaded(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onModelLoaded) override;
     std::optional<std::function<void()>> getOnFaceTracked() override;
     void setOnFaceTracked(const std::optional<std::function<void()>>& onFaceTracked) override;
+    std::optional<std::function<void(const std::string& /* reason */)>> getOnArUnavailable() override;
+    void setOnArUnavailable(const std::optional<std::function<void(const std::string& /* reason */)>>& onArUnavailable) override;
     std::optional<std::function<void(const std::string& /* modelUrl */)>> getOnGlassesDisplayed() override;
     void setOnGlassesDisplayed(const std::optional<std::function<void(const std::string& /* modelUrl */)>>& onGlassesDisplayed) override;
     std::optional<double> getForwardOffset() override;

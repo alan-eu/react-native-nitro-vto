@@ -104,6 +104,21 @@ namespace margelo::nitro::nitrovto::bridge::swift {
     return *optional;
   }
   
+  // pragma MARK: std::optional<std::function<void(const std::string& /* reason */)>>
+  /**
+   * Specialized version of `std::optional<std::function<void(const std::string& / * reason * /)>>`.
+   */
+  using std__optional_std__function_void_const_std__string_____reason______ = std::optional<std::function<void(const std::string& /* reason */)>>;
+  inline std::optional<std::function<void(const std::string& /* reason */)>> create_std__optional_std__function_void_const_std__string_____reason______(const std::function<void(const std::string& /* reason */)>& value) noexcept {
+    return std::optional<std::function<void(const std::string& /* reason */)>>(value);
+  }
+  inline bool has_value_std__optional_std__function_void_const_std__string_____reason______(const std::optional<std::function<void(const std::string& /* reason */)>>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline std::function<void(const std::string& /* reason */)> get_std__optional_std__function_void_const_std__string_____reason______(const std::optional<std::function<void(const std::string& /* reason */)>>& optional) noexcept {
+    return *optional;
+  }
+  
   // pragma MARK: std::optional<double>
   /**
    * Specialized version of `std::optional<double>`.

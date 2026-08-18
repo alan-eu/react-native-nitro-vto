@@ -31,6 +31,7 @@ const App = () => {
   const [debugEnabled, setDebugEnabled] = useState(false);
   const [glassesHidden, setGlassesHidden] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [arUnavailable, setArUnavailable] = useState<string | null>(null);
 
   const vtoRef = useRef<VtoRef | null>(null);
 
@@ -109,6 +110,11 @@ const App = () => {
     setPreviewMode((prev) => !prev);
   }, []);
 
+  const handleArUnavailable = useCallback((reason: string) => {
+    console.log(`[vto] AR unavailable: ${reason}`);
+    setArUnavailable(reason);
+  }, []);
+
   const handleDebug = useCallback(() => {
     setDebugEnabled((prev) => !prev);
   }, []);
@@ -156,6 +162,7 @@ const App = () => {
         onModelLoaded={callback(handleModelLoaded)}
         onFaceTracked={callback(handleFaceTracked)}
         onGlassesDisplayed={callback(handleGlassesDisplayed)}
+        onArUnavailable={callback(handleArUnavailable)}
         hybridRef={callback((ref: VtoRef) => {
           vtoRef.current = ref;
         })}
@@ -183,7 +190,8 @@ const App = () => {
           onPress={handleTogglePreview}
         >
           <Text style={styles.buttonText}>
-            Mode: {previewMode ? "Preview" : "AR"}
+            Mode: {previewMode || arUnavailable ? "Preview" : "AR"}
+            {arUnavailable ? ` (${arUnavailable})` : ""}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity

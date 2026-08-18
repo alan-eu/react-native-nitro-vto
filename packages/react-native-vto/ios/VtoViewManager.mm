@@ -65,6 +65,7 @@ RCT_CUSTOM_VIEW_PROPERTY(previewBackgroundColor, NSString *, VtoBridgeView) {
 RCT_REMAP_VIEW_PROPERTY(onModelLoaded, onModelLoadedEvent, RCTDirectEventBlock)
 RCT_REMAP_VIEW_PROPERTY(onFaceTracked, onFaceTrackedEvent, RCTDirectEventBlock)
 RCT_REMAP_VIEW_PROPERTY(onGlassesDisplayed, onGlassesDisplayedEvent, RCTDirectEventBlock)
+RCT_REMAP_VIEW_PROPERTY(onArUnavailable, onArUnavailableEvent, RCTDirectEventBlock)
 
 // --- Imperative commands ----------------------------------------------------
 
