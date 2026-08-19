@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.15.2](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.15.1...v0.15.2) (2026-08-19)
+
+### 🐛 Bug Fixes
+
+* **android:** scope the ARCore install prompt to the process, not the view ([#86](https://github.com/alan-eu/react-native-nitro-vto/issues/86)) ([ebb881e](https://github.com/alan-eu/react-native-nitro-vto/commit/ebb881e28ff44d87e7e96be111591945e3e9c76a))
+
 ## [0.15.1](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.15.0...v0.15.1) (2026-08-18)
 
 ### 🐛 Bug Fixes
