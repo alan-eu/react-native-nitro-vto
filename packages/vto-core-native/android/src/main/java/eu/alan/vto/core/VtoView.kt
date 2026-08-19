@@ -61,6 +61,12 @@ class VtoView(context: Context) : FrameLayout(context) {
         // must not re-check, and above all must not send the user to the Play
         // Store again.
         private var deviceNotCapable = false
+
+        // Whether we already spent our one Play Store redirect. Process-wide,
+        // not per view: a host app that navigates in and out of try-on mounts a
+        // new VtoView every time, and a per-view flag would let each mount
+        // prompt again — the loop this whole gate exists to prevent.
+        private var installRequested = false
     }
 
     // ARCore session
@@ -133,10 +139,6 @@ class VtoView(context: Context) : FrameLayout(context) {
     // user is in the ARCore install flow. Preview renders meanwhile so the view
     // is never blank, and clears once the answer arrives.
     private var arPending = false
-
-    // We spend at most one Play Store redirect per view. If we come back and
-    // ARCore still isn't there, the user declined and we stop asking.
-    private var installRequested = false
 
     private val isPreviewMode: Boolean get() = previewRequested || arUnavailable || arPending
 
