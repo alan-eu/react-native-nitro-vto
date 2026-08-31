@@ -31,11 +31,18 @@ struct Vertex {
 };
 
 // Full-screen quad in NDC with flipped V coordinates for portrait orientation
+// z = 0: Filament's device-domain path remaps z' = -0.5*z + 0.5, so z = 0
+// lands mid-range (0.5) — safely inside the clip volume. z = 1 (the old
+// value) landed exactly ON the far-plane clip boundary (z' = 0, reversed-Z),
+// which the device GPU's rasterizer clipped at some camera angles in preview
+// mode (background went black); the simulator kept it. Matches the Android
+// quad, which uses z = 0 and never showed the bug. Depth doesn't matter
+// otherwise: the material has depthWrite/depthCulling off.
 static const Vertex kVertices[4] = {
-    { { -1.0_h, -1.0_h, 1.0_h, 1.0_h }, { 0.0_h, 1.0_h } },  // bottom-left
-    { {  1.0_h, -1.0_h, 1.0_h, 1.0_h }, { 1.0_h, 1.0_h } },  // bottom-right
-    { { -1.0_h,  1.0_h, 1.0_h, 1.0_h }, { 0.0_h, 0.0_h } },  // top-left
-    { {  1.0_h,  1.0_h, 1.0_h, 1.0_h }, { 1.0_h, 0.0_h } },  // top-right
+    { { -1.0_h, -1.0_h, 0.0_h, 1.0_h }, { 0.0_h, 1.0_h } },  // bottom-left
+    { {  1.0_h, -1.0_h, 0.0_h, 1.0_h }, { 1.0_h, 1.0_h } },  // bottom-right
+    { { -1.0_h,  1.0_h, 0.0_h, 1.0_h }, { 0.0_h, 0.0_h } },  // top-left
+    { {  1.0_h,  1.0_h, 0.0_h, 1.0_h }, { 1.0_h, 0.0_h } },  // top-right
 };
 
 static constexpr uint16_t kIndices[6] = { 0, 1, 2, 2, 1, 3 };
@@ -264,6 +271,13 @@ static constexpr uint16_t kIndices[6] = { 0, 1, 2, 2, 1, 3 };
     TransformManager &transformManager = _engine->getTransformManager();
     TransformManager::Instance instance = transformManager.getInstance(_cameraFeedTriangle);
     transformManager.setTransform(instance, backgroundTransform);
+}
+
+- (void)resetTransform {
+    if (!_engine || _cameraFeedTriangle.isNull()) return;
+    TransformManager &transformManager = _engine->getTransformManager();
+    TransformManager::Instance instance = transformManager.getInstance(_cameraFeedTriangle);
+    transformManager.setTransform(instance, mat4f{});
 }
 
 - (void)destroy {

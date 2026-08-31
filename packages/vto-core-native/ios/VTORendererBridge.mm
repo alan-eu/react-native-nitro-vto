@@ -408,6 +408,10 @@ static NSString *const TAG = @"VTORenderer";
         [_cameraTextureRenderer useSolidBackgroundWithRed:_backgroundColor.r
                                                    green:_backgroundColor.g
                                                     blue:_backgroundColor.b];
+        // Drop the AR-frame transform left on the background quad — stale
+        // there, and it can knock the quad out of the render pass at some
+        // orbit angles (see resetTransform).
+        [_cameraTextureRenderer resetTransform];
         [self framePreviewCamera];
     } else {
         [_cameraTextureRenderer useCameraFeed];
