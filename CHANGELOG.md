@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.3](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.15.2...v0.15.3) (2026-08-31)
+
+### 🐛 Bug Fixes
+
+* **ios,android:** render transmission as authored via a neutral tone pipeline ([#87](https://github.com/alan-eu/react-native-nitro-vto/issues/87)) ([53cf837](https://github.com/alan-eu/react-native-nitro-vto/commit/53cf8375668204195188f0cbf853800e87fc95aa))
+* **ios:** keep the preview background quad in the render pass ([#88](https://github.com/alan-eu/react-native-nitro-vto/issues/88)) ([556f6c5](https://github.com/alan-eu/react-native-nitro-vto/commit/556f6c5b8f3c0f9290a928b9e45d7061c0813e76))
+
 ## [0.15.2](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.15.1...v0.15.2) (2026-08-19)
 
 ### 🐛 Bug Fixes
