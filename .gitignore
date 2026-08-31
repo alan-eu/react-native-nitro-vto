@@ -40,6 +40,7 @@ examples/*/ios/
 # Example apps
 examples/*/node_modules/
 examples/*/android/
+examples/example-new-arch/app/models.ts
 
 # Expo
 examples/*/.expo/

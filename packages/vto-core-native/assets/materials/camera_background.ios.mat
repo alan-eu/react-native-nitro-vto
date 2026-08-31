@@ -31,18 +31,15 @@ fragment {
         prepareMaterial(material);
         vec2 uv = getUV0();
         vec4 color = texture(materialParams_cameraFeed, uv);
-        // Camera feed is already display-encoded; pre-invert the view's
-        // (Filmic tonemap + sRGB encoder) so the round-trip is exact.
-        // Filament's `inverseTonemapSRGB` uses pow(x, 2.2) for the
-        // gamma step, which doesn't match the piecewise sRGB encoder on
-        // output — we use the real piecewise sRGB→linear here, then the
-        // analytical Filmic inverse.
-        vec3 sRGBToLinear = mix(
+        // Camera feed is display-encoded; the piecewise sRGB→linear decode
+        // is the exact inverse of the view's sRGB encoder, and the view's
+        // tone mapping is linear (ADR 0019), so the direct-view round-trip
+        // is identity and the refraction pass samples the true feed.
+        color.rgb = mix(
             color.rgb / 12.92,
             pow((color.rgb + 0.055) / 1.055, vec3(2.4)),
             step(0.04045, color.rgb)
         );
-        color.rgb = inverseTonemap(sRGBToLinear);
         material.baseColor = color;
     }
 }
