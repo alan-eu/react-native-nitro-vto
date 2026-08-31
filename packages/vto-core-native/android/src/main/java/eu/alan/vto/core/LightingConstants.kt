@@ -13,14 +13,24 @@ package eu.alan.vto.core
  * specular highlights match.
  */
 internal object LightingConstants {
-    /** Static IBL intensity (lux). */
-    const val STATIC_IBL_INTENSITY = 30_000f
+    /**
+     * Static IBL intensity (lux). Raised from 30000 with the neutral tone
+     * pipeline (ADR 0019): Filmic's mid-tone lift used to flatter the
+     * highlights, the neutral transform renders mids as-is, so the shine
+     * comes from the light itself (PBR Neutral's rolloff gives the
+     * headroom). This is the global "shininess" knob; it only affects lit
+     * materials — the camera feed is unlit and its display round-trip is
+     * untouched.
+     */
+    const val STATIC_IBL_INTENSITY = 45_000f
 
     /**
      * Peak intensity (lux) the directional light reaches when the SDK
-     * reports a fully-lit scene. Tunable.
+     * reports a fully-lit scene. Tunable. The directional is what shapes
+     * bright-vs-shadow contrast across a frame (the IBL alone is soft), so
+     * raise this when patterned acetates (tortoise) read flat.
      */
-    const val DIRECTIONAL_INTENSITY_MAX = 20_000f
+    const val DIRECTIONAL_INTENSITY_MAX = 25_000f
 
     /**
      * Empirical factor sceneview applies to ARCore's unit-less

@@ -143,14 +143,19 @@ static NSString *const TAG = @"VTORenderer";
     // Configure view
     _filamentView->setPostProcessingEnabled(true);
 
-    // Filmic tone mapper — compresses bright highlights more than the
-    // default ACES, taming the shine on the metallic glasses frame off
-    // the IBL. The camera material inverts this exact curve + the
-    // piecewise sRGB encoder so the feed round-trips unchanged.
+    // Khronos PBR Neutral tone mapping (ADR 0019) — identity below its
+    // ~0.76 knee, gentle highlight rolloff above. The camera feed (mostly
+    // below the knee) round-trips essentially unchanged and the refraction
+    // pass samples an undistorted feed, while specular highlights compress
+    // gracefully instead of clipping, so the lights can be pushed hard
+    // enough to give the glasses their shine. Only feed-safe operators
+    // belong here — a curved one (Filmic/ACES) would need the feed
+    // pre-inversion back, and the refraction pass would resample the
+    // distorted result.
     {
-        FilmicToneMapper filmic;
+        PBRNeutralToneMapper neutral;
         _colorGrading = ColorGrading::Builder()
-            .toneMapper(&filmic)
+            .toneMapper(&neutral)
             .build(*_engine);
         _filamentView->setColorGrading(_colorGrading);
     }

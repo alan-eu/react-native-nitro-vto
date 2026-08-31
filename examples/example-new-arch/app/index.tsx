@@ -1,6 +1,5 @@
 import {
   NitroVtoView,
-  nitroVtoVersion,
   type HybridRef,
   type NitroVtoViewMethods,
   type NitroVtoViewProps,
@@ -8,18 +7,20 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Image,
   PermissionsAndroid,
   Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  Dimensions
 } from "react-native";
 import { callback } from "react-native-nitro-modules";
 
 const MODELS = [
-  "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/878082.glb",
-  "https://github.com/alan-eu/react-native-nitro-vto/raw/main/misc/models/680048.glb",
+  { code: "ALAN161", name: "Calypso", url: "https://static.alan.com/shop/vto/878082.glb", isClipOn: false },
+  { code: "ALAN105", name: "Nénuphar", url: "https://static.alan.com/shop/vto/680048.glb", isClipOn: false },
 ];
 
 type VtoRef = HybridRef<NitroVtoViewProps, NitroVtoViewMethods>;
@@ -28,10 +29,9 @@ const App = () => {
   const [hasPermission, setHasPermission] = useState(false);
   const [currentModelIndex, setCurrentModelIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [debugEnabled, setDebugEnabled] = useState(false);
-  const [glassesHidden, setGlassesHidden] = useState(false);
-  const [previewMode, setPreviewMode] = useState(false);
-  const [arUnavailable, setArUnavailable] = useState<string | null>(null);
+  const [mode, setMode] = useState<"ar" | "preview">(
+    "ar"
+  );
 
   const vtoRef = useRef<VtoRef | null>(null);
 
@@ -87,6 +87,11 @@ const App = () => {
     setCurrentModelIndex((prev) => (prev + 1) % MODELS.length);
   }, []);
 
+  const handlePrevModel = useCallback(() => {
+    setIsLoading(true);
+    setCurrentModelIndex((prev) => (prev - 1 + MODELS.length) % MODELS.length);
+  }, []);
+
   const handleModelLoaded = useCallback((url: string) => {
     console.log(`[perf] modelLoaded ${url} in ${msSinceModelRequested()}ms`);
     // add a timeout to avoid loading overlay flickering
@@ -106,32 +111,12 @@ const App = () => {
     );
   }, []);
 
-  const handleTogglePreview = useCallback(() => {
-    setPreviewMode((prev) => !prev);
-  }, []);
-
   const handleArUnavailable = useCallback((reason: string) => {
     console.log(`[vto] AR unavailable: ${reason}`);
-    setArUnavailable(reason);
-  }, []);
-
-  const handleDebug = useCallback(() => {
-    setDebugEnabled((prev) => !prev);
-  }, []);
-
-  const handleToggleGlasses = useCallback(() => {
-    setGlassesHidden((prev) => {
-      const next = !prev;
-      if (next) {
-        vtoRef.current?.hideGlasses();
-      } else {
-        vtoRef.current?.showGlasses();
-      }
-      return next;
-    });
   }, []);
 
   const currentModel = MODELS[currentModelIndex];
+  const photoBase = `https://static.alan.com/fr-web/eyewear/frames/photoshoot/large/${currentModel.code}`;
 
   if (!hasPermission) {
     return (
@@ -151,13 +136,13 @@ const App = () => {
     <View style={styles.container}>
       <NitroVtoView
         style={styles.vtoView}
-        modelUrl={currentModel}
+        modelUrl={currentModel.url}
         isActive={true}
-        isClipOn={false}
-        mode={previewMode ? "preview" : "ar"}
+        isClipOn={currentModel.isClipOn}
+        mode={mode}
         previewBackgroundColor="#FBF3E4"
         forwardOffset={0.005}
-        debug={debugEnabled}
+        debug={false}
         showNativeFPS={true}
         onModelLoaded={callback(handleModelLoaded)}
         onFaceTracked={callback(handleFaceTracked)}
@@ -172,53 +157,49 @@ const App = () => {
           <Text style={styles.loadingText}>Loading model...</Text>
         </View>
       )}
+      <View style={styles.modelLabel}>
+        <Text style={styles.modelLabelCode}>
+          {currentModel.code}
+          {currentModel.isClipOn ? " (clip-on)" : ""}
+        </Text>
+        <Text style={styles.modelLabelName}>
+          {currentModel.name} · {currentModelIndex + 1}/{MODELS.length}
+        </Text>
+      </View>
       <View style={styles.controls}>
-        {MODELS.length > 1 && (
+        <View style={styles.navRow}>
+          <TouchableOpacity
+            style={[styles.button, isLoading && styles.buttonLoading]}
+            onPress={handlePrevModel}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>← Prev</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, isLoading && styles.buttonLoading]}
             onPress={handleNextModel}
             disabled={isLoading}
           >
-            <Text style={styles.buttonText}>Next Model</Text>
+            <Text style={styles.buttonText}>Next →</Text>
           </TouchableOpacity>
-        )}
+        </View>
         <TouchableOpacity
-          style={[
-            styles.button,
-            previewMode ? styles.buttonEnabled : styles.buttonDisabled,
-          ]}
-          onPress={handleTogglePreview}
+          style={styles.button}
+          onPress={() =>
+            setMode((prev) =>
+              prev === "ar" ? "preview" : "ar"
+            )
+          }
         >
-          <Text style={styles.buttonText}>
-            Mode: {previewMode || arUnavailable ? "Preview" : "AR"}
-            {arUnavailable ? ` (${arUnavailable})` : ""}
-          </Text>
+          <Text style={styles.buttonText}>Mode: {mode}</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.button,
-            debugEnabled ? styles.buttonEnabled : styles.buttonDisabled,
-          ]}
-          onPress={handleDebug}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>
-            Debug: {debugEnabled ? "Enabled" : "Disabled"}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.button,
-            glassesHidden ? styles.buttonDisabled : styles.buttonEnabled,
-          ]}
-          onPress={handleToggleGlasses}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>
-            Glasses: {glassesHidden ? "Hidden" : "Visible"}
-          </Text>
-        </TouchableOpacity>
-        <Text style={styles.text}>Nitro VTO Version: {nitroVtoVersion}</Text>
+      </View>
+      <View style={styles.photoStrip}>
+        <Image
+          source={{ uri: `${photoBase}-front.jpg` }}
+          style={styles.photo}
+          resizeMode="cover"
+        />
       </View>
     </View>
   );
@@ -234,11 +215,47 @@ const styles = StyleSheet.create({
   },
   controls: {
     position: "absolute",
-    bottom: 48,
+    bottom: Dimensions.get("screen").width / 2 + 20,
     left: 0,
     right: 0,
     alignItems: "center",
     gap: 10,
+  },
+  navRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  photoStrip: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: Dimensions.get("screen").width /2,
+    flexDirection: "row",
+    backgroundColor: "#FBF3E4",
+  },
+  photo: {
+    flex: 1,
+  },
+  modelLabel: {
+    position: "absolute",
+    top: 64,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+  modelLabelCode: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    textShadowColor: "rgba(0, 0, 0, 0.6)",
+    textShadowRadius: 4,
+  },
+  modelLabelName: {
+    color: "#fff",
+    fontSize: 13,
+    textShadowColor: "rgba(0, 0, 0, 0.6)",
+    textShadowRadius: 4,
   },
   button: {
     backgroundColor: "#007AFF",
@@ -248,12 +265,6 @@ const styles = StyleSheet.create({
   },
   buttonLoading: {
     backgroundColor: "#666",
-  },
-  buttonEnabled: {
-    backgroundColor: "#060",
-  },
-  buttonDisabled: {
-    backgroundColor: "#600",
   },
   buttonText: {
     color: "#fff",
