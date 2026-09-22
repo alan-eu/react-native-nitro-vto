@@ -11,7 +11,7 @@
 // knob; it only affects lit materials — the camera feed is unlit and its
 // display round-trip is untouched.
 // Mirrored on Android in LightingConstants.kt.
-static const float kStaticIblIntensity = 45000.0f;
+static const float kStaticIblIntensity = 20000.0f;
 
 // Directional ("sun") light driven per-frame from each AR SDK's light
 // estimate. Intensity is in lux; both platforms calibrate to a common
