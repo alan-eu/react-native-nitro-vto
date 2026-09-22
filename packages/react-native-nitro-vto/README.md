@@ -7,7 +7,7 @@ If your app runs with `newArchEnabled=false`, install [`@alaneu/react-native-vto
 ## Requirements
 
 - React Native ≥ 0.78 with `newArchEnabled=true`
-- `react-native-nitro-modules` ≥ 0.23
+- `react-native-nitro-modules` ≥ 0.37
 - Android: device with ARCore support
 - iOS: device with ARKit (TrueDepth camera — no simulator)
 

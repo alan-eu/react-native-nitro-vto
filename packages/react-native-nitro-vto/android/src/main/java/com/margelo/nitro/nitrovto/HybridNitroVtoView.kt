@@ -116,26 +116,10 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
         }
     }
 
-    /**
-     * Called when the view is attached to the window
-     */
-    fun onAttachedToWindow() {
-        if (isActive) {
-            nitroVtoView.resume()
-        }
-    }
-
-    /**
-     * Called when the view is detached from the window
-     */
-    fun onDetachedFromWindow() {
-        nitroVtoView.pause()
-    }
-
-    /**
-     * Cleanup resources when the view is destroyed
-     */
-    fun destroy() {
+    override fun onDropView() {
+        // The only place the engine is torn down. `VtoView.onDetachedFromWindow` deliberately
+        // only pauses — calling `destroy()` there races Filament's `onDetachedFromSurface` —
+        // so unmount teardown is the wrapper's job, as it is in `VtoViewManager` on old arch.
         nitroVtoView.destroy()
     }
 }
