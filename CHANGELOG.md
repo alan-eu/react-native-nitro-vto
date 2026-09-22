@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.15.5](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.15.4...v0.15.5) (2026-09-22)
+
+### 🐛 Bug Fixes
+
+* **android:** destroy the engine and ARCore session on unmount ([#90](https://github.com/alan-eu/react-native-nitro-vto/issues/90)) ([3af7cba](https://github.com/alan-eu/react-native-nitro-vto/commit/3af7cba88bc71e8b98483351df463a365e77c603))
+
 ## [0.15.4](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.15.3...v0.15.4) (2026-09-22)
 
 ### 🐛 Bug Fixes
