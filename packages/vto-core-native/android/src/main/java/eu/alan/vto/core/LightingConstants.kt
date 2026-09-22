@@ -22,7 +22,7 @@ internal object LightingConstants {
      * materials — the camera feed is unlit and its display round-trip is
      * untouched.
      */
-    const val STATIC_IBL_INTENSITY = 45_000f
+    const val STATIC_IBL_INTENSITY = 20_000f
 
     /**
      * Peak intensity (lux) the directional light reaches when the SDK
