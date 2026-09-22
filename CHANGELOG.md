@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.15.4](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.15.3...v0.15.4) (2026-09-22)
+
+### 🐛 Bug Fixes
+
+* use Studio Small 08 environment with 20k IBL ([#89](https://github.com/alan-eu/react-native-nitro-vto/issues/89)) ([182ef2d](https://github.com/alan-eu/react-native-nitro-vto/commit/182ef2daf471dd351e01e4febab376877d47d0f3))
+
 ## [0.15.3](https://github.com/alan-eu/react-native-nitro-vto/compare/v0.15.2...v0.15.3) (2026-08-31)
 
 ### 🐛 Bug Fixes

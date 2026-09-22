@@ -21,6 +21,8 @@ import { callback } from "react-native-nitro-modules";
 const MODELS = [
   { code: "ALAN161", name: "Calypso", url: "https://static.alan.com/shop/vto/878082.glb", isClipOn: false },
   { code: "ALAN105", name: "Nénuphar", url: "https://static.alan.com/shop/vto/680048.glb", isClipOn: false },
+  { code: "ALAN105", name: "Nénuphar", url: "https://static.alan.com/shop/vto/test/bodie-opt-sbf-crystal-with-english-oak_medium_a.glb", isClipOn: false },
+  { code: "ALAN242", name: "Emporio Armani - EA3177", url: "https://static.alan.com/shop/vto/0EA3177509053.glb", isClipOn: false },
 ];
 
 type VtoRef = HybridRef<NitroVtoViewProps, NitroVtoViewMethods>;
