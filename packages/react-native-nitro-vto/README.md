@@ -2,8 +2,6 @@
 
 React Native **new architecture** (Fabric) wrapper for the glasses virtual try-on library. Built on [Nitro Modules](https://nitro.margelo.com/) for high-performance native integration.
 
-If your app runs with `newArchEnabled=false`, install [`@alaneu/react-native-vto`](https://github.com/alan-eu/react-native-nitro-vto/tree/main/packages/react-native-vto) instead. The two packages are mutually exclusive; they share identical API surfaces but cannot coexist in the same app.
-
 ## Requirements
 
 - React Native ≥ 0.78 with `newArchEnabled=true`
@@ -53,7 +51,7 @@ function App() {
 }
 ```
 
-> **Callbacks must be wrapped with `callback()`** from `react-native-nitro-modules`. This is a Nitro renderer requirement and is specific to the new-arch wrapper — the old-arch wrapper uses plain JS functions.
+> **Callbacks must be wrapped with `callback()`** from `react-native-nitro-modules`. This is a Nitro renderer requirement.
 
 To switch glasses, update the `modelUrl` prop — setting it to a new URL swaps the model.
 
@@ -101,13 +99,6 @@ vtoRef.current?.showGlasses();
 | --- | --- |
 | `hideGlasses()` | Hide the glasses + face occlusion meshes. Sticky across frames. AR session and face tracking state are untouched. |
 | `showGlasses()` | Show them again after `hideGlasses()`. No-op if they weren't hidden. |
-
-## Differences from `@alaneu/react-native-vto`
-
-- Requires `react-native-nitro-modules` at runtime; the classic wrapper doesn't.
-- Callbacks **must** be wrapped in `callback()`; the classic wrapper accepts plain JS functions.
-- Methods exposed via `hybridRef` (Nitro pattern); the classic wrapper uses `ref` / `useImperativeHandle`.
-- Rendering / face tracking / materials are identical — both packages consume the same private `@alaneu/vto-core-native` core, bundled at install time.
 
 ## License
 

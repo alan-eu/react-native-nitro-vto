@@ -15,7 +15,7 @@ const PACKAGES_ROOT = resolve(CORE_ROOT, "..");
 
 // RN wrapper packages that should receive a bundled copy of core's native
 // sources + assets. Add new wrappers here when they come online.
-const WRAPPERS = ["react-native-nitro-vto", "react-native-vto"] as const;
+const WRAPPERS = ["react-native-nitro-vto"] as const;
 
 // Copy rules. Each entry maps a path inside core → the same path inside the
 // target wrapper. Files/dirs are wiped first in the destination to keep the
