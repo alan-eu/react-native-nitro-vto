@@ -1,5 +1,7 @@
 # Three-package layout with bundled `vto-core-native`
 
+> Superseded by [ADR 0021](./0021-single-package-layout.md).
+
 ## Context and Problem Statement
 
 We ship two RN bindings — `react-native-nitro-vto` (Nitro modules) and
