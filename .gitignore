@@ -32,17 +32,17 @@ local.properties
 **/android/build/
 
 # iOS
-examples/*/ios/
+example/ios/
 **/ios/*.xcodeproj/xcuserdata/
 **/ios/*.xcworkspace/xcuserdata/
 
 # Example apps
-examples/*/node_modules/
-examples/*/android/
-examples/example-new-arch/app/models.ts
+example/node_modules/
+example/android/
+example/app/models.ts
 
 # Expo
-examples/*/.expo/
+example/.expo/
 expo-env.d.ts
 
 # Scratch / debug dirs (not published, not tracked)

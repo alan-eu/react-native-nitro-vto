@@ -9,8 +9,7 @@ This is an npm-workspace monorepo:
 ```
 packages/
   react-native-nitro-vto/    published — native core + Nitro bridge
-examples/
-  example-new-arch/          new-arch Expo demo app
+example/                     Expo demo app
 ```
 
 Inside `packages/react-native-nitro-vto/`:
@@ -54,7 +53,7 @@ npm run cmgen   --workspace=@alaneu/react-native-nitro-vto   # .hdr → .ktx + _
 ### Running the example
 
 ```bash
-cd examples/example-new-arch
+cd example
 npm run ios           # or npm run android
 ```
 
@@ -71,7 +70,7 @@ Any surface change (new prop, renamed method, new callback signature) must land 
 - `packages/react-native-nitro-vto/src/types.ts` — `VtoCommonProps` and related types
 - `packages/react-native-nitro-vto/src/specs/NitroVtoView.nitro.ts` — Nitro spec (re-run `npm run specs` from the Nitro package)
 - `HybridNitroVtoView.{kt,swift}`
-- `examples/example-new-arch/app/index.tsx` — exercise the new surface
+- `example/app/index.tsx` — exercise the new surface
 - `packages/react-native-nitro-vto/README.md`
 
 ### Platform conventions
