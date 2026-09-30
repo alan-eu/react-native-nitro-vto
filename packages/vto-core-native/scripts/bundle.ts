@@ -14,13 +14,12 @@ const CORE_ROOT = resolve(__dirname, "..");
 const PACKAGES_ROOT = resolve(CORE_ROOT, "..");
 
 // RN wrapper packages that should receive a bundled copy of core's native
-// sources + assets. Add new wrappers here when they come online.
+// sources + assets.
 const WRAPPERS = ["react-native-nitro-vto"] as const;
 
 // Copy rules. Each entry maps a path inside core → the same path inside the
 // target wrapper. Files/dirs are wiped first in the destination to keep the
-// copy hermetic. `optional` entries skip silently if the source doesn't exist
-// (useful for the old-arch wrapper before it's scaffolded).
+// copy hermetic.
 type Rule = {
   from: string; // relative to core root
   to: string; // relative to wrapper root

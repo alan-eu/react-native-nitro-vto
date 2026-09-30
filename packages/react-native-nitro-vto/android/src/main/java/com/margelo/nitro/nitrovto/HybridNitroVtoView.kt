@@ -119,7 +119,7 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
     override fun onDropView() {
         // The only place the engine is torn down. `VtoView.onDetachedFromWindow` deliberately
         // only pauses — calling `destroy()` there races Filament's `onDetachedFromSurface` —
-        // so unmount teardown is the wrapper's job, as it is in `VtoViewManager` on old arch.
+        // so unmount teardown is the wrapper's job.
         nitroVtoView.destroy()
     }
 }

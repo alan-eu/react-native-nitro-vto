@@ -30,15 +30,11 @@ static NSString *const CACHE_DIR = @"glb_cache";
         ext = nameComponents.count > 1 ? nameComponents.lastObject : @"";
     }
 
-    // Try to find the resource bundle. Each wrapper podspec names its bundle
-    // differently (CocoaPods `resource_bundles`): the Nitro wrapper ships
-    // `NitroVtoAssets.bundle`, the classic wrapper ships
-    // `ReactNativeVtoAssets.bundle`. We don't know which wrapper is hosting
-    // this code at runtime, so try both.
+    // Try to find the resource bundle the podspec declares in
+    // `resource_bundles` (`NitroVtoAssets.bundle`).
     NSBundle *classBundle = [NSBundle bundleForClass:[LoaderUtils class]];
     NSArray<NSString *> *candidateBundleNames = @[
         @"NitroVtoAssets",
-        @"ReactNativeVtoAssets",
     ];
 
     NSMutableArray *bundles = [NSMutableArray array];

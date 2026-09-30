@@ -7,11 +7,9 @@ import type {
 /**
  * Props for the NitroVtoView component.
  *
- * NOTE: This shape is kept in lockstep with `packages/vto-core-native/src/types.ts`
- * (the single source of truth for both the Nitro and classic wrappers).
- * When editing the prop surface, update both files. The `scripts/bundle.ts` in
- * core copies `types.ts` into the classic wrapper verbatim; Nitro keeps its own
- * copy inline here because it has to be resolvable by nitrogen at build time
+ * NOTE: This shape is kept in lockstep with `packages/vto-core-native/src/types.ts`.
+ * When editing the prop surface, update both files. Nitro keeps its own copy
+ * inline here because it has to be resolvable by nitrogen at build time
  * (before workspace `postinstall` runs).
  */
 export interface NitroVtoViewProps extends HybridViewProps {

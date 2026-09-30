@@ -13,10 +13,8 @@ import MetalKit
  * Note: Camera permissions must be handled by the consuming React Native app
  * before this view becomes active.
  */
-// `public` so Swift emits this class into each wrapper's auto-generated
-// ObjC interface header (`<ModuleName>-Swift.h`). Subclasses in wrappers
-// (e.g. VtoBridgeView in react-native-vto) need to be public themselves,
-// and a public subclass requires a public superclass. Internal members
+// `public` so Swift emits this class into the wrapper's auto-generated
+// ObjC interface header (`<ModuleName>-Swift.h`). Internal members
 // remain internal — ObjC visibility is still gated by @objc.
 public class VtoView: UIView {
 

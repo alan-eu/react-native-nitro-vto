@@ -82,7 +82,7 @@ Any surface change (new prop, renamed method, new callback signature) must land 
 - **Android**: core is Kotlin, package `eu.alan.vto.core`. Do not put anything in `com.margelo.nitro.nitrovto` — that namespace is reserved for Nitro-specific bridge code.
 - **Filament**: version is pinned at `1.71.4` in the podspec and `android/build.gradle`; don't bump one without the other.
 - **Assets**: source `.mat` / `.hdr` live in `packages/vto-core-native/assets/`; compiled `.filamat` / `.ktx` / `.txt` are checked in under `packages/vto-core-native/android/src/main/assets/` and `packages/vto-core-native/ios/assets/`. Always recompile and commit both source and compiled forms together.
-- **Resource bundle lookup on iOS**: `LoaderUtils.loadAssetNamed:` tries both `NitroVtoAssets.bundle` and `ReactNativeVtoAssets.bundle` (each wrapper podspec names its `resource_bundles` differently). If you add a third wrapper, extend that list.
+- **Resource bundle lookup on iOS**: `LoaderUtils.loadAssetNamed:` looks up `NitroVtoAssets.bundle`, the `resource_bundles` name declared in the podspec. Rename both together.
 
 ### What to test before opening a PR
 

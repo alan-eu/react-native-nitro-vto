@@ -1,7 +1,6 @@
 /**
- * Shared TypeScript surface for both the Nitro (new-arch) and classic (old-arch)
- * VTO React Native wrappers. Edit here; `scripts/bundle.ts` copies this file into
- * each wrapper so their types stay in lockstep.
+ * TypeScript surface of the VTO React Native wrapper. Edit here;
+ * `scripts/bundle.ts` copies this file into the wrapper.
  */
 
 /**

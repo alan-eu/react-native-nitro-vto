@@ -771,11 +771,11 @@ class VtoView(context: Context) : FrameLayout(context) {
         // `UiHelper.onDetachedFromSurface` and the Android `SurfaceHolder`
         // surfaceDestroyed callback, which can fire against an already-freed
         // engine and trip Filament's `TPanic<PreconditionPanic>` → SIGABRT.
-        // The wrappers own the true teardown, and each has to call `destroy()`
-        // itself at unmount: `VtoViewManager.onDropViewInstance` (old-arch) and
-        // `HybridNitroVtoView.onDropView` (Nitro). Nitrogen's generated manager
-        // only forwards the unmount as `onDropView()` — the base implementation
-        // is a no-op, so leaving it unoverridden leaks the engine and session.
+        // The wrapper owns the true teardown and has to call `destroy()`
+        // itself at unmount, in `HybridNitroVtoView.onDropView`. Nitrogen's
+        // generated manager only forwards the unmount as `onDropView()` — the
+        // base implementation is a no-op, so leaving it unoverridden leaks the
+        // engine and session.
         pause()
     }
 }
