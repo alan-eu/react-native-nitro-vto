@@ -1,6 +1,5 @@
 /**
- * TypeScript surface of the VTO React Native wrapper. Edit here;
- * `scripts/bundle.ts` copies this file into the wrapper.
+ * Shared TypeScript types of the VTO React Native wrapper.
  */
 
 /**

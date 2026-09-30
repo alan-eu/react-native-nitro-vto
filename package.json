@@ -4,14 +4,10 @@
   "description": "React Native library for glasses virtual try-on using ARCore and Filament",
   "private": true,
   "workspaces": [
-    "packages/vto-core-native",
     "packages/react-native-nitro-vto",
     "examples/example-new-arch"
   ],
   "scripts": {
-    "postinstall": "npm run bundle --workspace=@alaneu/vto-core-native",
-    "bundle": "npm run bundle --workspace=@alaneu/vto-core-native",
-    "watch:core": "npm run watch --workspace=@alaneu/vto-core-native",
     "release": "npm run release --workspace=packages/react-native-nitro-vto && release-it"
   },
   "devDependencies": {
@@ -48,7 +44,6 @@
       "@release-it/bumper": {
         "out": [
           "package.json",
-          "packages/vto-core-native/package.json",
           "packages/react-native-nitro-vto/package.json",
           "examples/example-new-arch/package.json"
         ]

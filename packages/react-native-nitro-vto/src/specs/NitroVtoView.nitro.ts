@@ -7,10 +7,8 @@ import type {
 /**
  * Props for the NitroVtoView component.
  *
- * NOTE: This shape is kept in lockstep with `packages/vto-core-native/src/types.ts`.
- * When editing the prop surface, update both files. Nitro keeps its own copy
- * inline here because it has to be resolvable by nitrogen at build time
- * (before workspace `postinstall` runs).
+ * NOTE: This shape is kept in lockstep with `VtoCommonProps` in `src/types.ts`.
+ * When editing the prop surface, update both files.
  */
 export interface NitroVtoViewProps extends HybridViewProps {
   /**

@@ -109,7 +109,7 @@ class VtoView(context: Context) : FrameLayout(context) {
             c = c.baseContext
         }
         // 3. React Native's ThemedReactContext.getCurrentActivity() —
-        //    accessed via reflection so vto-core-native doesn't take a
+        //    accessed via reflection so the core doesn't take a
         //    hard dependency on the RN host classes.
         return try {
             val method = context.javaClass.methods.firstOrNull { it.name == "getCurrentActivity" }
