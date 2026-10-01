@@ -8,8 +8,7 @@
     "android": "expo run:android",
     "androidAll": "tsx script/runAndroidAll.ts",
     "ios": "expo run:ios",
-    "lint": "expo lint",
-    "testflight": "tsx script/preTestFlight.ts && testflight && tsx script/postTestFlight.ts"
+    "lint": "expo lint"
   },
   "dependencies": {
     "@alaneu/react-native-nitro-vto": "*",
@@ -43,7 +42,6 @@
     "@types/react": "~19.2.18",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~57.0.2",
-    "testflight": "1.0.4",
     "tsx": "^4.21.0",
     "typescript": "~6.0.3"
   }

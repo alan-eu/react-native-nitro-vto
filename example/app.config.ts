@@ -9,11 +9,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: "vto-demo",
     slug: "vto-demo",
     version: "1.0.0",
-    extra: {
-      eas: {
-        projectId: "b39f1bdf-bef0-4d9a-966d-9fd1e3654774",
-      },
-    },
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "vtodemo",
