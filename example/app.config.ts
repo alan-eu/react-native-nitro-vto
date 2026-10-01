@@ -18,7 +18,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     icon: "./assets/images/icon.png",
     scheme: "vtodemo",
     userInterfaceStyle: "automatic",
-    newArchEnabled: true,
     ios: {
       bundleIdentifier: "eu.alan.vto.demo",
       supportsTablet: true,
@@ -36,7 +35,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         backgroundImage: "./assets/images/android-icon-background.png",
         monochromeImage: "./assets/images/android-icon-monochrome.png",
       },
-      edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       permissions: ["android.permission.CAMERA"],
     },
