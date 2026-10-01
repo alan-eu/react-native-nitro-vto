@@ -20,6 +20,7 @@
 #include <string>
 #include <functional>
 #include <optional>
+#include "ArUnavailableReason.hpp"
 #include <memory>
 #include "HybridNitroVtoViewSpec.hpp"
 
@@ -47,7 +48,7 @@ namespace margelo::nitro::nitrovto::views {
     nitro::ReactProp<bool> isActive;
     nitro::ReactProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>> onModelLoaded;
     nitro::ReactProp<std::optional<std::function<void()>>> onFaceTracked;
-    nitro::ReactProp<std::optional<std::function<void(const std::string& /* reason */)>>> onArUnavailable;
+    nitro::ReactProp<std::optional<std::function<void(ArUnavailableReason /* reason */)>>> onArUnavailable;
     nitro::ReactProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>> onGlassesDisplayed;
     nitro::ReactProp<std::optional<double>> forwardOffset;
     nitro::ReactProp<std::optional<bool>> debug;

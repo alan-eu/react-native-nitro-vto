@@ -45,7 +45,8 @@ class VtoView(context: Context) : FrameLayout(context) {
     companion object {
         private const val TAG = "VtoView"
 
-        // Reasons handed to onArUnavailable — keep in sync with types.ts.
+        // Reasons handed to onArUnavailable — keep in sync with ArUnavailableReason
+        // in src/specs/NitroVtoView.nitro.ts.
         private const val REASON_DEVICE_NOT_CAPABLE = "device-not-capable"
         private const val REASON_NOT_INSTALLED = "arcore-not-installed"
         private const val REASON_OUTDATED = "arcore-outdated"

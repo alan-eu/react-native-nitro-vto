@@ -24,7 +24,7 @@ namespace margelo::nitro::nitrovto::views {
     isActive(nitro::ReactProp<bool>::fromRawValue("NitroVtoView", "isActive", rawProps, sourceProps.isActive)),
     onModelLoaded(nitro::ReactProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>>::fromRawValue("NitroVtoView", "onModelLoaded", rawProps, sourceProps.onModelLoaded)),
     onFaceTracked(nitro::ReactProp<std::optional<std::function<void()>>>::fromRawValue("NitroVtoView", "onFaceTracked", rawProps, sourceProps.onFaceTracked)),
-    onArUnavailable(nitro::ReactProp<std::optional<std::function<void(const std::string& /* reason */)>>>::fromRawValue("NitroVtoView", "onArUnavailable", rawProps, sourceProps.onArUnavailable)),
+    onArUnavailable(nitro::ReactProp<std::optional<std::function<void(ArUnavailableReason /* reason */)>>>::fromRawValue("NitroVtoView", "onArUnavailable", rawProps, sourceProps.onArUnavailable)),
     onGlassesDisplayed(nitro::ReactProp<std::optional<std::function<void(const std::string& /* modelUrl */)>>>::fromRawValue("NitroVtoView", "onGlassesDisplayed", rawProps, sourceProps.onGlassesDisplayed)),
     forwardOffset(nitro::ReactProp<std::optional<double>>::fromRawValue("NitroVtoView", "forwardOffset", rawProps, sourceProps.forwardOffset)),
     debug(nitro::ReactProp<std::optional<bool>>::fromRawValue("NitroVtoView", "debug", rawProps, sourceProps.debug)),

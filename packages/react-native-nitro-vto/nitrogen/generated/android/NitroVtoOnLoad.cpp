@@ -18,6 +18,7 @@
 #include "JHybridNitroVtoViewSpec.hpp"
 #include "JFunc_void_std__string.hpp"
 #include "JFunc_void.hpp"
+#include "JFunc_void_ArUnavailableReason.hpp"
 #include "views/JHybridNitroVtoViewStateUpdater.hpp"
 #include <NitroModules/DefaultConstructableObject.hpp>
 
@@ -46,6 +47,7 @@ void registerAllNatives() {
   margelo::nitro::nitrovto::JHybridNitroVtoViewSpec::CxxPart::registerNatives();
   margelo::nitro::nitrovto::JFunc_void_std__string_cxx::registerNatives();
   margelo::nitro::nitrovto::JFunc_void_cxx::registerNatives();
+  margelo::nitro::nitrovto::JFunc_void_ArUnavailableReason_cxx::registerNatives();
   margelo::nitro::nitrovto::views::JHybridNitroVtoViewStateUpdater::registerNatives();
 
   // Register Nitro Hybrid Objects

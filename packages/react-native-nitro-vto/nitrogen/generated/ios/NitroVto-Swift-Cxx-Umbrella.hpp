@@ -8,10 +8,13 @@
 #pragma once
 
 // Forward declarations of C++ defined types
+// Forward declaration of `ArUnavailableReason` to properly resolve imports.
+namespace margelo::nitro::nitrovto { enum class ArUnavailableReason; }
 // Forward declaration of `HybridNitroVtoViewSpec` to properly resolve imports.
 namespace margelo::nitro::nitrovto { class HybridNitroVtoViewSpec; }
 
 // Include C++ defined types
+#include "ArUnavailableReason.hpp"
 #include "HybridNitroVtoViewSpec.hpp"
 #include <NitroModules/Result.hpp>
 #include <exception>

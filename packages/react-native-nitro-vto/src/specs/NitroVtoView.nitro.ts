@@ -5,6 +5,26 @@ import type {
 } from "react-native-nitro-modules";
 
 /**
+ * Why the view gave up on AR and settled into preview mode.
+ *
+ * - `"device-not-capable"` — ARCore says this device can't run AR at all.
+ * - `"arcore-not-installed"` — ARCore is missing and still missing after we sent
+ *   the user to install it once. Declined, cancelled and "the Play install
+ *   failed" are indistinguishable from the app's side, so they all report this.
+ *   We don't ask a second time.
+ * - `"arcore-outdated"` — ARCore or this app is too old for the other.
+ * - `"arcore-unavailable"` — ARCore couldn't give a verdict.
+ * - `"face-tracking-unsupported"` — the device runs AR but not front-camera face
+ *   tracking (also what the iOS simulator reports).
+ */
+export type ArUnavailableReason =
+  | "device-not-capable"
+  | "arcore-not-installed"
+  | "arcore-outdated"
+  | "arcore-unavailable"
+  | "face-tracking-unsupported";
+
+/**
  * Props for the NitroVtoView component.
  *
  * NOTE: This shape is kept in lockstep with `VtoCommonProps` in `src/types.ts`.
@@ -36,12 +56,11 @@ export interface NitroVtoViewProps extends HybridViewProps {
 
   /**
    * Called once when the view gives up on AR and settles into preview mode.
-   * Reason is one of `device-not-capable`, `arcore-not-installed`,
-   * `arcore-outdated`, `arcore-unavailable`, `face-tracking-unsupported`. The view is showing the model in preview from
-   * then on, whatever the `mode` prop says.
-   * @param reason - Why AR is unavailable.
+   * The view is showing the model in preview from then on, whatever the `mode`
+   * prop says.
+   * @param reason - Why AR is unavailable, see {@link ArUnavailableReason}.
    */
-  onArUnavailable?: (reason: string) => void;
+  onArUnavailable?: (reason: ArUnavailableReason) => void;
 
   /**
    * Called the first time the glasses model is rendered on the tracked face

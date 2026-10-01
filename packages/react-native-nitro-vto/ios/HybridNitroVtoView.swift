@@ -55,9 +55,11 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
         }
     }
 
-    public var onArUnavailable: ((String) -> Void)? = nil {
+    public var onArUnavailable: ((ArUnavailableReason) -> Void)? = nil {
         didSet {
-            nitroVtoView.onArUnavailable = onArUnavailable
+            nitroVtoView.onArUnavailable = onArUnavailable.map { cb in
+                { reason in ArUnavailableReason(fromString: reason).map(cb) }
+            }
         }
     }
 

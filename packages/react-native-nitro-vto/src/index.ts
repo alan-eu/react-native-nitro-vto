@@ -1,16 +1,13 @@
 import { getHostComponent } from "react-native-nitro-modules";
 import type {
+  ArUnavailableReason,
   NitroVtoViewProps,
   NitroVtoViewMethods,
 } from "./specs/NitroVtoView.nitro";
 import NitroVtoViewConfig from "../nitrogen/generated/shared/json/NitroVtoViewConfig.json";
 import { version } from "../package.json";
 // Re-export types
-export type { NitroVtoViewProps, NitroVtoViewMethods };
-
-// The prop signatures nitrogen generates are plain strings, so this is the
-// union that documents what `onArUnavailable` can actually hand back.
-export type { ArUnavailableReason } from "./types";
+export type { ArUnavailableReason, NitroVtoViewProps, NitroVtoViewMethods };
 
 // Export the HybridRef type for use with hybridRef prop
 export type { HybridRef } from "react-native-nitro-modules";
