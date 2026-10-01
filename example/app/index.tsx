@@ -28,7 +28,8 @@ const MODELS = [
 type VtoRef = HybridRef<NitroVtoViewProps, NitroVtoViewMethods>;
 
 const App = () => {
-  const [hasPermission, setHasPermission] = useState(false);
+  // iOS prompts for camera access natively when the AR session starts.
+  const [hasPermission, setHasPermission] = useState(Platform.OS !== "android");
   const [currentModelIndex, setCurrentModelIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [mode, setMode] = useState<"ar" | "preview">(
@@ -37,20 +38,15 @@ const App = () => {
 
   const vtoRef = useRef<VtoRef | null>(null);
 
-  const requestCameraPermission = useCallback(async () => {
-    if (Platform.OS === "android") {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.CAMERA,
-          {
-            title: "Camera Permission",
-            message:
-              "This app needs camera access for the virtual try-on feature.",
-            buttonNeutral: "Ask Me Later",
-            buttonNegative: "Cancel",
-            buttonPositive: "OK",
-          }
-        );
+  const requestCameraPermission = useCallback(() => {
+    PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA, {
+      title: "Camera Permission",
+      message: "This app needs camera access for the virtual try-on feature.",
+      buttonNeutral: "Ask Me Later",
+      buttonNegative: "Cancel",
+      buttonPositive: "OK",
+    })
+      .then((granted) => {
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
           setHasPermission(true);
         } else {
@@ -59,23 +55,21 @@ const App = () => {
             "Camera permission is required for this feature."
           );
         }
-      } catch (err) {
-        console.warn(err);
-      }
-    } else {
-      setHasPermission(true);
-    }
+      })
+      .catch((err) => console.warn(err));
   }, []);
 
   useEffect(() => {
-    requestCameraPermission();
+    if (Platform.OS === "android") {
+      requestCameraPermission();
+    }
   }, [requestCameraPermission]);
 
   // Perf instrumentation — all three events are timed from the same baseline
   // (the last model change) so their durations are directly comparable.
-  // `tModelRequested` is set at mount and re-armed whenever the selected model
-  // changes.
-  const tModelRequested = useRef(performance.now());
+  // `tModelRequested` is armed by the effect below at mount and re-armed
+  // whenever the selected model changes.
+  const tModelRequested = useRef(0);
 
   useEffect(() => {
     tModelRequested.current = performance.now();
@@ -117,6 +111,18 @@ const App = () => {
     console.log(`[vto] AR unavailable: ${reason}`);
   }, []);
 
+  // Nitro's callback() only tags the function for the native bridge; it never
+  // invokes it during render, so the ref reads inside are safe.
+  /* eslint-disable react-hooks/refs */
+  const onModelLoaded = callback(handleModelLoaded);
+  const onFaceTracked = callback(handleFaceTracked);
+  const onGlassesDisplayed = callback(handleGlassesDisplayed);
+  const onArUnavailable = callback(handleArUnavailable);
+  const hybridRef = callback((ref: VtoRef) => {
+    vtoRef.current = ref;
+  });
+  /* eslint-enable react-hooks/refs */
+
   const currentModel = MODELS[currentModelIndex];
   const photoBase = `https://static.alan.com/fr-web/eyewear/frames/photoshoot/large/${currentModel.code}`;
 
@@ -146,13 +152,11 @@ const App = () => {
         forwardOffset={0.005}
         debug={false}
         showNativeFPS={true}
-        onModelLoaded={callback(handleModelLoaded)}
-        onFaceTracked={callback(handleFaceTracked)}
-        onGlassesDisplayed={callback(handleGlassesDisplayed)}
-        onArUnavailable={callback(handleArUnavailable)}
-        hybridRef={callback((ref: VtoRef) => {
-          vtoRef.current = ref;
-        })}
+        onModelLoaded={onModelLoaded}
+        onFaceTracked={onFaceTracked}
+        onGlassesDisplayed={onGlassesDisplayed}
+        onArUnavailable={onArUnavailable}
+        hybridRef={hybridRef}
       />
       {isLoading && (
         <View style={styles.loadingOverlay}>
