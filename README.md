@@ -12,21 +12,13 @@ A React Native library for glasses virtual try-on using ARCore (Android) and ARK
 - World-space positioning with proper perspective projection
 - Face occlusion support (glasses appear behind face when appropriate)
 
-## Pick the right package
+## Package
 
-This repo publishes two wrappers that share the same native core but target different React Native architectures:
+This repo publishes [`@alaneu/react-native-nitro-vto`](./packages/react-native-nitro-vto), built on [Nitro Modules](https://nitro.margelo.com/) for the React Native new architecture (RN ≥ 0.78 with `newArchEnabled=true`).
 
-| Package | Architecture | Extra runtime dep | When to use |
-| --- | --- | --- | --- |
-| [`@alaneu/react-native-nitro-vto`](./packages/react-native-nitro-vto) | new (Fabric) | `react-native-nitro-modules` | RN ≥ 0.78 with `newArchEnabled=true` |
-| [`@alaneu/react-native-vto`](./packages/react-native-vto) | old (Paper) | none | `newArchEnabled=false`, or apps that can't pull in Nitro |
+See its [README](./packages/react-native-nitro-vto/README.md) for install, usage, and full API.
 
-They're mutually exclusive — install whichever matches your app's architecture. The API surface (props, methods, callbacks) is identical; only the import path, the callback wrapping convention (Nitro requires `callback()`), and the method-access pattern (Nitro's `hybridRef` vs. classic `ref`) differ.
-
-See each package's README for install, usage, and full API:
-
-- [`@alaneu/react-native-nitro-vto` — new-arch install + API](./packages/react-native-nitro-vto/README.md)
-- [`@alaneu/react-native-vto` — old-arch install + API](./packages/react-native-vto/README.md)
+The old-architecture wrapper `@alaneu/react-native-vto` is no longer maintained; its last release is 0.15.5.
 
 ## Requirements
 

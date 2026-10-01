@@ -8,6 +8,8 @@
 #pragma once
 
 // Forward declarations of C++ defined types
+// Forward declaration of `ArUnavailableReason` to properly resolve imports.
+namespace margelo::nitro::nitrovto { enum class ArUnavailableReason; }
 // Forward declaration of `HybridNitroVtoViewSpec` to properly resolve imports.
 namespace margelo::nitro::nitrovto { class HybridNitroVtoViewSpec; }
 
@@ -16,6 +18,7 @@ namespace margelo::nitro::nitrovto { class HybridNitroVtoViewSpec; }
 namespace NitroVto { class HybridNitroVtoViewSpec_cxx; }
 
 // Include C++ defined types
+#include "ArUnavailableReason.hpp"
 #include "HybridNitroVtoViewSpec.hpp"
 #include <NitroModules/Result.hpp>
 #include <exception>
@@ -104,18 +107,40 @@ namespace margelo::nitro::nitrovto::bridge::swift {
     return optional.value();
   }
   
-  // pragma MARK: std::optional<std::function<void(const std::string& /* reason */)>>
+  // pragma MARK: std::function<void(ArUnavailableReason /* reason */)>
   /**
-   * Specialized version of `std::optional<std::function<void(const std::string& / * reason * /)>>`.
+   * Specialized version of `std::function<void(ArUnavailableReason)>`.
    */
-  using std__optional_std__function_void_const_std__string_____reason______ = std::optional<std::function<void(const std::string& /* reason */)>>;
-  inline std::optional<std::function<void(const std::string& /* reason */)>> create_std__optional_std__function_void_const_std__string_____reason______(const std::function<void(const std::string& /* reason */)>& value) noexcept {
-    return std::optional<std::function<void(const std::string& /* reason */)>>(value);
+  using Func_void_ArUnavailableReason = std::function<void(ArUnavailableReason /* reason */)>;
+  /**
+   * Wrapper class for a `std::function<void(ArUnavailableReason / * reason * /)>`, this can be used from Swift.
+   */
+  class Func_void_ArUnavailableReason_Wrapper final {
+  public:
+    explicit Func_void_ArUnavailableReason_Wrapper(std::function<void(ArUnavailableReason /* reason */)>&& func): _function(std::make_unique<std::function<void(ArUnavailableReason /* reason */)>>(std::move(func))) {}
+    inline void call(int reason) const noexcept {
+      _function->operator()(static_cast<ArUnavailableReason>(reason));
+    }
+  private:
+    std::unique_ptr<std::function<void(ArUnavailableReason /* reason */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_void_ArUnavailableReason create_Func_void_ArUnavailableReason(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_void_ArUnavailableReason_Wrapper wrap_Func_void_ArUnavailableReason(Func_void_ArUnavailableReason value) noexcept {
+    return Func_void_ArUnavailableReason_Wrapper(std::move(value));
   }
-  inline bool has_value_std__optional_std__function_void_const_std__string_____reason______(const std::optional<std::function<void(const std::string& /* reason */)>>& optional) noexcept {
+  
+  // pragma MARK: std::optional<std::function<void(ArUnavailableReason /* reason */)>>
+  /**
+   * Specialized version of `std::optional<std::function<void(ArUnavailableReason / * reason * /)>>`.
+   */
+  using std__optional_std__function_void_ArUnavailableReason____reason______ = std::optional<std::function<void(ArUnavailableReason /* reason */)>>;
+  inline std::optional<std::function<void(ArUnavailableReason /* reason */)>> create_std__optional_std__function_void_ArUnavailableReason____reason______(const std::function<void(ArUnavailableReason /* reason */)>& value) noexcept {
+    return std::optional<std::function<void(ArUnavailableReason /* reason */)>>(value);
+  }
+  inline bool has_value_std__optional_std__function_void_ArUnavailableReason____reason______(const std::optional<std::function<void(ArUnavailableReason /* reason */)>>& optional) noexcept {
     return optional.has_value();
   }
-  inline std::function<void(const std::string& /* reason */)> get_std__optional_std__function_void_const_std__string_____reason______(const std::optional<std::function<void(const std::string& /* reason */)>>& optional) noexcept {
+  inline std::function<void(ArUnavailableReason /* reason */)> get_std__optional_std__function_void_ArUnavailableReason____reason______(const std::optional<std::function<void(ArUnavailableReason /* reason */)>>& optional) noexcept {
     return optional.value();
   }
   

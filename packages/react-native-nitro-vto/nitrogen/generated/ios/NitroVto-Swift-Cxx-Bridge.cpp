@@ -30,6 +30,14 @@ namespace margelo::nitro::nitrovto::bridge::swift {
     };
   }
   
+  // pragma MARK: std::function<void(ArUnavailableReason /* reason */)>
+  Func_void_ArUnavailableReason create_Func_void_ArUnavailableReason(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = NitroVto::Func_void_ArUnavailableReason::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](ArUnavailableReason reason) mutable -> void {
+      swiftClosure.call(static_cast<int>(reason));
+    };
+  }
+  
   // pragma MARK: std::shared_ptr<HybridNitroVtoViewSpec>
   std::shared_ptr<HybridNitroVtoViewSpec> create_std__shared_ptr_HybridNitroVtoViewSpec_(void* NON_NULL swiftUnsafePointer) noexcept {
     NitroVto::HybridNitroVtoViewSpec_cxx swiftPart = NitroVto::HybridNitroVtoViewSpec_cxx::fromUnsafe(swiftUnsafePointer);

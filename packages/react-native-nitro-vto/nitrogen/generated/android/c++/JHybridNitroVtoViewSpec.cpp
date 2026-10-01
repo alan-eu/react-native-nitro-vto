@@ -7,7 +7,8 @@
 
 #include "JHybridNitroVtoViewSpec.hpp"
 
-
+// Forward declaration of `ArUnavailableReason` to properly resolve imports.
+namespace margelo::nitro::nitrovto { enum class ArUnavailableReason; }
 
 #include <string>
 #include <functional>
@@ -15,6 +16,9 @@
 #include "JFunc_void_std__string.hpp"
 #include <NitroModules/JNICallable.hpp>
 #include "JFunc_void.hpp"
+#include "ArUnavailableReason.hpp"
+#include "JFunc_void_ArUnavailableReason.hpp"
+#include "JArUnavailableReason.hpp"
 
 namespace margelo::nitro::nitrovto {
 
@@ -98,22 +102,22 @@ namespace margelo::nitro::nitrovto {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JFunc_void::javaobject> /* onFaceTracked */)>("setOnFaceTracked_cxx");
     method(_javaPart, onFaceTracked.has_value() ? JFunc_void_cxx::fromCpp(onFaceTracked.value()) : nullptr);
   }
-  std::optional<std::function<void(const std::string& /* reason */)>> JHybridNitroVtoViewSpec::getOnArUnavailable() {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JFunc_void_std__string::javaobject>()>("getOnArUnavailable_cxx");
+  std::optional<std::function<void(ArUnavailableReason /* reason */)>> JHybridNitroVtoViewSpec::getOnArUnavailable() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JFunc_void_ArUnavailableReason::javaobject>()>("getOnArUnavailable_cxx");
     auto __result = method(_javaPart);
-    return __result != nullptr ? std::make_optional([&]() -> std::function<void(const std::string& /* reason */)> {
-      if (__result->isInstanceOf(JFunc_void_std__string_cxx::javaClassStatic())) [[likely]] {
-        auto downcast = jni::static_ref_cast<JFunc_void_std__string_cxx::javaobject>(__result);
+    return __result != nullptr ? std::make_optional([&]() -> std::function<void(ArUnavailableReason /* reason */)> {
+      if (__result->isInstanceOf(JFunc_void_ArUnavailableReason_cxx::javaClassStatic())) [[likely]] {
+        auto downcast = jni::static_ref_cast<JFunc_void_ArUnavailableReason_cxx::javaobject>(__result);
         return downcast->cthis()->getFunction();
       } else {
         auto __resultRef = jni::make_global(__result);
-        return JNICallable<JFunc_void_std__string, void(std::string)>(std::move(__resultRef));
+        return JNICallable<JFunc_void_ArUnavailableReason, void(ArUnavailableReason)>(std::move(__resultRef));
       }
     }()) : std::nullopt;
   }
-  void JHybridNitroVtoViewSpec::setOnArUnavailable(const std::optional<std::function<void(const std::string& /* reason */)>>& onArUnavailable) {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JFunc_void_std__string::javaobject> /* onArUnavailable */)>("setOnArUnavailable_cxx");
-    method(_javaPart, onArUnavailable.has_value() ? JFunc_void_std__string_cxx::fromCpp(onArUnavailable.value()) : nullptr);
+  void JHybridNitroVtoViewSpec::setOnArUnavailable(const std::optional<std::function<void(ArUnavailableReason /* reason */)>>& onArUnavailable) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JFunc_void_ArUnavailableReason::javaobject> /* onArUnavailable */)>("setOnArUnavailable_cxx");
+    method(_javaPart, onArUnavailable.has_value() ? JFunc_void_ArUnavailableReason_cxx::fromCpp(onArUnavailable.value()) : nullptr);
   }
   std::optional<std::function<void(const std::string& /* modelUrl */)>> JHybridNitroVtoViewSpec::getOnGlassesDisplayed() {
     static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JFunc_void_std__string::javaobject>()>("getOnGlassesDisplayed_cxx");

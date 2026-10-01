@@ -9,8 +9,7 @@ import NitroModules
  */
 class HybridNitroVtoView: HybridNitroVtoViewSpec {
 
-    // The underlying native view (shared core — class `VtoView` lives in
-    // core/ios/VtoView.swift and is bundled into this package on install).
+    // The underlying native view (core renderer, `ios/VtoView.swift`).
     private let nitroVtoView: VtoView
 
     public required override init() {
@@ -55,9 +54,11 @@ class HybridNitroVtoView: HybridNitroVtoViewSpec {
         }
     }
 
-    public var onArUnavailable: ((String) -> Void)? = nil {
+    public var onArUnavailable: ((ArUnavailableReason) -> Void)? = nil {
         didSet {
-            nitroVtoView.onArUnavailable = onArUnavailable
+            nitroVtoView.onArUnavailable = onArUnavailable.map { cb in
+                { reason in ArUnavailableReason(fromString: reason).map(cb) }
+            }
         }
     }
 

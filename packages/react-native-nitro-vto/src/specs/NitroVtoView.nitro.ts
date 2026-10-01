@@ -5,14 +5,27 @@ import type {
 } from "react-native-nitro-modules";
 
 /**
- * Props for the NitroVtoView component.
+ * Why the view gave up on AR and settled into preview mode.
  *
- * NOTE: This shape is kept in lockstep with `packages/vto-core-native/src/types.ts`
- * (the single source of truth for both the Nitro and classic wrappers).
- * When editing the prop surface, update both files. The `scripts/bundle.ts` in
- * core copies `types.ts` into the classic wrapper verbatim; Nitro keeps its own
- * copy inline here because it has to be resolvable by nitrogen at build time
- * (before workspace `postinstall` runs).
+ * - `"device-not-capable"` — ARCore says this device can't run AR at all.
+ * - `"arcore-not-installed"` — ARCore is missing and still missing after we sent
+ *   the user to install it once. Declined, cancelled and "the Play install
+ *   failed" are indistinguishable from the app's side, so they all report this.
+ *   We don't ask a second time.
+ * - `"arcore-outdated"` — ARCore or this app is too old for the other.
+ * - `"arcore-unavailable"` — ARCore couldn't give a verdict.
+ * - `"face-tracking-unsupported"` — the device runs AR but not front-camera face
+ *   tracking (also what the iOS simulator reports).
+ */
+export type ArUnavailableReason =
+  | "device-not-capable"
+  | "arcore-not-installed"
+  | "arcore-outdated"
+  | "arcore-unavailable"
+  | "face-tracking-unsupported";
+
+/**
+ * Props for the NitroVtoView component.
  */
 export interface NitroVtoViewProps extends HybridViewProps {
   /**
@@ -40,25 +53,25 @@ export interface NitroVtoViewProps extends HybridViewProps {
 
   /**
    * Called once when the view gives up on AR and settles into preview mode.
-   * Reason is one of `device-not-capable`, `arcore-not-installed`,
-   * `arcore-outdated`, `arcore-unavailable`, `face-tracking-unsupported`. The view is showing the model in preview from
-   * then on, whatever the `mode` prop says.
-   * @param reason - Why AR is unavailable.
+   * The view is showing the model in preview from then on, whatever the `mode`
+   * prop says.
+   * @param reason - Why AR is unavailable, see {@link ArUnavailableReason}.
    */
-  onArUnavailable?: (reason: string) => void;
+  onArUnavailable?: (reason: ArUnavailableReason) => void;
 
   /**
    * Called the first time the glasses model is rendered on the tracked face
    * — i.e. the first frame whose transform is driven by a valid face pose
-   * after the model was loaded. Re-fires whenever `modelUrl` changes to a
-   * different model.
+   * after the model was loaded. In preview mode there is no face, so it fires
+   * on the first frame the model is rendered. Re-fires whenever `modelUrl`
+   * changes to a different model.
    * @param modelUrl - The URL of the glasses model that became visible.
    */
   onGlassesDisplayed?: (modelUrl: string) => void;
 
   /**
    * Forward offset for glasses positioning in meters.
-   * Default: 0.005 (5mm forward).
+   * Default: 0.005 (5mm in front of the nose bridge).
    */
   forwardOffset?: number;
 
@@ -70,6 +83,8 @@ export interface NitroVtoViewProps extends HybridViewProps {
 
   /**
    * Show a small native FPS counter in the top-right corner of the view.
+   * Reads frames-per-second + frame-time-in-ms directly from the render
+   * loop on each platform. Intended for performance profiling.
    * Default: false.
    */
   showNativeFPS?: boolean;
@@ -87,7 +102,8 @@ export interface NitroVtoViewProps extends HybridViewProps {
 
   /**
    * Background behind the glasses in preview mode, as `#RGB`, `#RRGGBB` or
-   * `#RRGGBBAA` (alpha ignored — the background is opaque). Ignored in AR mode.
+   * `#RRGGBBAA` (alpha ignored — the background is opaque). Ignored in AR mode,
+   * where the camera feed is the background.
    * Default: near-black.
    */
   previewBackgroundColor?: string;

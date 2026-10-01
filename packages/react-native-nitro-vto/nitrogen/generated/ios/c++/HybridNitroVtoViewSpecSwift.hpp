@@ -12,11 +12,13 @@
 // Forward declaration of `HybridNitroVtoViewSpec_cxx` to properly resolve imports.
 namespace NitroVto { class HybridNitroVtoViewSpec_cxx; }
 
-
+// Forward declaration of `ArUnavailableReason` to properly resolve imports.
+namespace margelo::nitro::nitrovto { enum class ArUnavailableReason; }
 
 #include <string>
 #include <functional>
 #include <optional>
+#include "ArUnavailableReason.hpp"
 
 #include "NitroVto-Swift-Cxx-Umbrella.hpp"
 
@@ -91,11 +93,11 @@ namespace margelo::nitro::nitrovto {
     inline void setOnFaceTracked(const std::optional<std::function<void()>>& onFaceTracked) noexcept override {
       _swiftPart.setOnFaceTracked(onFaceTracked);
     }
-    inline std::optional<std::function<void(const std::string& /* reason */)>> getOnArUnavailable() noexcept override {
+    inline std::optional<std::function<void(ArUnavailableReason /* reason */)>> getOnArUnavailable() noexcept override {
       auto __result = _swiftPart.getOnArUnavailable();
       return __result;
     }
-    inline void setOnArUnavailable(const std::optional<std::function<void(const std::string& /* reason */)>>& onArUnavailable) noexcept override {
+    inline void setOnArUnavailable(const std::optional<std::function<void(ArUnavailableReason /* reason */)>>& onArUnavailable) noexcept override {
       _swiftPart.setOnArUnavailable(onArUnavailable);
     }
     inline std::optional<std::function<void(const std::string& /* modelUrl */)>> getOnGlassesDisplayed() noexcept override {

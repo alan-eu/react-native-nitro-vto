@@ -52,10 +52,12 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
             nitroVtoView.onGlassesDisplayed = value
         }
 
-    override var onArUnavailable: ((reason: String) -> Unit)? = null
+    override var onArUnavailable: ((reason: ArUnavailableReason) -> Unit)? = null
         set(value) {
             field = value
-            nitroVtoView.onArUnavailable = value
+            nitroVtoView.onArUnavailable = value?.let { cb ->
+                { reason -> arUnavailableReason(reason)?.let(cb) }
+            }
         }
 
     override var forwardOffset: Double? = null
@@ -119,7 +121,16 @@ class HybridNitroVtoView(private val reactContext: ThemedReactContext) : HybridN
     override fun onDropView() {
         // The only place the engine is torn down. `VtoView.onDetachedFromWindow` deliberately
         // only pauses — calling `destroy()` there races Filament's `onDetachedFromSurface` —
-        // so unmount teardown is the wrapper's job, as it is in `VtoViewManager` on old arch.
+        // so unmount teardown is the wrapper's job.
         nitroVtoView.destroy()
+    }
+
+    private fun arUnavailableReason(reason: String): ArUnavailableReason? = when (reason) {
+        "device-not-capable" -> ArUnavailableReason.DEVICE_NOT_CAPABLE
+        "arcore-not-installed" -> ArUnavailableReason.ARCORE_NOT_INSTALLED
+        "arcore-outdated" -> ArUnavailableReason.ARCORE_OUTDATED
+        "arcore-unavailable" -> ArUnavailableReason.ARCORE_UNAVAILABLE
+        "face-tracking-unsupported" -> ArUnavailableReason.FACE_TRACKING_UNSUPPORTED
+        else -> null
     }
 }
