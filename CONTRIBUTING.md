@@ -67,7 +67,6 @@ The example app consumes the package through the npm workspace, so native edits 
 
 Any surface change (new prop, renamed method, new callback signature) must land in **all** of:
 
-- `packages/react-native-nitro-vto/src/types.ts` — `VtoCommonProps` and related types
 - `packages/react-native-nitro-vto/src/specs/NitroVtoView.nitro.ts` — Nitro spec (re-run `npm run specs` from the Nitro package)
 - `HybridNitroVtoView.{kt,swift}`
 - `example/app/index.tsx` — exercise the new surface

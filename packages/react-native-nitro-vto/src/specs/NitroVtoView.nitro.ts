@@ -26,9 +26,6 @@ export type ArUnavailableReason =
 
 /**
  * Props for the NitroVtoView component.
- *
- * NOTE: This shape is kept in lockstep with `VtoCommonProps` in `src/types.ts`.
- * When editing the prop surface, update both files.
  */
 export interface NitroVtoViewProps extends HybridViewProps {
   /**
@@ -65,15 +62,16 @@ export interface NitroVtoViewProps extends HybridViewProps {
   /**
    * Called the first time the glasses model is rendered on the tracked face
    * — i.e. the first frame whose transform is driven by a valid face pose
-   * after the model was loaded. Re-fires whenever `modelUrl` changes to a
-   * different model.
+   * after the model was loaded. In preview mode there is no face, so it fires
+   * on the first frame the model is rendered. Re-fires whenever `modelUrl`
+   * changes to a different model.
    * @param modelUrl - The URL of the glasses model that became visible.
    */
   onGlassesDisplayed?: (modelUrl: string) => void;
 
   /**
    * Forward offset for glasses positioning in meters.
-   * Default: 0.005 (5mm forward).
+   * Default: 0.005 (5mm in front of the nose bridge).
    */
   forwardOffset?: number;
 
@@ -85,6 +83,8 @@ export interface NitroVtoViewProps extends HybridViewProps {
 
   /**
    * Show a small native FPS counter in the top-right corner of the view.
+   * Reads frames-per-second + frame-time-in-ms directly from the render
+   * loop on each platform. Intended for performance profiling.
    * Default: false.
    */
   showNativeFPS?: boolean;
@@ -102,7 +102,8 @@ export interface NitroVtoViewProps extends HybridViewProps {
 
   /**
    * Background behind the glasses in preview mode, as `#RGB`, `#RRGGBB` or
-   * `#RRGGBBAA` (alpha ignored — the background is opaque). Ignored in AR mode.
+   * `#RRGGBBAA` (alpha ignored — the background is opaque). Ignored in AR mode,
+   * where the camera feed is the background.
    * Default: near-black.
    */
   previewBackgroundColor?: string;
